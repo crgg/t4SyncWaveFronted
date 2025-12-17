@@ -50,7 +50,6 @@ class WebSocketService {
   async connect(): Promise<void> {
     const urlIsWebSocket = isWebSocketUrl(this.config.url);
     const shouldUseSFU = this.useSFU || (this.useWebRTC && urlIsWebSocket);
-
     if (this.useWebRTC) {
       if (shouldUseSFU) {
         console.log('Usando modo WebRTC SFU (detectado automáticamente por URL WebSocket)');
@@ -192,6 +191,7 @@ class WebSocketService {
         return this.webrtcSFUService.isConnected();
       }
       if (this.webrtcService) {
+        console.log('Debugger isConnected - webrtcService');
         return this.webrtcService.isConnected();
       }
     }
@@ -371,22 +371,94 @@ class WebSocketService {
   /**
    * Reproduce el audio (solo host)
    */
-  playAudio(timestamp: number): void {
+  playAudio(timestamp: number, position?: number, trackUrl?: string): void {
+    if (this.useWebRTC) {
+      if (this.useSFU && this.webrtcSFUService) {
+        this.webrtcSFUService.playAudio(timestamp, position, trackUrl);
+        return;
+      }
+      if (this.webrtcService) {
+        this.webrtcService.playAudio(timestamp, position, trackUrl);
+        return;
+      }
+    }
+
+    // Mantener compatibilidad con el evento antiguo
     this.emit(SOCKET_EVENTS.AUDIO_PLAY, { timestamp });
+
+    // Emitir nuevo evento playback-state si se proporcionan los parámetros
+    if (position !== undefined && trackUrl) {
+      const sessionId = this.getSocketId() || '';
+      this.emit(SOCKET_EVENTS.PLAYBACK_STATE, {
+        room: sessionId,
+        userName: 'User', // TODO: obtener del estado de sesión
+        position,
+        isPlaying: true,
+        trackUrl,
+      });
+    }
   }
 
   /**
    * Pausa el audio (solo host)
    */
-  pauseAudio(timestamp: number): void {
+  pauseAudio(timestamp: number, position?: number, trackUrl?: string): void {
+    if (this.useWebRTC) {
+      if (this.useSFU && this.webrtcSFUService) {
+        this.webrtcSFUService.pauseAudio(timestamp, position, trackUrl);
+        return;
+      }
+      if (this.webrtcService) {
+        this.webrtcService.pauseAudio(timestamp, position, trackUrl);
+        return;
+      }
+    }
+
+    // Mantener compatibilidad con el evento antiguo
     this.emit(SOCKET_EVENTS.AUDIO_PAUSE, { timestamp });
+
+    // Emitir nuevo evento playback-state si se proporcionan los parámetros
+    if (position !== undefined && trackUrl) {
+      const sessionId = this.getSocketId() || '';
+      this.emit(SOCKET_EVENTS.PLAYBACK_STATE, {
+        room: sessionId,
+        userName: 'User', // TODO: obtener del estado de sesión
+        position,
+        isPlaying: false,
+        trackUrl,
+      });
+    }
   }
 
   /**
    * Cambia la posición del audio (solo host)
    */
-  seekAudio(position: number, timestamp: number): void {
+  seekAudio(position: number, timestamp: number, trackUrl?: string): void {
+    if (this.useWebRTC) {
+      if (this.useSFU && this.webrtcSFUService) {
+        this.webrtcSFUService.seekAudio(position, timestamp, trackUrl);
+        return;
+      }
+      if (this.webrtcService) {
+        this.webrtcService.seekAudio(position, timestamp, trackUrl);
+        return;
+      }
+    }
+
+    // Mantener compatibilidad con el evento antiguo
     this.emit(SOCKET_EVENTS.AUDIO_SEEK, { position, timestamp });
+
+    // Emitir nuevo evento playback-state si se proporciona trackUrl
+    if (trackUrl) {
+      const sessionId = this.getSocketId() || '';
+      this.emit(SOCKET_EVENTS.PLAYBACK_STATE, {
+        room: sessionId,
+        userName: 'User', // TODO: obtener del estado de sesión
+        position,
+        isPlaying: true, // Asumimos que sigue reproduciendo después de seek
+        trackUrl,
+      });
+    }
   }
 
   /**

@@ -428,22 +428,61 @@ class WebRTCService {
   /**
    * Reproduce el audio (solo host)
    */
-  playAudio(timestamp: number): void {
+  playAudio(timestamp: number, position?: number, trackUrl?: string): void {
+    // Mantener compatibilidad con el evento antiguo
     this.emit(SOCKET_EVENTS.AUDIO_PLAY, { timestamp });
+
+    // Emitir nuevo evento playback-state si se proporcionan los parámetros
+    if (position !== undefined && trackUrl) {
+      const sessionId = this.getSocketId() || '';
+      this.emit(SOCKET_EVENTS.PLAYBACK_STATE, {
+        room: sessionId,
+        userName: 'User', // TODO: obtener del estado de sesión
+        position,
+        isPlaying: true,
+        trackUrl,
+      });
+    }
   }
 
   /**
    * Pausa el audio (solo host)
    */
-  pauseAudio(timestamp: number): void {
+  pauseAudio(timestamp: number, position?: number, trackUrl?: string): void {
+    // Mantener compatibilidad con el evento antiguo
     this.emit(SOCKET_EVENTS.AUDIO_PAUSE, { timestamp });
+
+    // Emitir nuevo evento playback-state si se proporcionan los parámetros
+    if (position !== undefined && trackUrl) {
+      const sessionId = this.getSocketId() || '';
+      this.emit(SOCKET_EVENTS.PLAYBACK_STATE, {
+        room: sessionId,
+        userName: 'User', // TODO: obtener del estado de sesión
+        position,
+        isPlaying: false,
+        trackUrl,
+      });
+    }
   }
 
   /**
    * Cambia la posición del audio (solo host)
    */
-  seekAudio(position: number, timestamp: number): void {
+  seekAudio(position: number, timestamp: number, trackUrl?: string): void {
+    // Mantener compatibilidad con el evento antiguo
     this.emit(SOCKET_EVENTS.AUDIO_SEEK, { position, timestamp });
+
+    // Emitir nuevo evento playback-state si se proporciona trackUrl
+    if (trackUrl) {
+      const sessionId = this.getSocketId() || '';
+      this.emit(SOCKET_EVENTS.PLAYBACK_STATE, {
+        room: sessionId,
+        userName: 'User', // TODO: obtener del estado de sesión
+        position,
+        isPlaying: true, // Asumimos que sigue reproduciendo después de seek
+        trackUrl,
+      });
+    }
   }
 
   /**

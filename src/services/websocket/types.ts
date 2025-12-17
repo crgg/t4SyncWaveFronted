@@ -5,7 +5,7 @@
 import { AudioState, SessionInfo, Track } from '@shared/types';
 import { SOCKET_EVENTS } from '@shared/constants';
 
-export type SocketEvent = typeof SOCKET_EVENTS[keyof typeof SOCKET_EVENTS];
+export type SocketEvent = (typeof SOCKET_EVENTS)[keyof typeof SOCKET_EVENTS];
 
 export interface SocketEventHandlers {
   [SOCKET_EVENTS.SESSION_CREATED]: (data: { sessionId: string }) => void;
@@ -16,7 +16,17 @@ export interface SocketEventHandlers {
   [SOCKET_EVENTS.CONNECTION_STATUS]: (data: { connected: boolean }) => void;
   [SOCKET_EVENTS.PARTICIPANT_JOINED]: (data: { participantId: string }) => void;
   [SOCKET_EVENTS.PARTICIPANT_LEFT]: (data: { participantId: string }) => void;
-  [SOCKET_EVENTS.PLAYLIST_SYNC]: (data: { tracks: Track[]; currentTrackIndex: number | null }) => void;
+  [SOCKET_EVENTS.PLAYLIST_SYNC]: (data: {
+    tracks: Track[];
+    currentTrackIndex: number | null;
+  }) => void;
+  [SOCKET_EVENTS.PLAYBACK_STATE]: (data: {
+    room: string;
+    userName: string;
+    position: number;
+    isPlaying: boolean;
+    trackUrl: string;
+  }) => void;
 }
 
 export interface WebSocketServiceConfig {
@@ -25,4 +35,3 @@ export interface WebSocketServiceConfig {
   reconnection?: boolean;
   reconnectionAttempts?: number;
 }
-

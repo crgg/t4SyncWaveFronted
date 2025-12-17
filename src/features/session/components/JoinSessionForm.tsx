@@ -15,7 +15,7 @@ export function JoinSessionForm() {
   const dispatch = useAppDispatch();
   const { joinSession } = useWebSocket();
   const { isJoining, error, sessionId } = useAppSelector((state) => state.session);
-  const [sessionIdInput, setSessionIdInput] = useState('');
+  const [sessionIdInput, setSessionIdInput] = useState('Spotty-Fredy');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,4 +64,3 @@ export function JoinSessionForm() {
     </div>
   );
 }
-

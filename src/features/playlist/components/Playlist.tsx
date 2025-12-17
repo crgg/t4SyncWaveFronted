@@ -3,23 +3,20 @@
  */
 
 import { useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+import { removeTrack, setCurrentTrackIndex } from '@features/playlist/playlistSlice';
+import { getWebSocketService } from '@services/websocket/websocketService';
 import { useAppDispatch, useAppSelector } from '@app/hooks';
-import {
-  setCurrentTrack,
-  removeTrack,
-  setCurrentTrackIndex,
-} from '@features/playlist/playlistSlice';
 import { setTrack } from '@features/audio/audioSlice';
 import { formatTime } from '@shared/utils';
-import { motion, AnimatePresence } from 'framer-motion';
-import { getWebSocketService } from '@services/websocket/websocketService';
 import { WS_URL } from '@shared/constants';
 
 export function Playlist() {
   const dispatch = useAppDispatch();
   const { tracks, currentTrackIndex } = useAppSelector((state) => state.playlist);
-  const { role, sessionId } = useAppSelector((state) => state.session);
   const { trackId: currentTrackId } = useAppSelector((state) => state.audio);
+  const { role, sessionId } = useAppSelector((state) => state.session);
 
   // Sincronizar playlist con el servidor cuando el host la actualiza
   useEffect(() => {
@@ -137,11 +134,7 @@ export function Playlist() {
                 {/* Número/Ícono de reproducción */}
                 <div className="w-8 flex-shrink-0 flex items-center justify-center">
                   {isPlaying ? (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="w-4 h-4"
-                    >
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-4 h-4">
                       <svg
                         className="w-full h-full text-primary-600"
                         fill="currentColor"
@@ -200,4 +193,3 @@ export function Playlist() {
     </div>
   );
 }
-

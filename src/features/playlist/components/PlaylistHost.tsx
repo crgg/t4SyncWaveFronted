@@ -4,22 +4,44 @@
  */
 
 import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+
 import { useAppDispatch, useAppSelector } from '@app/hooks';
 import {
   setCurrentTrackIndex,
   removeTrack,
+  setPlaylistFromApi,
 } from '@features/playlist/playlistSlice';
 import { setTrack } from '@features/audio/audioSlice';
 import { formatTime } from '@shared/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getWebSocketService } from '@services/websocket/websocketService';
 import { WS_URL } from '@shared/constants';
+import { playListApi } from '../playListApi';
 
 export function PlaylistHost() {
   const dispatch = useAppDispatch();
   const { tracks, currentTrackIndex } = useAppSelector((state) => state.playlist);
   const { sessionId } = useAppSelector((state) => state.session);
   const { trackId: currentTrackId } = useAppSelector((state) => state.audio);
+  const { data: playlist } = useQuery({
+    queryKey: ['playlist', sessionId],
+    queryFn: () => playListApi.getPlaylist(),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos
+    enabled: !!sessionId,
+  });
+
+  // Sincronizar playlist desde la API con Redux
+  useEffect(() => {
+    if (playlist) {
+      // La API puede devolver un array de tracks directamente o un objeto con tracks
+      const tracks = Array.isArray(playlist) ? playlist : (playlist as any)?.tracks || [];
+      if (tracks.length > 0) {
+        dispatch(setPlaylistFromApi({ tracks }));
+      }
+    }
+  }, [playlist, dispatch]);
 
   // Sincronizar playlist con el servidor cuando se actualiza
   useEffect(() => {
@@ -124,11 +146,7 @@ export function PlaylistHost() {
               >
                 <div className="w-8 flex-shrink-0 flex items-center justify-center">
                   {isPlaying ? (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="w-4 h-4"
-                    >
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-4 h-4">
                       <svg
                         className="w-full h-full text-primary-600"
                         fill="currentColor"
@@ -182,4 +200,3 @@ export function PlaylistHost() {
     </div>
   );
 }
-

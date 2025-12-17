@@ -20,6 +20,7 @@ export const SOCKET_EVENTS = {
   AUDIO_NEXT: 'audio:next',
   SYNC_REQUEST: 'sync:request',
   PLAYLIST_UPDATE: 'playlist:update',
+  PLAYBACK_STATE: 'playback-state',
 
   // Servidor -> Cliente
   SESSION_CREATED: 'session:created',

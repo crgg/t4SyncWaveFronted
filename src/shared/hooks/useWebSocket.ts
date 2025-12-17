@@ -4,19 +4,12 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@app/hooks';
-import {
-  connecting,
-  connected,
-  disconnected,
-  setLatency,
-  incrementReconnectAttempts,
-} from '@features/connection/connectionSlice';
+import { connecting, connected, disconnected } from '@features/connection/connectionSlice';
 import {
   createSessionSuccess,
   createSessionFailure,
   joinSessionSuccess,
   joinSessionFailure,
-  updateParticipantCount,
   leaveSession as leaveSessionAction,
 } from '@features/session/sessionSlice';
 import { setAudioState, reset as resetAudio } from '@features/audio/audioSlice';
@@ -192,11 +185,73 @@ export function useWebSocket() {
       }
     };
 
+    const handlePlaybackState = (data: {
+      room: string;
+      userName: string;
+      position: number;
+      isPlaying: boolean;
+      trackUrl: string;
+    }) => {
+      // Actualizar referencia antes de usarla
+      updateAudioStateRef();
+      const currentAudioState = audioStateRef.current;
+
+      console.log('Playback state recibido:', data);
+
+      // Validar que trackUrl sea válida antes de guardar
+      if (data.trackUrl && !isValidAudioUrl(data.trackUrl)) {
+        console.warn(
+          'El servidor envió una URL inválida:',
+          data.trackUrl,
+          'Debe ser un archivo de audio válido (ej: .mp3, .wav, etc.)'
+        );
+        return;
+      }
+
+      // Convertir playback-state a AudioState
+      const audioStateToDispatch: AudioState = {
+        isPlaying: data.isPlaying,
+        currentPosition:
+          isNaN(data.position) || data.position < 0
+            ? (currentAudioState?.currentPosition ?? 0)
+            : data.position,
+        volume: currentAudioState?.volume ?? 100, // Preservar volumen local
+        trackId: currentAudioState?.trackId || '', // Intentar preservar trackId si existe
+        trackUrl: data.trackUrl || currentAudioState?.trackUrl || '',
+        trackTitle: currentAudioState?.trackTitle,
+        trackArtist: currentAudioState?.trackArtist,
+        trackDuration: currentAudioState?.trackDuration,
+        timestamp: Date.now(),
+      };
+
+      dispatch(setAudioState(audioStateToDispatch));
+
+      // Para listeners, actualizar el estado interno del audioService
+      if (role === 'listener' && audioStateToDispatch.trackUrl) {
+        try {
+          const audioService = getAudioService();
+          const audioServiceState = audioService.getState();
+
+          if (audioServiceState) {
+            (audioServiceState as any).isPlaying = audioStateToDispatch.isPlaying;
+            (audioServiceState as any).trackUrl = audioStateToDispatch.trackUrl;
+            (audioServiceState as any).currentPosition = audioStateToDispatch.currentPosition;
+            if (audioStateToDispatch.trackDuration) {
+              (audioServiceState as any).trackDuration = audioStateToDispatch.trackDuration;
+            }
+          }
+        } catch (error) {
+          console.error('Error al actualizar estado interno del audioService:', error);
+        }
+      }
+    };
+
     wsService.on(SOCKET_EVENTS.SESSION_CREATED, handleSessionCreated);
     wsService.on(SOCKET_EVENTS.SESSION_JOINED, handleSessionJoined);
     wsService.on(SOCKET_EVENTS.SESSION_ERROR, handleSessionError);
     wsService.on(SOCKET_EVENTS.AUDIO_STATE, handleAudioState);
     wsService.on(SOCKET_EVENTS.PLAYLIST_SYNC, handlePlaylistSync);
+    wsService.on(SOCKET_EVENTS.PLAYBACK_STATE, handlePlaybackState);
 
     wsService.on(SOCKET_EVENTS.PARTICIPANT_JOINED, () => {
       // El servidor debería enviar el conteo actualizado
@@ -219,6 +274,7 @@ export function useWebSocket() {
         wsService.off(SOCKET_EVENTS.SESSION_ERROR, handleSessionError);
         wsService.off(SOCKET_EVENTS.AUDIO_STATE, handleAudioState);
         wsService.off(SOCKET_EVENTS.PLAYLIST_SYNC, handlePlaylistSync);
+        wsService.off(SOCKET_EVENTS.PLAYBACK_STATE, handlePlaybackState);
       };
     }
 
@@ -233,6 +289,7 @@ export function useWebSocket() {
         wsService.off(SOCKET_EVENTS.SESSION_ERROR, handleSessionError);
         wsService.off(SOCKET_EVENTS.AUDIO_STATE, handleAudioState);
         wsService.off(SOCKET_EVENTS.PLAYLIST_SYNC, handlePlaylistSync);
+        wsService.off(SOCKET_EVENTS.PLAYBACK_STATE, handlePlaybackState);
       };
     }
 
@@ -281,8 +338,6 @@ export function useWebSocket() {
     async (name?: string) => {
       try {
         const wsService = getWebSocketService({ url: WS_URL });
-
-        console.log('🚀 ~ wsService:', wsService);
         // Si ya está conectado, crear sesión inmediatamente
         if (wsService.isConnected()) {
           await wsService.createSession(name);

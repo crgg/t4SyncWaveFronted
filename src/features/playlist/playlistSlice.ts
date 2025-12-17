@@ -54,10 +54,7 @@ const playlistSlice = createSlice({
         state.currentTrackIndex = action.payload.index;
       }
     },
-    updateTrackDuration: (
-      state,
-      action: PayloadAction<{ trackId: string; duration: number }>
-    ) => {
+    updateTrackDuration: (state, action: PayloadAction<{ trackId: string; duration: number }>) => {
       const track = state.tracks.find((t) => t.id === action.payload.trackId);
       if (track) {
         track.duration = action.payload.duration;
@@ -99,9 +96,7 @@ const playlistSlice = createSlice({
     previousTrack: (state) => {
       if (state.currentTrackIndex !== null && state.tracks.length > 0) {
         state.currentTrackIndex =
-          state.currentTrackIndex === 0
-            ? state.tracks.length - 1
-            : state.currentTrackIndex - 1;
+          state.currentTrackIndex === 0 ? state.tracks.length - 1 : state.currentTrackIndex - 1;
       } else if (state.tracks.length > 0) {
         state.currentTrackIndex = state.tracks.length - 1;
       }
@@ -129,6 +124,24 @@ const playlistSlice = createSlice({
         }
       }
     },
+    setPlaylistFromApi: (state, action: PayloadAction<{ tracks: Track[] }>) => {
+      // Sincronizar playlist desde la API
+      // La API devuelve tracks sin addedAt, así que lo agregamos si falta
+      state.tracks = action.payload.tracks.map((track) => ({
+        ...track,
+        addedAt: track.addedAt || Date.now(),
+      }));
+      // Si hay un track actual, mantener el índice si existe en la nueva lista
+      if (state.currentTrackIndex !== null) {
+        const currentTrackId = state.tracks[state.currentTrackIndex]?.id;
+        if (currentTrackId) {
+          const newIndex = state.tracks.findIndex((t) => t.id === currentTrackId);
+          state.currentTrackIndex = newIndex !== -1 ? newIndex : null;
+        } else {
+          state.currentTrackIndex = null;
+        }
+      }
+    },
   },
 });
 
@@ -143,7 +156,7 @@ export const {
   nextTrack,
   previousTrack,
   syncPlaylist,
+  setPlaylistFromApi,
 } = playlistSlice.actions;
 
 export default playlistSlice.reducer;
-

@@ -289,7 +289,7 @@ export function useAudio() {
           try {
             const wsService = getWebSocketService({ url: WS_URL });
             if (wsService.isConnected()) {
-              wsService.seekAudio(currentState.currentPosition, Date.now());
+              wsService.seekAudio(currentState.currentPosition, Date.now(), audioState.trackUrl);
             }
           } catch (error) {
             console.error('Error al enviar actualización de posición:', error);
@@ -299,7 +299,7 @@ export function useAudio() {
     }, 1000); // Enviar cada segundo
 
     return () => clearInterval(interval);
-  }, [role, audioState.isPlaying, audioState.trackUrl]);
+  }, [role, audioState.isPlaying, audioState.trackUrl, audioState.currentPosition]);
 
   // Detectar cuando termina una canción y pasar a la siguiente (solo host)
   useEffect(() => {
@@ -379,7 +379,9 @@ export function useAudio() {
         try {
           const wsService = getWebSocketService({ url: WS_URL });
           if (wsService.isConnected()) {
-            wsService.playAudio(timestamp);
+            const currentState = audioServiceRef.current?.getState();
+            const position = currentState?.currentPosition ?? 0;
+            wsService.playAudio(timestamp, position, audioState.trackUrl);
           }
         } catch (error) {
           console.error('Error al emitir play al servidor:', error);
@@ -403,8 +405,10 @@ export function useAudio() {
     }
 
     const wsService = getWebSocketService({ url: WS_URL });
-    wsService.pauseAudio(timestamp);
-  }, [role, dispatch]);
+    const currentState = audioServiceRef.current?.getState();
+    const position = currentState?.currentPosition ?? audioState.currentPosition ?? 0;
+    wsService.pauseAudio(timestamp, position, audioState.trackUrl);
+  }, [role, dispatch, audioState.trackUrl, audioState.currentPosition]);
 
   const handleSeek = useCallback(
     (position: number) => {
@@ -418,9 +422,9 @@ export function useAudio() {
       }
 
       const wsService = getWebSocketService({ url: WS_URL });
-      wsService.seekAudio(position, timestamp);
+      wsService.seekAudio(position, timestamp, audioState.trackUrl);
     },
-    [role, dispatch]
+    [role, dispatch, audioState.trackUrl]
   );
 
   const handleVolumeChange = useCallback(

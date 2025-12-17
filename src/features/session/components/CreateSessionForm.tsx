@@ -15,7 +15,7 @@ export function CreateSessionForm() {
   const dispatch = useAppDispatch();
   const { createSession } = useWebSocket();
   const { isCreating, error, sessionId } = useAppSelector((state) => state.session);
-  const [sessionName, setSessionName] = useState('');
+  const [sessionName, setSessionName] = useState('Spotty-Fredy');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
