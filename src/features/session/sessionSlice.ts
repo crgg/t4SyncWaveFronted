@@ -1,0 +1,96 @@
+/**
+ * Redux slice para gestión de sesiones
+ */
+
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import type { SessionInfo, UserRole } from '@shared/types';
+
+interface SessionState {
+  sessionId: string | null;
+  hostId: string | null;
+  role: UserRole | null;
+  participantCount: number;
+  isCreating: boolean;
+  isJoining: boolean;
+  error: string | null;
+  sessionName?: string;
+}
+
+const initialState: SessionState = {
+  sessionId: null,
+  hostId: null,
+  role: null,
+  participantCount: 0,
+  isCreating: false,
+  isJoining: false,
+  error: null,
+  sessionName: undefined,
+};
+
+const sessionSlice = createSlice({
+  name: 'session',
+  initialState,
+  reducers: {
+    createSessionStart: (state, action: PayloadAction<{ name?: string }>) => {
+      state.isCreating = true;
+      state.error = null;
+      state.sessionName = action.payload.name;
+    },
+    createSessionSuccess: (state, action: PayloadAction<{ sessionId: string }>) => {
+      state.isCreating = false;
+      state.sessionId = action.payload.sessionId;
+      state.hostId = action.payload.sessionId; // Temporal, debería venir del servidor
+      state.role = 'host';
+      state.error = null;
+    },
+    createSessionFailure: (state, action: PayloadAction<{ error: string }>) => {
+      state.isCreating = false;
+      state.error = action.payload.error;
+    },
+    joinSessionStart: (state, action: PayloadAction<{ sessionId: string }>) => {
+      state.isJoining = true;
+      state.error = null;
+    },
+    joinSessionSuccess: (state, action: PayloadAction<SessionInfo>) => {
+      state.isJoining = false;
+      state.sessionId = action.payload.sessionId;
+      state.hostId = action.payload.hostId;
+      state.role = 'listener';
+      state.participantCount = action.payload.participantCount;
+      state.error = null;
+    },
+    joinSessionFailure: (state, action: PayloadAction<{ error: string }>) => {
+      state.isJoining = false;
+      state.error = action.payload.error;
+    },
+    leaveSession: (state) => {
+      state.sessionId = null;
+      state.hostId = null;
+      state.role = null;
+      state.participantCount = 0;
+      state.error = null;
+      state.sessionName = undefined;
+    },
+    updateParticipantCount: (state, action: PayloadAction<{ count: number }>) => {
+      state.participantCount = action.payload.count;
+    },
+    clearError: (state) => {
+      state.error = null;
+    },
+  },
+});
+
+export const {
+  createSessionStart,
+  createSessionSuccess,
+  createSessionFailure,
+  joinSessionStart,
+  joinSessionSuccess,
+  joinSessionFailure,
+  leaveSession,
+  updateParticipantCount,
+  clearError,
+} = sessionSlice.actions;
+
+export default sessionSlice.reducer;
+
