@@ -12,6 +12,8 @@ export interface AudioState {
   trackArtist?: string;
   trackDuration?: number;
   timestamp: number; // Timestamp del servidor
+  // new fields
+  truckUrl?: string;
 }
 
 export interface SessionInfo {

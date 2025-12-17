@@ -37,6 +37,7 @@ export function PlaylistHost() {
     if (playlist) {
       // La API puede devolver un array de tracks directamente o un objeto con tracks
       const tracks = Array.isArray(playlist) ? playlist : (playlist as any)?.tracks || [];
+      console.log('🚀 ~ useEffect ~ tracks:', tracks);
       if (tracks.length > 0) {
         dispatch(setPlaylistFromApi({ tracks }));
       }

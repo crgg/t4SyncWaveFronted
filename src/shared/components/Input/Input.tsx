@@ -15,9 +15,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-dark-text-secondary mb-1">
-            {label}
-          </label>
+          <label className="block text-sm font-medium text-dark-text-secondary mb-1">{label}</label>
         )}
         <input
           ref={ref}
@@ -35,4 +33,3 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 );
 
 Input.displayName = 'Input';
-

@@ -4,7 +4,6 @@
  */
 
 import type { AudioState } from '@shared/types';
-import { SYNC_CONFIG } from '@shared/constants';
 import { calculateLatency, clamp, isValidAudioUrl } from '@shared/utils';
 
 class AudioService {
@@ -58,8 +57,6 @@ class AudioService {
       return;
     }
 
-    console.log('audioUrl', audioUrl);
-
     // Guardar volumen actual antes de limpiar
     const currentVolume = this.audioElement?.volume ?? (this.currentState?.volume ?? 100) / 100;
 
@@ -71,7 +68,6 @@ class AudioService {
 
     // Crear nuevo elemento de audio con la URL
     this.audioElement = new Audio(audioUrl);
-    console.log('this.audioElement', this.audioElement, 'src:', this.audioElement.src);
     this.onStateChange = onStateChange ?? null;
 
     // Establecer volumen guardado
@@ -148,7 +144,6 @@ class AudioService {
 
     const loadedmetadataHandler = () => {
       if (this.audioElement && !isNaN(this.audioElement.duration)) {
-        console.log('Metadata cargada, duración:', this.audioElement.duration);
         this.updateState({
           trackDuration: this.audioElement.duration,
         });
@@ -157,7 +152,6 @@ class AudioService {
 
     const loadeddataHandler = () => {
       if (this.audioElement && !isNaN(this.audioElement.duration)) {
-        console.log('Datos cargados, duración:', this.audioElement.duration);
         this.updateState({
           trackDuration: this.audioElement.duration,
         });
@@ -173,15 +167,27 @@ class AudioService {
         // Si el estado actual indica que debería estar reproduciendo, reproducir automáticamente
         // Esto es importante para listeners que reciben el estado del servidor
         if (this.currentState?.isPlaying && this.audioElement.paused) {
+          console.log('canplayHandler: Audio listo, reproduciendo automáticamente', {
+            isPlaying: this.currentState.isPlaying,
+            paused: this.audioElement.paused,
+            readyState: this.audioElement.readyState,
+            trackUrl: this.currentState.trackUrl,
+          });
           // Esperar un poco para asegurar que el audio esté completamente listo
           setTimeout(() => {
             if (this.audioElement && this.currentState?.isPlaying && this.audioElement.paused) {
-              console.log('Reproduciendo automáticamente después de canplay (listener)');
+              console.log('canplayHandler: Intentando reproducir...');
               this.play().catch((error) => {
                 console.error('Error al reproducir automáticamente después de canplay:', error);
               });
             }
           }, 200);
+        } else {
+          console.log('canplayHandler: No se reproduce automáticamente', {
+            isPlaying: this.currentState?.isPlaying,
+            paused: this.audioElement.paused,
+            hasCurrentState: !!this.currentState,
+          });
         }
       }
     };
@@ -202,7 +208,6 @@ class AudioService {
         return;
       }
 
-      console.log('error', event.target, 'src:', audioElement.src);
       let errorMessage = 'Error al cargar el audio';
 
       if (audioElement.error) {
@@ -363,12 +368,38 @@ class AudioService {
     if (newTrackUrl && newTrackUrl !== currentTrackUrl && newTrackUrl !== '') {
       // Verificar que realmente sea una URL diferente antes de reinicializar
       if (!this.audioElement || currentTrackUrl === '' || currentTrackUrl !== newTrackUrl) {
-        console.log('Cambiando track durante sincronización:', {
-          from: currentTrackUrl,
-          to: newTrackUrl,
+        console.log('sync: Inicializando audioService con nueva URL', {
+          newTrackUrl,
+          currentTrackUrl,
+          isPlaying,
+          serverPosition,
         });
+        // IMPORTANTE: Establecer el estado interno ANTES de inicializar
+        // para que canplayHandler pueda reproducir automáticamente si isPlaying es true
+        if (!this.currentState) {
+          this.currentState = {
+            isPlaying: false,
+            currentPosition: 0,
+            volume: 100,
+            trackId: '',
+            trackUrl: '',
+            timestamp: Date.now(),
+          } as AudioState;
+        }
+        // Actualizar estado interno con los valores del servidor antes de inicializar
+        this.currentState.isPlaying = isPlaying;
+        this.currentState.currentPosition = serverPosition;
+        this.currentState.trackUrl = newTrackUrl;
+        this.currentState.timestamp = serverTimestamp;
+
+        console.log('sync: Estado interno establecido antes de init', {
+          isPlaying: this.currentState.isPlaying,
+          trackUrl: this.currentState.trackUrl,
+        });
+
         this.init(newTrackUrl, this.onStateChange || undefined);
-        // No reproducir automáticamente al cambiar de track
+        // No reproducir automáticamente al cambiar de track aquí
+        // El canplayHandler lo hará si isPlaying es true
         return;
       }
     }

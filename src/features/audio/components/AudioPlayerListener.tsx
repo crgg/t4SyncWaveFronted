@@ -12,7 +12,6 @@ export function AudioPlayerListener() {
   const { audioState, setVolume } = useAudio();
   const [localVolume, setLocalVolume] = useState(audioState.volume || 100);
   const volumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastPositionRef = useRef(0);
 
   // Inicializar volumen desde localStorage solo una vez al montar
   useEffect(() => {
@@ -76,15 +75,11 @@ export function AudioPlayerListener() {
     };
   }, []);
 
+  // console.log('audioState', audioState);
   // Calcular porcentaje de progreso
   const progressPercentage = audioState.trackDuration
     ? (audioState.currentPosition / audioState.trackDuration) * 100
     : 0;
-
-  console.log('debugger Progress Percentage', {
-    progressPercentage,
-    ...audioState,
-  });
 
   return (
     <div className="bg-dark-card rounded-xl shadow-2xl p-6 space-y-6">

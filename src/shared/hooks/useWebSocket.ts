@@ -71,12 +71,10 @@ export function useWebSocket() {
     wsService.on(SOCKET_EVENTS.CONNECTION_STATUS, handleConnectionStatus);
 
     const handleSessionCreated = (data: { sessionId: string }) => {
-      console.log('Sesión creada:', data.sessionId);
       dispatch(createSessionSuccess({ sessionId: data.sessionId }));
     };
 
     const handleSessionJoined = (data: SessionInfo) => {
-      console.log('Unido a sesión:', data);
       dispatch(joinSessionSuccess(data));
     };
 
@@ -90,6 +88,9 @@ export function useWebSocket() {
     };
 
     const handleAudioState = (data: AudioState) => {
+      if (!data) return;
+      // Buscar trackUrl en ambos campos posibles (truckUrl o trackUrl)
+      const trackUrl = data.trackUrl || data.truckUrl || '';
       // Actualizar referencia antes de usarla
       updateAudioStateRef();
       const currentAudioState = audioStateRef.current;
@@ -97,10 +98,10 @@ export function useWebSocket() {
       console.log('Estado de audio recibido del servidor:', data);
 
       // Validar que trackUrl sea válida antes de guardar
-      if (data.trackUrl && !isValidAudioUrl(data.trackUrl)) {
+      if (trackUrl && !isValidAudioUrl(trackUrl)) {
         console.warn(
           'El servidor envió una URL inválida:',
-          data.trackUrl,
+          trackUrl,
           'Debe ser un archivo de audio válido (ej: .mp3, .wav, etc.)'
         );
         // No actualizar el estado si la URL es inválida
@@ -115,14 +116,14 @@ export function useWebSocket() {
       const hasSignificantChange =
         positionDiff > 0.1 || // Cambio de posición > 100ms
         data.isPlaying !== currentAudioState?.isPlaying ||
-        data.trackId !== currentAudioState?.trackId ||
-        data.trackUrl !== currentAudioState?.trackUrl ||
-        data.trackTitle !== currentAudioState?.trackTitle ||
-        data.trackArtist !== currentAudioState?.trackArtist ||
+        // data.trackId !== currentAudioState?.trackId ||
+        trackUrl !== currentAudioState?.trackUrl ||
+        // data.trackTitle !== currentAudioState?.trackTitle ||
+        // data.trackArtist !== currentAudioState?.trackArtist ||
         (data.trackDuration && data.trackDuration !== currentAudioState?.trackDuration);
 
       // Si no hay cambios significativos, no actualizar (excepto si es la primera vez)
-      if (!hasSignificantChange && currentAudioState?.trackUrl) {
+      if (!hasSignificantChange && trackUrl) {
         return;
       }
 
@@ -132,10 +133,10 @@ export function useWebSocket() {
       const audioStateToDispatch: AudioState = {
         ...data,
         // Preservar trackUrl si viene vacía o inválida
-        trackUrl: data.trackUrl || currentAudioState?.trackUrl || '',
-        trackId: data.trackId || currentAudioState?.trackId || '',
-        trackTitle: data.trackTitle || currentAudioState?.trackTitle,
-        trackArtist: data.trackArtist || currentAudioState?.trackArtist,
+        trackUrl: trackUrl,
+        trackId: trackUrl,
+        // trackTitle: data.trackTitle || currentAudioState?.trackTitle,
+        // trackArtist: data.trackArtist || currentAudioState?.trackArtist,
         // Preservar volumen local SIEMPRE (nunca se sincroniza desde el servidor)
         volume: currentAudioState?.volume ?? 100,
         // Preservar duración si no viene
@@ -147,26 +148,38 @@ export function useWebSocket() {
             : data.currentPosition,
       };
 
-      console.log(
-        'debugger Current Position',
-        isNaN(data.currentPosition) || data.currentPosition < 0
-          ? (currentAudioState?.currentPosition ?? 0)
-          : data.currentPosition
-      );
+      console.log('debugger Current Position', {
+        val:
+          isNaN(data.currentPosition) || data.currentPosition < 0
+            ? (currentAudioState?.currentPosition ?? 0)
+            : data.currentPosition,
+        role,
+        trackUrl,
+      });
 
       dispatch(setAudioState(audioStateToDispatch));
 
       // IMPORTANTE: Para listeners, actualizar el estado interno del audioService
       // cuando llega audio:state para que pueda reproducir automáticamente
-      if (role === 'listener' && audioStateToDispatch.trackUrl) {
+      if (role === 'listener' && trackUrl) {
         try {
           const audioService = getAudioService();
           const audioServiceState = audioService.getState();
 
+          // Siempre sincronizar con el estado del servidor
+          // sync() manejará la inicialización si es necesario
+          audioService.sync(
+            audioStateToDispatch.currentPosition,
+            audioStateToDispatch.timestamp,
+            audioStateToDispatch.isPlaying,
+            trackUrl
+          );
+
+          // Si el audioService ya está inicializado, también actualizar el estado interno
+          // para asegurar que los valores estén sincronizados
           if (audioServiceState) {
-            // Actualizar estado interno para que sync() y canplayHandler puedan reproducir
             (audioServiceState as any).isPlaying = audioStateToDispatch.isPlaying;
-            (audioServiceState as any).trackUrl = audioStateToDispatch.trackUrl;
+            (audioServiceState as any).trackUrl = trackUrl;
             (audioServiceState as any).currentPosition = audioStateToDispatch.currentPosition;
             if (audioStateToDispatch.trackDuration) {
               (audioServiceState as any).trackDuration = audioStateToDispatch.trackDuration;

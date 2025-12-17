@@ -24,7 +24,6 @@ export function LoadSampleMusic() {
   }
 
   const handleLoadSample = (track: typeof DEFAULT_SAMPLE_TRACK) => {
-    console.log('handleLoadSample', track);
     setIsLoading(true);
 
     // Agregar a la playlist

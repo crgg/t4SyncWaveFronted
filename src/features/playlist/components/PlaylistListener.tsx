@@ -2,14 +2,39 @@
  * Componente de lista de reproducción para el Listener
  * Solo lectura, muestra la playlist sincronizada del host
  */
-
-import { useAppSelector } from '@app/hooks';
-import { formatTime } from '@shared/utils';
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+
+import { useAppDispatch, useAppSelector } from '@app/hooks';
+import { setPlaylistFromApi } from '../playlistSlice';
+import { playListApi } from '../playListApi';
+import { formatTime } from '@shared/utils';
 
 export function PlaylistListener() {
+  const dispatch = useAppDispatch();
   const { tracks, currentTrackIndex } = useAppSelector((state) => state.playlist);
   const { trackId: currentTrackId } = useAppSelector((state) => state.audio);
+  const { sessionId } = useAppSelector((state) => state.session);
+
+  const { data: playlist } = useQuery({
+    queryKey: ['playlist', sessionId],
+    queryFn: () => playListApi.getPlaylist(),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos
+    enabled: !!sessionId,
+  });
+
+  // Sincronizar playlist desde la API con Redux
+  useEffect(() => {
+    if (playlist) {
+      // La API puede devolver un array de tracks directamente o un objeto con tracks
+      const tracks = Array.isArray(playlist) ? playlist : (playlist as any)?.tracks || [];
+      if (tracks.length > 0) {
+        dispatch(setPlaylistFromApi({ tracks }));
+      }
+    }
+  }, [playlist, dispatch]);
 
   if (tracks.length === 0) {
     return (
@@ -62,11 +87,7 @@ export function PlaylistListener() {
               >
                 <div className="w-8 flex-shrink-0 flex items-center justify-center">
                   {isPlaying ? (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="w-4 h-4"
-                    >
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-4 h-4">
                       <svg
                         className="w-full h-full text-primary-600"
                         fill="currentColor"
@@ -106,4 +127,3 @@ export function PlaylistListener() {
     </div>
   );
 }
-

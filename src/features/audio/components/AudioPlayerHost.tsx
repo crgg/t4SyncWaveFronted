@@ -60,6 +60,7 @@ export function AudioPlayerHost() {
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const position = parseFloat(e.target.value);
+    console.log('handleSeek', position);
     if (!isNaN(position) && position >= 0 && audioState.trackDuration) {
       const clampedPosition = Math.min(Math.max(0, position), audioState.trackDuration);
       seek(clampedPosition);
@@ -117,6 +118,13 @@ export function AudioPlayerHost() {
   const progressPercentage = audioState.trackDuration
     ? (audioState.currentPosition / audioState.trackDuration) * 100
     : 0;
+
+  useEffect(() => {
+    // seek(audioState.currentPosition);
+    seek(audioState.currentPosition ?? 0);
+  }, [audioState.currentPosition]);
+
+  // console.log('audioState.currentPosition', audioState.currentPosition);
 
   return (
     <div className="bg-dark-card rounded-xl shadow-2xl p-6 space-y-6">
@@ -317,4 +325,3 @@ export function AudioPlayerHost() {
     </div>
   );
 }
-

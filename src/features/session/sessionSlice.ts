@@ -47,7 +47,7 @@ const sessionSlice = createSlice({
       state.isCreating = false;
       state.error = action.payload.error;
     },
-    joinSessionStart: (state, action: PayloadAction<{ sessionId: string }>) => {
+    joinSessionStart: (state, _action: PayloadAction<{ sessionId: string }>) => {
       state.isJoining = true;
       state.error = null;
     },
@@ -93,4 +93,3 @@ export const {
 } = sessionSlice.actions;
 
 export default sessionSlice.reducer;
-

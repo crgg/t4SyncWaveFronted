@@ -3,7 +3,6 @@
  */
 
 import { SYNC_CONFIG } from '@shared/constants';
-import type { AudioState } from '@shared/types';
 
 /**
  * Calcula la posición objetivo considerando la latencia
@@ -20,10 +19,7 @@ export function calculateTargetPosition(
 /**
  * Verifica si necesita re-sincronización
  */
-export function needsResync(
-  currentPosition: number,
-  targetPosition: number
-): boolean {
+export function needsResync(currentPosition: number, targetPosition: number): boolean {
   const difference = Math.abs(currentPosition - targetPosition) * 1000;
   return difference > SYNC_CONFIG.SYNC_THRESHOLD;
 }
@@ -31,10 +27,7 @@ export function needsResync(
 /**
  * Calcula el offset de sincronización
  */
-export function calculateSyncOffset(
-  currentPosition: number,
-  targetPosition: number
-): number {
+export function calculateSyncOffset(currentPosition: number, targetPosition: number): number {
   return (targetPosition - currentPosition) * 1000; // en ms
 }
 
@@ -50,4 +43,3 @@ export function calculateBufferSize(latency: number): number {
     return SYNC_CONFIG.BUFFER_SIZE * 2;
   }
 }
-

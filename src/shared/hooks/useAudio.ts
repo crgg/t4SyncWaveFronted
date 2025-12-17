@@ -81,9 +81,36 @@ export function useAudio() {
       audioServiceRef.current = null;
     }
 
-    console.log('Inicializando audio con URL:', audioState.trackUrl);
     const audioService = getAudioService();
     audioServiceRef.current = audioService;
+
+    // IMPORTANTE: Para listeners, establecer el estado interno ANTES de inicializar
+    // para que canplayHandler pueda reproducir automáticamente si isPlaying es true
+    if (role === 'listener') {
+      const audioServiceState = audioService.getState();
+      if (!audioServiceState) {
+        // Establecer estado inicial con valores de Redux
+        (audioService as any).currentState = {
+          isPlaying: audioState.isPlaying || false,
+          currentPosition: audioState.currentPosition || 0,
+          volume: audioState.volume || 100,
+          trackId: audioState.trackId || '',
+          trackUrl: audioState.trackUrl,
+          trackTitle: audioState.trackTitle,
+          trackArtist: audioState.trackArtist,
+          trackDuration: audioState.trackDuration,
+          timestamp: audioState.timestamp || Date.now(),
+        };
+      } else {
+        // Actualizar estado existente con valores de Redux
+        (audioServiceState as any).isPlaying = audioState.isPlaying || false;
+        (audioServiceState as any).currentPosition = audioState.currentPosition || 0;
+        (audioServiceState as any).trackUrl = audioState.trackUrl;
+        if (audioState.trackDuration) {
+          (audioServiceState as any).trackDuration = audioState.trackDuration;
+        }
+      }
+    }
 
     // Inicializar con el volumen actual
     const currentVolume = audioState.volume || 100;
@@ -357,12 +384,12 @@ export function useAudio() {
     if (role !== 'host') return; // Solo el host puede controlar
 
     if (!audioState.trackUrl) {
-      console.warn('No hay track cargado para reproducir');
+      console.warn('There is no track loaded to play');
       return;
     }
 
     if (!audioServiceRef.current) {
-      console.warn('AudioService no está inicializado');
+      console.warn('AudioService is not initialized');
       return;
     }
 
@@ -384,11 +411,11 @@ export function useAudio() {
             wsService.playAudio(timestamp, position, audioState.trackUrl);
           }
         } catch (error) {
-          console.error('Error al emitir play al servidor:', error);
+          console.error('Error sending play to server:', error);
         }
       })
       .catch((error) => {
-        console.error('Error al reproducir audio:', error);
+        console.error('Error playing audio:', error);
         // Revertir estado si falla
         dispatch(pause({ timestamp: Date.now() }));
       });
@@ -414,12 +441,14 @@ export function useAudio() {
     (position: number) => {
       if (role !== 'host') return; // Solo el host puede controlar
 
+      console.log('Debugger handleSeek', position);
+
       const timestamp = Date.now();
       dispatch(seek({ position, timestamp }));
 
-      if (audioServiceRef.current) {
-        audioServiceRef.current.seek(position);
-      }
+      // if (audioServiceRef.current) {
+      //   audioServiceRef.current.seek(position);
+      // }
 
       const wsService = getWebSocketService({ url: WS_URL });
       wsService.seekAudio(position, timestamp, audioState.trackUrl);

@@ -7,6 +7,8 @@
 
 import { SOCKET_EVENTS, RECONNECTION_CONFIG } from '@shared/constants';
 import type { SocketEventHandlers, WebSocketServiceConfig } from '../websocket/types';
+import type { AudioState } from '@shared/types';
+import { store } from '@app/store';
 
 interface SFUSignalingMessage {
   type:
@@ -67,14 +69,12 @@ class WebRTCSFUService {
     // NO convertir wss:// a https:// (eso causaría errores de CORS con fetch)
     if (config.url.startsWith('ws://') || config.url.startsWith('wss://')) {
       this.signalingUrl = config.url.replace(/\/$/, '');
-      console.log('WebRTCSFUService - URL WebSocket detectada:', this.signalingUrl);
     } else {
       // Convertir http:// a ws:// o https:// a wss:// solo si no es ya WebSocket
       this.signalingUrl = config.url
         .replace(/^http:/, 'ws:')
         .replace(/^https:/, 'wss:')
         .replace(/\/$/, '');
-      console.log('WebRTCSFUService - URL convertida a WebSocket:', this.signalingUrl);
     }
 
     // Validar que la URL final sea WebSocket
@@ -168,20 +168,9 @@ class WebRTCSFUService {
         // Ejemplo: wss://t4videocall.t4ever.com/sfu/ws
         const wsUrl = this.signalingUrl;
 
-        console.log('Conectando a WebSocket de señalización SFU:', wsUrl);
-        console.log(
-          'Tipo de URL:',
-          wsUrl.startsWith('ws://')
-            ? 'WebSocket (no seguro)'
-            : wsUrl.startsWith('wss://')
-              ? 'WebSocket seguro'
-              : 'INVÁLIDA'
-        );
-
         this.signalingWebSocket = new WebSocket(wsUrl);
 
         this.signalingWebSocket.onopen = () => {
-          console.log('WebSocket de señalización conectado al SFU');
           this.reconnectAttempts = 0;
           // Disparar evento de conexión cuando el WebSocket se conecta
           // El evento se disparará nuevamente cuando el data channel se abra
@@ -195,7 +184,6 @@ class WebRTCSFUService {
         };
 
         this.signalingWebSocket.onclose = () => {
-          console.log('WebSocket de señalización cerrado');
           this.handleEvent(SOCKET_EVENTS.CONNECTION_STATUS, { connected: false });
 
           if (this.config.reconnection) {
@@ -221,7 +209,7 @@ class WebRTCSFUService {
    * Maneja mensajes de señalización del SFU
    */
   private async handleSignalingMessage(message: SFUSignalingMessage): Promise<void> {
-    console.log('handleSignalingMessage', message);
+    console.log('debugger handleSignalingMessage', message);
     switch (message.type) {
       case 'answer': {
         // El SFU responde con un answer
@@ -254,6 +242,60 @@ class WebRTCSFUService {
         } else if (this.role === 'listener') {
           this.handleEvent(SOCKET_EVENTS.SESSION_JOINED, { sessionId: this.sessionId });
         }
+        break;
+      }
+
+      case 'playback-state': {
+        // El payload viene en formato playback-state, necesitamos transformarlo a AudioState
+        const playbackState = message as {
+          type: string;
+          room: string;
+          userName: string;
+          position: number;
+          isPlaying: boolean;
+          timestamp: number;
+          truckUrl: string;
+        };
+
+        // Validar que truckUrl exista
+        if (!playbackState.truckUrl) {
+          console.warn('Received playback-state without truckUrl:', playbackState);
+          return;
+        }
+
+        console.log('Received Playback State', playbackState);
+
+        // Obtener el estado actual de audio desde el store si está disponible
+        // Para preservar campos que no vienen en el payload
+        let currentAudioState: Partial<AudioState> = {};
+        try {
+          const state = store.getState();
+          if (state.audio) {
+            currentAudioState = state.audio;
+          }
+        } catch (error) {
+          // Si no podemos acceder al store, continuamos con valores por defecto
+          console.debug('No se pudo acceder al estado de audio actual:', error);
+        }
+
+        // Transformar el payload playback-state al formato AudioState
+        const audioState: AudioState = {
+          isPlaying: playbackState.isPlaying ?? false,
+          currentPosition:
+            isNaN(playbackState.position) || playbackState.position < 0
+              ? (currentAudioState.currentPosition ?? 0)
+              : playbackState.position,
+          volume: currentAudioState.volume ?? 100, // Preservar volumen local
+          trackId: currentAudioState.trackId || '', // Preservar trackId si existe
+          trackUrl: playbackState.truckUrl || currentAudioState.trackUrl || '', // Mapear truckUrl a trackUrl
+          trackTitle: currentAudioState.trackTitle,
+          trackArtist: currentAudioState.trackArtist,
+          trackDuration: currentAudioState.trackDuration,
+          timestamp: playbackState.timestamp ?? Date.now(),
+          truckUrl: playbackState.truckUrl, // También preservar truckUrl original
+        };
+
+        this.handleEvent(SOCKET_EVENTS.AUDIO_STATE, audioState);
         break;
       }
 
@@ -354,7 +396,6 @@ class WebRTCSFUService {
     // Manejar cambios en el estado de conexión
     this.peerConnection.onconnectionstatechange = () => {
       const state = this.peerConnection?.connectionState;
-      console.log('Estado de conexión WebRTC:', state);
 
       if (state === 'connected') {
         this.reconnectAttempts = 0;
@@ -369,8 +410,7 @@ class WebRTCSFUService {
     };
 
     // Manejar tracks recibidos del SFU (si es necesario)
-    this.peerConnection.ontrack = (event) => {
-      console.log('Track recibido del SFU:', event.track.kind);
+    this.peerConnection.ontrack = (_event) => {
       // En esta aplicación, no necesitamos manejar tracks de audio directamente
       // porque usamos el elemento HTML5 Audio en lugar de WebRTC audio tracks
     };
@@ -387,12 +427,10 @@ class WebRTCSFUService {
     });
 
     this.dataChannel.onopen = () => {
-      console.log('Data channel abierto con SFU');
       this.handleEvent(SOCKET_EVENTS.CONNECTION_STATUS, { connected: true });
     };
 
     this.dataChannel.onclose = () => {
-      console.log('Data channel cerrado');
       this.handleEvent(SOCKET_EVENTS.CONNECTION_STATUS, { connected: false });
     };
 
@@ -426,8 +464,6 @@ class WebRTCSFUService {
         Math.pow(RECONNECTION_CONFIG.MULTIPLIER, this.reconnectAttempts - 1),
       RECONNECTION_CONFIG.MAX_DELAY
     );
-
-    console.log(`Reintentando conexión SFU en ${delay}ms (intento ${this.reconnectAttempts})`);
 
     this.reconnectTimeout = setTimeout(() => {
       this.connect().catch((error) => {
@@ -473,11 +509,6 @@ class WebRTCSFUService {
     // El data channel puede tardar en abrirse, pero el WebSocket es suficiente para comunicación básica
     const signalingConnected = this.signalingWebSocket?.readyState === WebSocket.OPEN;
     const dataChannelOpen = this.dataChannel?.readyState === 'open';
-
-    console.log('Debugger  isConnected', {
-      signalingConnected,
-      dataChannelOpen,
-    });
 
     // Si el data channel está abierto, definitivamente está conectado
     if (dataChannelOpen && signalingConnected) {
@@ -631,7 +662,7 @@ class WebRTCSFUService {
       userName,
       position,
       isPlaying,
-      trackUrl,
+      truckUrl: trackUrl,
     });
   }
 
@@ -639,21 +670,28 @@ class WebRTCSFUService {
    * Reproduce el audio (solo host)
    */
   playAudio(timestamp: number, position?: number, trackUrl?: string): void {
-    console.log({ timestamp, position, trackUrl });
+    console.log('Emit Play', {
+      room: this.sessionId || '',
+      userName: 'FredyMax',
+      position: position ?? 0,
+      isPlaying: true,
+      truckUrl: trackUrl,
+      timestamp,
+    });
     // Mantener compatibilidad con el evento antiguo
     this.emit(SOCKET_EVENTS.AUDIO_PLAY, {
       room: this.sessionId || '',
       userName: 'FredyMax',
       position: position ?? 0,
       isPlaying: true,
-      trackUrl,
+      truckUrl: trackUrl,
       timestamp,
     });
 
     // Emitir nuevo evento playback-state si se proporcionan los parámetros
-    if (position !== undefined && trackUrl) {
-      this.emitPlaybackState(position, true, trackUrl);
-    }
+    // if (position !== undefined && trackUrl) {
+    //   this.emitPlaybackState(position, true, trackUrl);
+    // }
   }
 
   /**
@@ -666,7 +704,7 @@ class WebRTCSFUService {
       userName: 'FredyMax',
       position: position ?? 0,
       isPlaying: false,
-      trackUrl,
+      truckUrl: trackUrl,
       timestamp,
     });
 
@@ -679,9 +717,9 @@ class WebRTCSFUService {
   /**
    * Cambia la posición del audio (solo host)
    */
-  seekAudio(position: number, timestamp: number, trackUrl?: string): void {
+  seekAudio(position: number, _timestamp: number, trackUrl?: string): void {
     // Mantener compatibilidad con el evento antiguo
-    this.emit(SOCKET_EVENTS.AUDIO_SEEK, { position, timestamp });
+    // this.emit(SOCKET_EVENTS.AUDIO_SEEK, { position, timestamp });
 
     // Emitir nuevo evento playback-state si se proporciona trackUrl
     if (trackUrl) {

@@ -6,9 +6,7 @@ import { useAppSelector } from '@app/hooks';
 import { cn } from '@shared/utils';
 
 export function ConnectionStatus() {
-  const { isConnected, latency, lastError } = useAppSelector(
-    (state) => state.connection
-  );
+  const { isConnected, latency, lastError } = useAppSelector((state) => state.connection);
 
   return (
     <div className="flex items-center gap-2 text-sm">
@@ -21,10 +19,7 @@ export function ConnectionStatus() {
       <span className={cn(isConnected ? 'text-primary-600' : 'text-red-400')}>
         {isConnected ? `Conectado (${latency}ms)` : 'Desconectado'}
       </span>
-      {lastError && (
-        <span className="text-red-400 text-xs">({lastError})</span>
-      )}
+      {lastError && <span className="text-red-400 text-xs">({lastError})</span>}
     </div>
   );
 }
-

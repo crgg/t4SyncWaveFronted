@@ -12,13 +12,18 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', isLoading, children, disabled, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
-    
+  (
+    { className, variant = 'primary', size = 'md', isLoading, children, disabled, ...props },
+    ref
+  ) => {
+    const baseStyles =
+      'inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
+
     const variants = {
       primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-lg',
       secondary: 'bg-dark-surface text-dark-text hover:bg-dark-hover focus:ring-dark-hover',
-      outline: 'border-2 border-primary-600 text-primary-600 hover:bg-dark-hover focus:ring-primary-500',
+      outline:
+        'border-2 border-primary-600 text-primary-600 hover:bg-dark-hover focus:ring-primary-500',
       ghost: 'text-dark-text-secondary hover:bg-dark-hover focus:ring-dark-hover',
     };
 
@@ -64,4 +69,3 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 );
 
 Button.displayName = 'Button';
-

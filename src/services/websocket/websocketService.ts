@@ -52,13 +52,10 @@ class WebSocketService {
     const shouldUseSFU = this.useSFU || (this.useWebRTC && urlIsWebSocket);
     if (this.useWebRTC) {
       if (shouldUseSFU) {
-        console.log('Usando modo WebRTC SFU (detectado automáticamente por URL WebSocket)');
         return this.connectWebRTCSFU();
       }
-      console.log('Usando modo WebRTC P2P');
       return this.connectWebRTC();
     }
-    console.log('Usando modo Socket.IO');
     return this.connectSocketIO();
   }
 
@@ -191,7 +188,6 @@ class WebSocketService {
         return this.webrtcSFUService.isConnected();
       }
       if (this.webrtcService) {
-        console.log('Debugger isConnected - webrtcService');
         return this.webrtcService.isConnected();
       }
     }
@@ -205,7 +201,7 @@ class WebSocketService {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('WebSocket conectado');
+      console.info('WebSocket conectado');
       this.reconnectAttempts = 0;
       this.isConnecting = false; // Resetear flag cuando se conecta
       // Disparar handlers locales directamente
@@ -213,7 +209,7 @@ class WebSocketService {
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('WebSocket desconectado:', reason);
+      console.info('WebSocket desconectado:', reason);
       // Disparar handlers locales directamente
       this.handleEvent(SOCKET_EVENTS.CONNECTION_STATUS, { connected: false });
     });

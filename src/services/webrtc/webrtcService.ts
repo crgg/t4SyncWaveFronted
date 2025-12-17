@@ -148,7 +148,6 @@ class WebRTCService {
     // Manejar cambios en el estado de conexión
     this.peerConnection.onconnectionstatechange = () => {
       const state = this.peerConnection?.connectionState;
-      console.log('Estado de conexión WebRTC:', state);
 
       if (state === 'connected') {
         this.reconnectAttempts = 0;
@@ -178,13 +177,11 @@ class WebRTCService {
     });
 
     this.dataChannel.onopen = () => {
-      console.log('Data channel abierto');
       this.reconnectAttempts = 0;
       this.handleEvent(SOCKET_EVENTS.CONNECTION_STATUS, { connected: true });
     };
 
     this.dataChannel.onclose = () => {
-      console.log('Data channel cerrado');
       this.handleEvent(SOCKET_EVENTS.CONNECTION_STATUS, { connected: false });
 
       if (this.config.reconnection) {
@@ -259,8 +256,6 @@ class WebRTCService {
         Math.pow(RECONNECTION_CONFIG.MULTIPLIER, this.reconnectAttempts - 1),
       RECONNECTION_CONFIG.MAX_DELAY
     );
-
-    console.log(`Reintentando conexión en ${delay}ms (intento ${this.reconnectAttempts})`);
 
     this.reconnectTimeout = setTimeout(() => {
       this.connect().catch((error) => {
@@ -440,7 +435,7 @@ class WebRTCService {
         userName: 'User', // TODO: obtener del estado de sesión
         position,
         isPlaying: true,
-        trackUrl,
+        truckUrl: trackUrl,
       });
     }
   }
@@ -460,7 +455,7 @@ class WebRTCService {
         userName: 'User', // TODO: obtener del estado de sesión
         position,
         isPlaying: false,
-        trackUrl,
+        truckUrl: trackUrl,
       });
     }
   }
@@ -480,7 +475,7 @@ class WebRTCService {
         userName: 'User', // TODO: obtener del estado de sesión
         position,
         isPlaying: true, // Asumimos que sigue reproduciendo después de seek
-        trackUrl,
+        truckUrl: trackUrl,
       });
     }
   }
