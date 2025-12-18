@@ -62,7 +62,6 @@ export function HostPage() {
   return (
     <div className="min-h-screen bg-dark-bg p-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="bg-dark-card rounded-xl shadow-2xl p-6 mb-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
@@ -87,18 +86,14 @@ export function HostPage() {
           </div>
         </div>
 
-        {/* Cargar Música */}
         <LoadSampleMusic />
 
-        {/* Lista de Reproducción */}
         <div className="mb-6">
           <PlaylistHost />
         </div>
 
-        {/* Audio Player */}
         <AudioPlayerHost />
 
-        {/* Instrucciones */}
         <div className="mt-6 bg-dark-surface border border-dark-hover rounded-xl p-4">
           <h3 className="font-semibold text-dark-text mb-2">Instrucciones para el Host:</h3>
           <ul className="list-disc list-inside text-sm text-dark-text-secondary space-y-1">

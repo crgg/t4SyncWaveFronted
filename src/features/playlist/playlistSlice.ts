@@ -1,7 +1,3 @@
-/**
- * Redux slice para gestión de playlist
- */
-
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { Track } from '@shared/types';
 

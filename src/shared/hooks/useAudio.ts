@@ -1,7 +1,3 @@
-/**
- * Hook para manejar la reproducción de audio
- */
-
 import { useEffect, useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@app/hooks';
 import {
@@ -35,11 +31,8 @@ export function useAudio() {
     trackUrl: '',
   });
 
-  // Inicializar servicio de audio cuando cambia la URL del track (para todos los roles)
   useEffect(() => {
-    // Validar que la URL sea válida antes de inicializar
     if (!audioState.trackUrl || audioState.trackUrl.trim() === '') {
-      // Si no hay URL, limpiar el servicio
       if (audioServiceRef.current) {
         audioServiceRef.current.cleanup();
         audioServiceRef.current = null;
@@ -47,7 +40,6 @@ export function useAudio() {
       return;
     }
 
-    // Validar que la URL sea válida para audio
     if (!isValidAudioUrl(audioState.trackUrl)) {
       console.warn(
         'Intento de usar una URL inválida como URL de audio:',
@@ -63,11 +55,9 @@ export function useAudio() {
       return;
     }
 
-    // Si ya existe un servicio pero la URL cambió, limpiar y recrear
     if (audioServiceRef.current) {
       const currentUrl = audioServiceRef.current.getState()?.trackUrl;
       if (currentUrl === audioState.trackUrl) {
-        // Ya está inicializado con esta URL, solo asegurar volumen
         const currentVolume = audioState.volume || 100;
         try {
           audioServiceRef.current.setVolume(currentVolume);
@@ -76,7 +66,6 @@ export function useAudio() {
         }
         return;
       }
-      // Limpiar servicio anterior
       audioServiceRef.current.cleanup();
       audioServiceRef.current = null;
     }
@@ -84,12 +73,9 @@ export function useAudio() {
     const audioService = getAudioService();
     audioServiceRef.current = audioService;
 
-    // IMPORTANTE: Para listeners, establecer el estado interno ANTES de inicializar
-    // para que canplayHandler pueda reproducir automáticamente si isPlaying es true
     if (role === 'listener') {
       const audioServiceState = audioService.getState();
       if (!audioServiceState) {
-        // Establecer estado inicial con valores de Redux
         (audioService as any).currentState = {
           isPlaying: audioState.isPlaying || false,
           currentPosition: audioState.currentPosition || 0,
@@ -102,7 +88,6 @@ export function useAudio() {
           timestamp: audioState.timestamp || Date.now(),
         };
       } else {
-        // Actualizar estado existente con valores de Redux
         (audioServiceState as any).isPlaying = audioState.isPlaying || false;
         (audioServiceState as any).currentPosition = audioState.currentPosition || 0;
         (audioServiceState as any).trackUrl = audioState.trackUrl;
@@ -112,36 +97,25 @@ export function useAudio() {
       }
     }
 
-    // Inicializar con el volumen actual
     const currentVolume = audioState.volume || 100;
 
-    // Marcar como cargando
     dispatch(setLoading({ isLoading: true }));
     dispatch(setError({ error: '' }));
 
     audioService.init(audioState.trackUrl, (state: AudioState & { error?: string }) => {
-      // Callback para actualizaciones del estado del audio
-      // Si hay un error, manejarlo primero
       if ((state as any).error) {
         dispatch(setError({ error: (state as any).error }));
         dispatch(setLoading({ isLoading: false }));
         return;
       }
 
-      // Validar que el estado sea válido
       if (!state || isNaN(state.currentPosition)) {
         return;
       }
 
-      // Obtener estado actual de Redux para comparar
       const currentReduxState = store.getState().audio;
 
-      // IMPORTANTE: Para listeners, NO actualizar desde el callback del audioService
-      // durante la sincronización activa, ya que esto causa ciclos infinitos
-      // El estado se actualiza desde useWebSocket cuando llega audio:state
-      // Solo actualizar duración si es necesario
       if (role === 'listener') {
-        // Solo actualizar duración si cambió y no está definida
         if (state.trackDuration && state.trackDuration !== currentReduxState.trackDuration) {
           dispatch(
             setAudioState({
@@ -150,32 +124,21 @@ export function useAudio() {
             })
           );
         }
-        // NO actualizar posición ni isPlaying desde aquí para listeners
-        // Esto se maneja desde useWebSocket y sync()
         return;
       }
 
-      // Para el host: actualizar normalmente
-      // Calcular diferencias
       const positionDiff = Math.abs(
         (state.currentPosition || 0) - (currentReduxState.currentPosition || 0)
       );
-      // Umbral para actualizaciones de posición (más grande para evitar actualizaciones excesivas)
       const hasPositionChange = positionDiff > 0.05;
       const hasDurationChange =
         state.trackDuration !== currentReduxState.trackDuration && state.trackDuration;
 
-      // Para el host: NUNCA sobrescribir isPlaying desde el callback del audioService
-      // El host controla isPlaying explícitamente a través de los botones
-
-      // Actualizar Redux solo si hay cambios significativos
-      // Para el host: solo actualizar posición y duración, nunca isPlaying
       if (
         hasPositionChange ||
         hasDurationChange ||
         (!currentReduxState.trackDuration && state.trackDuration)
       ) {
-        // Asegurar que trackUrl sea válida (no una ruta de la app)
         let validTrackUrl = currentReduxState.trackUrl || state.trackUrl;
         if (
           validTrackUrl &&
@@ -187,7 +150,6 @@ export function useAudio() {
 
         dispatch(setLoading({ isLoading: false }));
 
-        // Para el host: preservar isPlaying de Redux, solo actualizar posición y duración
         const stateToDispatch: Partial<AudioState> = {
           currentPosition: state.currentPosition,
           trackDuration: state.trackDuration,
@@ -200,7 +162,6 @@ export function useAudio() {
         dispatch(setAudioState(stateToDispatch as AudioState));
       }
 
-      // Actualizar duración en la playlist cuando se carga
       if (state.trackDuration && currentReduxState.trackId && hasDurationChange) {
         dispatch(
           updateTrackDuration({ trackId: currentReduxState.trackId, duration: state.trackDuration })
@@ -208,7 +169,6 @@ export function useAudio() {
       }
     });
 
-    // Establecer volumen después de inicializar (con manejo de errores)
     setTimeout(() => {
       if (audioServiceRef.current) {
         try {
@@ -219,10 +179,7 @@ export function useAudio() {
       }
     }, 100);
 
-    return () => {
-      // No limpiar aquí porque puede ser usado por otros efectos
-      // Solo limpiar cuando cambie la URL o se desmonte el componente
-    };
+    return () => {};
   }, [
     audioState.trackUrl,
     role,
@@ -232,47 +189,38 @@ export function useAudio() {
     audioState.trackArtist,
   ]);
 
-  // Sincronizar con estado del servidor (solo listeners)
   useEffect(() => {
     if (role !== 'listener' || !audioState.trackUrl) return;
 
-    // El servicio ya está inicializado por el efecto anterior
     if (!audioServiceRef.current) {
       return;
     }
 
-    // Usar intervalo para sincronizar periódicamente en lugar de en cada cambio
     const syncInterval = setInterval(() => {
       if (!audioServiceRef.current) return;
 
-      // Obtener estado actual de Redux directamente
       const currentState = store.getState().audio;
 
-      // Validar que haya trackUrl antes de sincronizar
       if (!currentState.trackUrl) return;
 
-      // Solo sincronizar si hay cambios significativos
-      // Reducir el umbral para cambios de posición para mejor sincronización
       const positionDiff = Math.abs(
         lastSyncRef.current.position - (currentState.currentPosition || 0)
       );
       const hasSignificantChange =
-        positionDiff > 0.05 || // Cambio de posición > 50ms
+        positionDiff > 0.05 ||
         lastSyncRef.current.isPlaying !== currentState.isPlaying ||
         lastSyncRef.current.trackUrl !== currentState.trackUrl ||
-        Math.abs((lastSyncRef.current.timestamp || 0) - (currentState.timestamp || 0)) > 500; // Cambio de timestamp > 500ms
+        Math.abs((lastSyncRef.current.timestamp || 0) - (currentState.timestamp || 0)) > 500;
 
       if (!hasSignificantChange && lastSyncRef.current.trackUrl === currentState.trackUrl) {
-        return; // No hay cambios significativos, no sincronizar
+        return;
       }
 
-      // Validar que currentPosition sea válido antes de sincronizar
       const serverPosition = currentState.currentPosition || 0;
       if (isNaN(serverPosition) || serverPosition < 0) {
-        return; // Posición inválida, no sincronizar
+        return;
       }
 
-      // Actualizar referencia
       lastSyncRef.current = {
         position: serverPosition,
         timestamp: currentState.timestamp || Date.now(),
@@ -280,13 +228,9 @@ export function useAudio() {
         trackUrl: currentState.trackUrl,
       };
 
-      // Sincronizar con el estado del servidor
       try {
-        // IMPORTANTE: Actualizar el estado interno del audioService antes de sincronizar
-        // para que pueda reproducir automáticamente si el servidor dice que está reproduciendo
         const audioServiceState = audioServiceRef.current.getState();
         if (audioServiceState && audioServiceState.isPlaying !== currentState.isPlaying) {
-          // Actualizar estado interno para que sync() pueda reproducir correctamente
           (audioServiceState as any).isPlaying = currentState.isPlaying;
         }
 
@@ -299,12 +243,11 @@ export function useAudio() {
       } catch (error) {
         console.error('Error en sincronización:', error);
       }
-    }, 200); // Sincronizar cada 200ms para mejor respuesta
+    }, 200);
 
     return () => clearInterval(syncInterval);
   }, [role, audioState.trackUrl, dispatch]);
 
-  // Enviar actualizaciones periódicas de posición al servidor (solo host)
   useEffect(() => {
     if (role !== 'host' || !audioState.isPlaying || !audioState.trackUrl) return;
 
@@ -312,7 +255,6 @@ export function useAudio() {
       if (audioServiceRef.current && audioState.isPlaying) {
         const currentState = audioServiceRef.current.getState();
         if (currentState && currentState.currentPosition !== undefined) {
-          // Enviar actualización de posición al servidor cada segundo
           try {
             const wsService = getWebSocketService({ url: WS_URL });
             if (wsService.isConnected()) {
@@ -323,23 +265,20 @@ export function useAudio() {
           }
         }
       }
-    }, 1000); // Enviar cada segundo
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [role, audioState.isPlaying, audioState.trackUrl, audioState.currentPosition]);
 
-  // Detectar cuando termina una canción y pasar a la siguiente (solo host)
   useEffect(() => {
     if (role !== 'host' || tracks.length === 0) return;
 
-    // Verificar si la canción terminó
     const checkEnded = () => {
       if (
         audioState.isPlaying &&
         audioState.trackDuration &&
         audioState.currentPosition >= audioState.trackDuration - 0.5
       ) {
-        // Pasar a la siguiente canción automáticamente
         const nextIndex = currentTrackIndex !== null ? (currentTrackIndex + 1) % tracks.length : 0;
         const nextTrack = tracks[nextIndex];
 
@@ -354,7 +293,6 @@ export function useAudio() {
             })
           );
 
-          // Notificar al servidor
           const timestamp = Date.now();
           const wsService = getWebSocketService({ url: WS_URL });
           wsService.emit('audio:track-change', {
@@ -381,7 +319,7 @@ export function useAudio() {
   ]);
 
   const handlePlay = useCallback(() => {
-    if (role !== 'host') return; // Solo el host puede controlar
+    if (role !== 'host') return;
 
     if (!audioState.trackUrl) {
       console.warn('There is no track loaded to play');
@@ -395,14 +333,11 @@ export function useAudio() {
 
     const timestamp = Date.now();
 
-    // Actualizar Redux primero para feedback inmediato
     dispatch(play({ timestamp }));
 
-    // Reproducir localmente
     audioServiceRef.current
       .play()
       .then(() => {
-        // Emitir al servidor después de que se reproduzca localmente
         try {
           const wsService = getWebSocketService({ url: WS_URL });
           if (wsService.isConnected()) {
@@ -416,13 +351,12 @@ export function useAudio() {
       })
       .catch((error) => {
         console.error('Error playing audio:', error);
-        // Revertir estado si falla
         dispatch(pause({ timestamp: Date.now() }));
       });
   }, [role, dispatch, audioState.trackUrl]);
 
   const handlePause = useCallback(() => {
-    if (role !== 'host') return; // Solo el host puede controlar
+    if (role !== 'host') return;
 
     const timestamp = Date.now();
     dispatch(pause({ timestamp }));
@@ -439,16 +373,14 @@ export function useAudio() {
 
   const handleSeek = useCallback(
     (position: number) => {
-      if (role !== 'host') return; // Solo el host puede controlar
-
-      console.log('Debugger handleSeek', position);
+      if (role !== 'host') return;
 
       const timestamp = Date.now();
       dispatch(seek({ position, timestamp }));
 
-      // if (audioServiceRef.current) {
-      //   audioServiceRef.current.seek(position);
-      // }
+      if (audioServiceRef.current) {
+        audioServiceRef.current.seek(position);
+      }
 
       const wsService = getWebSocketService({ url: WS_URL });
       wsService.seekAudio(position, timestamp, audioState.trackUrl);
@@ -456,27 +388,33 @@ export function useAudio() {
     [role, dispatch, audioState.trackUrl]
   );
 
+  const emitSeek = useCallback(
+    (position: number) => {
+      if (role !== 'host') return;
+
+      const timestamp = Date.now();
+
+      const wsService = getWebSocketService({ url: WS_URL });
+      wsService.seekAudio(position, timestamp, audioState.trackUrl);
+    },
+    [role, audioState.trackUrl]
+  );
+
   const handleVolumeChange = useCallback(
     (volume: number) => {
-      // Volumen es local para cada cliente, no se sincroniza
       const clampedVolume = Math.max(0, Math.min(100, volume));
 
-      // Solo actualizar si hay un cambio real
       if (Math.abs(clampedVolume - (audioState.volume || 0)) < 0.1) {
-        return; // No hay cambio significativo
+        return;
       }
 
-      // Actualizar Redux primero
       dispatch(setVolumeAction({ volume: clampedVolume }));
 
-      // Aplicar volumen al audioService si existe
-      // Usar try-catch para prevenir errores que rompan la app
       if (audioServiceRef.current) {
         try {
           audioServiceRef.current.setVolume(clampedVolume);
         } catch (error) {
           console.error('Error al cambiar volumen:', error);
-          // No propagar el error para evitar que rompa la app
         }
       }
     },
@@ -484,19 +422,16 @@ export function useAudio() {
   );
 
   const handleNext = useCallback(() => {
-    if (role !== 'host') return; // Solo el host puede controlar
+    if (role !== 'host') return;
 
     if (tracks.length === 0) return;
 
-    // Obtener siguiente track
     const nextIndex = currentTrackIndex !== null ? (currentTrackIndex + 1) % tracks.length : 0;
     const nextTrack = tracks[nextIndex];
 
     if (nextTrack) {
-      // Actualizar playlist
       dispatch(setCurrentTrackIndex({ index: nextIndex }));
 
-      // Actualizar audio
       dispatch(
         setTrack({
           trackId: nextTrack.id,
@@ -506,7 +441,6 @@ export function useAudio() {
         })
       );
 
-      // Notificar al servidor
       const timestamp = Date.now();
       const wsService = getWebSocketService({ url: WS_URL });
       wsService.emit('audio:track-change', {
@@ -516,22 +450,25 @@ export function useAudio() {
         trackArtist: nextTrack.artist,
         timestamp,
       });
+
+      setTimeout(() => {
+        if (audioServiceRef.current) {
+          audioServiceRef.current.play();
+        }
+      }, 100);
     }
   }, [role, dispatch, tracks, currentTrackIndex]);
 
   const handlePrevious = useCallback(() => {
-    if (role !== 'host') return; // Solo el host puede controlar
+    if (role !== 'host') return;
 
-    // Si estamos en los primeros 3 segundos y hay tracks anteriores, ir al track anterior
     if (audioState.currentPosition < 3 && tracks.length > 0 && currentTrackIndex !== null) {
       const prevIndex = currentTrackIndex === 0 ? tracks.length - 1 : currentTrackIndex - 1;
       const prevTrack = tracks[prevIndex];
 
       if (prevTrack) {
-        // Actualizar playlist
         dispatch(setCurrentTrackIndex({ index: prevIndex }));
 
-        // Actualizar audio
         dispatch(
           setTrack({
             trackId: prevTrack.id,
@@ -541,7 +478,6 @@ export function useAudio() {
           })
         );
 
-        // Notificar al servidor
         const timestamp = Date.now();
         const wsService = getWebSocketService({ url: WS_URL });
         wsService.emit('audio:track-change', {
@@ -555,7 +491,6 @@ export function useAudio() {
       }
     }
 
-    // Si no hay tracks anteriores o estamos más allá de los 3 segundos, retroceder 10s
     const newPosition = audioState.currentPosition < 3 ? 0 : audioState.currentPosition - 10;
     const timestamp = Date.now();
     dispatch(seek({ position: Math.max(0, newPosition), timestamp }));
@@ -569,7 +504,7 @@ export function useAudio() {
   }, [role, dispatch, audioState.currentPosition, tracks, currentTrackIndex]);
 
   const handleRestart = useCallback(() => {
-    if (role !== 'host') return; // Solo el host puede controlar
+    if (role !== 'host') return;
 
     const timestamp = Date.now();
     dispatch(seek({ position: 0, timestamp }));
@@ -582,7 +517,6 @@ export function useAudio() {
     wsService.seekAudio(0, timestamp);
   }, [role, dispatch]);
 
-  // Limpiar audio al desmontar o salir de sesión
   useEffect(() => {
     return () => {
       if (audioServiceRef.current) {
@@ -603,5 +537,6 @@ export function useAudio() {
     next: handleNext,
     previous: handlePrevious,
     restart: handleRestart,
+    emitSeek,
   };
 }

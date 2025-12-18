@@ -1,8 +1,3 @@
-/**
- * Componente reproductor de audio para el Listener
- * Solo lectura, sin controles de reproducción
- */
-
 import { useState, useEffect, useRef } from 'react';
 import { useAudio } from '@shared/hooks/useAudio';
 import { formatTime } from '@shared/utils';
@@ -13,7 +8,6 @@ export function AudioPlayerListener() {
   const [localVolume, setLocalVolume] = useState(audioState.volume || 100);
   const volumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Inicializar volumen desde localStorage solo una vez al montar
   useEffect(() => {
     const savedVolume = localStorage.getItem('audioVolume');
     if (savedVolume) {
@@ -25,10 +19,8 @@ export function AudioPlayerListener() {
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sincronizar volumen local con Redux
   useEffect(() => {
     if (
       audioState.volume !== undefined &&
@@ -75,15 +67,12 @@ export function AudioPlayerListener() {
     };
   }, []);
 
-  // console.log('audioState', audioState);
-  // Calcular porcentaje de progreso
   const progressPercentage = audioState.trackDuration
     ? (audioState.currentPosition / audioState.trackDuration) * 100
     : 0;
 
   return (
     <div className="bg-dark-card rounded-xl shadow-2xl p-6 space-y-6">
-      {/* Información de la canción */}
       <div className="text-center">
         <h3 className="text-xl font-bold text-dark-text mb-1">
           {audioState.trackTitle || 'Sin título'}
@@ -93,7 +82,6 @@ export function AudioPlayerListener() {
         )}
       </div>
 
-      {/* Barra de progreso (solo lectura) */}
       <div className="space-y-2">
         <div className="relative h-2 bg-dark-hover rounded-full overflow-hidden">
           <div className="absolute inset-0 bg-dark-hover rounded-full" />
@@ -115,7 +103,6 @@ export function AudioPlayerListener() {
         </div>
       </div>
 
-      {/* Estado de reproducción */}
       <div className="flex items-center justify-center">
         <div className="flex items-center gap-3 px-4 py-2 bg-dark-surface rounded-full">
           {audioState.isPlaying ? (
@@ -136,7 +123,6 @@ export function AudioPlayerListener() {
         </div>
       </div>
 
-      {/* Control de volumen (único control disponible para listeners) */}
       <div className="flex items-center gap-3">
         <svg className="w-5 h-5 text-dark-text-secondary" fill="currentColor" viewBox="0 0 20 20">
           {localVolume === 0 ? (
@@ -175,7 +161,6 @@ export function AudioPlayerListener() {
         </span>
       </div>
 
-      {/* Indicador de modo listener */}
       <div className="text-center text-sm text-dark-text-secondary">
         Modo escucha - Solo puedes controlar tu volumen
       </div>

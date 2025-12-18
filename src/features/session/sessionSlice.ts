@@ -1,7 +1,3 @@
-/**
- * Redux slice para gestión de sesiones
- */
-
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { SessionInfo, UserRole } from '@shared/types';
 
@@ -39,7 +35,7 @@ const sessionSlice = createSlice({
     createSessionSuccess: (state, action: PayloadAction<{ sessionId: string }>) => {
       state.isCreating = false;
       state.sessionId = action.payload.sessionId;
-      state.hostId = action.payload.sessionId; // Temporal, debería venir del servidor
+      state.hostId = action.payload.sessionId;
       state.role = 'host';
       state.error = null;
     },
@@ -74,6 +70,9 @@ const sessionSlice = createSlice({
     updateParticipantCount: (state, action: PayloadAction<{ count: number }>) => {
       state.participantCount = action.payload.count;
     },
+    setRole: (state, action: PayloadAction<{ role: UserRole }>) => {
+      state.role = action.payload.role;
+    },
     clearError: (state) => {
       state.error = null;
     },
@@ -90,6 +89,7 @@ export const {
   leaveSession,
   updateParticipantCount,
   clearError,
+  setRole,
 } = sessionSlice.actions;
 
 export default sessionSlice.reducer;

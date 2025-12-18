@@ -1,21 +1,15 @@
-/**
- * Componente reproductor de audio para el Host
- * Tiene control total sobre la reproducción
- */
-
 import { useState, useEffect, useRef } from 'react';
 import { useAudio } from '@shared/hooks/useAudio';
 import { formatTime } from '@shared/utils';
 import { motion } from 'framer-motion';
 
 export function AudioPlayerHost() {
-  const { audioState, play, pause, seek, setVolume, next, restart } = useAudio();
+  const { audioState, play, pause, seek, setVolume, next, restart, emitSeek } = useAudio();
   const [localVolume, setLocalVolume] = useState(audioState.volume || 100);
   const [isDragging, setIsDragging] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
   const volumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Inicializar volumen desde localStorage solo una vez al montar
   useEffect(() => {
     const savedVolume = localStorage.getItem('audioVolume');
     if (savedVolume) {
@@ -27,10 +21,8 @@ export function AudioPlayerHost() {
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sincronizar volumen local con Redux
   useEffect(() => {
     if (
       audioState.volume !== undefined &&
@@ -41,14 +33,12 @@ export function AudioPlayerHost() {
     }
   }, [audioState.volume, localVolume]);
 
-  // Guardar volumen en localStorage cuando cambia
   useEffect(() => {
     if (localVolume >= 0 && localVolume <= 100) {
       localStorage.setItem('audioVolume', localVolume.toString());
     }
   }, [localVolume]);
 
-  // Animación de progreso
   useEffect(() => {
     if (!isDragging && progressRef.current) {
       const progress = audioState.trackDuration
@@ -60,7 +50,6 @@ export function AudioPlayerHost() {
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const position = parseFloat(e.target.value);
-    console.log('handleSeek', position);
     if (!isNaN(position) && position >= 0 && audioState.trackDuration) {
       const clampedPosition = Math.min(Math.max(0, position), audioState.trackDuration);
       seek(clampedPosition);
@@ -120,15 +109,12 @@ export function AudioPlayerHost() {
     : 0;
 
   useEffect(() => {
-    // seek(audioState.currentPosition);
-    seek(audioState.currentPosition ?? 0);
-  }, [audioState.currentPosition]);
-
-  // console.log('audioState.currentPosition', audioState.currentPosition);
+    if (!audioState.isPlaying) return;
+    emitSeek(audioState.currentPosition ?? 0);
+  }, [audioState.currentPosition, audioState.isPlaying, emitSeek]);
 
   return (
     <div className="bg-dark-card rounded-xl shadow-2xl p-6 space-y-6">
-      {/* Información de la canción */}
       <div className="text-center">
         <motion.h3
           className="text-xl font-bold text-dark-text mb-1"
@@ -143,7 +129,6 @@ export function AudioPlayerHost() {
         )}
       </div>
 
-      {/* Barra de progreso */}
       <div className="space-y-2">
         <div className="relative h-2 bg-dark-hover rounded-full overflow-hidden group">
           <div className="absolute inset-0 bg-dark-hover rounded-full" />
@@ -177,19 +162,11 @@ export function AudioPlayerHost() {
           />
         </div>
         <div className="flex justify-between text-xs text-dark-text-secondary">
-          <motion.span
-            key={audioState.currentPosition}
-            initial={{ opacity: 0.5 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2 }}
-          >
-            {formatTime(audioState.currentPosition)}
-          </motion.span>
+          <span>{formatTime(audioState.currentPosition)}</span>
           <span>{formatTime(audioState.trackDuration || 0)}</span>
         </div>
       </div>
 
-      {/* Controles principales */}
       <div className="flex items-center justify-center gap-2">
         <motion.button
           whileHover={{ scale: 1.1 }}
@@ -284,7 +261,6 @@ export function AudioPlayerHost() {
         </motion.button>
       </div>
 
-      {/* Control de volumen */}
       <div className="flex items-center gap-3">
         <svg className="w-5 h-5 text-dark-text-secondary" fill="currentColor" viewBox="0 0 20 20">
           {localVolume === 0 ? (

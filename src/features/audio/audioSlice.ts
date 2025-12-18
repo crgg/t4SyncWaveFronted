@@ -1,7 +1,3 @@
-/**
- * Redux slice para gestión de audio
- */
-
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { AudioState } from '@shared/types';
 import { isValidAudioUrl } from '@shared/utils';

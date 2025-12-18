@@ -21,19 +21,14 @@ export function AudioPlayer() {
       const volume = parseFloat(savedVolume);
       if (!isNaN(volume) && volume >= 0 && volume <= 100) {
         setLocalVolume(volume);
-        // Solo establecer volumen si es diferente del actual
         if (Math.abs(volume - (audioState.volume || 100)) > 0.1) {
           setVolume(volume);
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Solo ejecutar una vez al montar
+  }, []);
 
-  // Sincronizar volumen local con Redux solo si viene de una fuente externa
-  // (no del cambio local del usuario)
   useEffect(() => {
-    // Solo sincronizar si la diferencia es significativa y no viene del usuario
     if (
       audioState.volume !== undefined &&
       Math.abs(audioState.volume - localVolume) > 1 &&
@@ -43,14 +38,12 @@ export function AudioPlayer() {
     }
   }, [audioState.volume, localVolume]);
 
-  // Guardar volumen en localStorage cuando cambia
   useEffect(() => {
     if (localVolume >= 0 && localVolume <= 100) {
       localStorage.setItem('audioVolume', localVolume.toString());
     }
   }, [localVolume]);
 
-  // Animación de progreso
   useEffect(() => {
     if (!isDragging && progressRef.current) {
       const progress = audioState.trackDuration
@@ -81,29 +74,23 @@ export function AudioPlayer() {
     const volume = parseFloat(e.target.value);
     if (isNaN(volume) || volume < 0 || volume > 100) return;
 
-    // Actualizar estado local inmediatamente para feedback visual
     setLocalVolume(volume);
 
-    // Limpiar timeout anterior si existe
     if (volumeTimeoutRef.current) {
       clearTimeout(volumeTimeoutRef.current);
     }
 
-    // Actualizar volumen en el servicio de audio con debounce
-    // Esto previene actualizaciones excesivas durante el drag y errores
     volumeTimeoutRef.current = setTimeout(() => {
       try {
         setVolume(volume);
       } catch (error) {
         console.error('Error al cambiar volumen:', error);
-        // Restaurar volumen anterior en caso de error para prevenir crash
         setLocalVolume(audioState.volume || 100);
       }
       volumeTimeoutRef.current = null;
     }, 150);
   };
 
-  // Cleanup del timeout al desmontar
   useEffect(() => {
     return () => {
       if (volumeTimeoutRef.current) {
@@ -128,7 +115,6 @@ export function AudioPlayer() {
 
   return (
     <div className="bg-dark-card rounded-xl shadow-2xl p-6 space-y-6">
-      {/* Información de la canción */}
       <div className="text-center">
         <motion.h3
           className="text-xl font-bold text-dark-text mb-1"
@@ -143,13 +129,10 @@ export function AudioPlayer() {
         )}
       </div>
 
-      {/* Barra de progreso mejorada */}
       <div className="space-y-2">
         <div className="relative h-2 bg-dark-hover rounded-full overflow-hidden group">
-          {/* Barra de fondo */}
           <div className="absolute inset-0 bg-dark-hover rounded-full" />
 
-          {/* Barra de progreso */}
           <motion.div
             ref={progressRef}
             className="absolute h-full bg-primary-600 rounded-full pointer-events-none"
@@ -163,7 +146,6 @@ export function AudioPlayer() {
             }}
           />
 
-          {/* Punto indicador que aparece al hover */}
           {isHost && (
             <motion.div
               className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-primary-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg border-2 border-dark-bg pointer-events-none z-10"
@@ -173,7 +155,6 @@ export function AudioPlayer() {
             />
           )}
 
-          {/* Input range superpuesto - debe estar encima de todo */}
           <input
             type="range"
             min="0"
@@ -203,9 +184,7 @@ export function AudioPlayer() {
         </div>
       </div>
 
-      {/* Controles principales */}
       <div className="flex items-center justify-center gap-2">
-        {/* Botón reiniciar */}
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
@@ -223,7 +202,6 @@ export function AudioPlayer() {
           </svg>
         </motion.button>
 
-        {/* Botón retroceder 10s */}
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
@@ -240,7 +218,6 @@ export function AudioPlayer() {
           </span>
         </motion.button>
 
-        {/* Botón play/pause principal */}
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
@@ -267,7 +244,6 @@ export function AudioPlayer() {
           )}
         </motion.button>
 
-        {/* Botón adelantar 10s */}
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
@@ -284,7 +260,6 @@ export function AudioPlayer() {
           </span>
         </motion.button>
 
-        {/* Botón siguiente (solo host) */}
         {isHost && (
           <motion.button
             whileHover={{ scale: 1.1 }}
@@ -309,7 +284,6 @@ export function AudioPlayer() {
         )}
       </div>
 
-      {/* Control de volumen (todos los clientes) */}
       <div className="flex items-center gap-3">
         <svg className="w-5 h-5 text-dark-text-secondary" fill="currentColor" viewBox="0 0 20 20">
           {localVolume === 0 ? (
@@ -348,7 +322,6 @@ export function AudioPlayer() {
         </span>
       </div>
 
-      {/* Indicador de modo listener */}
       {!isHost && (
         <div className="text-center text-sm text-dark-text-secondary">
           Modo escucha - Solo el host puede controlar la reproducción

@@ -15,15 +15,17 @@ import {
 import { setTrack } from '@features/audio/audioSlice';
 import { formatTime } from '@shared/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getWebSocketService } from '@services/websocket/websocketService';
-import { WS_URL } from '@shared/constants';
+// import { getWebSocketService } from '@services/websocket/websocketService';
+// import { WS_URL } from '@shared/constants';
 import { playListApi } from '../playListApi';
+import { useAudio } from '@/shared/hooks/useAudio';
 
 export function PlaylistHost() {
   const dispatch = useAppDispatch();
   const { tracks, currentTrackIndex } = useAppSelector((state) => state.playlist);
   const { sessionId } = useAppSelector((state) => state.session);
   const { trackId: currentTrackId } = useAppSelector((state) => state.audio);
+  const { play } = useAudio();
   const { data: playlist } = useQuery({
     queryKey: ['playlist', sessionId],
     queryFn: () => playListApi.getPlaylist(),
@@ -32,12 +34,9 @@ export function PlaylistHost() {
     enabled: !!sessionId,
   });
 
-  // Sincronizar playlist desde la API con Redux
   useEffect(() => {
     if (playlist) {
-      // La API puede devolver un array de tracks directamente o un objeto con tracks
       const tracks = Array.isArray(playlist) ? playlist : (playlist as any)?.tracks || [];
-      console.log('🚀 ~ useEffect ~ tracks:', tracks);
       if (tracks.length > 0) {
         dispatch(setPlaylistFromApi({ tracks }));
       }
@@ -48,16 +47,16 @@ export function PlaylistHost() {
   useEffect(() => {
     if (!sessionId || tracks.length === 0) return;
 
-    try {
-      const wsService = getWebSocketService({ url: WS_URL });
-      if (wsService.isConnected()) {
-        wsService.emit('playlist:update', {
-          tracks: tracks.map(({ addedAt, ...track }) => track),
-        });
-      }
-    } catch (error) {
-      console.error('Error al sincronizar playlist:', error);
-    }
+    // try {
+    //   const wsService = getWebSocketService({ url: WS_URL });
+    //   if (wsService.isConnected()) {
+    //     wsService.emit('playlist:update', {
+    //       tracks: tracks.map(({ addedAt, ...track }) => track),
+    //     });
+    //   }
+    // } catch (error) {
+    //   console.error('Error al sincronizar playlist:', error);
+    // }
   }, [tracks, sessionId]);
 
   const handleTrackSelect = (trackId: string, index: number) => {
@@ -73,21 +72,22 @@ export function PlaylistHost() {
         trackArtist: track.artist,
       })
     );
+    setTimeout(play, 1000);
 
-    if (sessionId) {
-      try {
-        const wsService = getWebSocketService({ url: WS_URL });
-        wsService.emit('audio:track-change', {
-          trackId: track.id,
-          trackUrl: track.url,
-          trackTitle: track.title,
-          trackArtist: track.artist,
-          timestamp: Date.now(),
-        });
-      } catch (error) {
-        console.error('Error al notificar cambio de track:', error);
-      }
-    }
+    // if (sessionId) {
+    //   try {
+    //     const wsService = getWebSocketService({ url: WS_URL });
+    //     wsService.emit('audio:track-change', {
+    //       trackId: track.id,
+    //       trackUrl: track.url,
+    //       trackTitle: track.title,
+    //       trackArtist: track.artist,
+    //       timestamp: Date.now(),
+    //     });
+    //   } catch (error) {
+    //     console.error('Error al notificar cambio de track:', error);
+    //   }
+    // }
   };
 
   const handleRemoveTrack = (trackId: string, e: React.MouseEvent) => {

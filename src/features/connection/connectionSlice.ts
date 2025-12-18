@@ -1,7 +1,3 @@
-/**
- * Redux slice para gestión de conexión WebSocket
- */
-
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { ConnectionState } from '@shared/types';
 

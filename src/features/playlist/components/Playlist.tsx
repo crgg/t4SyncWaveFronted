@@ -18,16 +18,14 @@ export function Playlist() {
   const { trackId: currentTrackId } = useAppSelector((state) => state.audio);
   const { role, sessionId } = useAppSelector((state) => state.session);
 
-  // Sincronizar playlist con el servidor cuando el host la actualiza
   useEffect(() => {
     if (role !== 'host' || !sessionId || tracks.length === 0) return;
 
-    // Enviar playlist actualizada al servidor
     try {
       const wsService = getWebSocketService({ url: WS_URL });
       if (wsService.isConnected()) {
         wsService.emit('playlist:update', {
-          tracks: tracks.map(({ addedAt, ...track }) => track), // Remover addedAt para serialización
+          tracks: tracks.map(({ addedAt: _addedAt, ...track }) => track),
         });
       }
     } catch (error) {
@@ -36,16 +34,13 @@ export function Playlist() {
   }, [tracks, role, sessionId]);
 
   const handleTrackSelect = (trackId: string, index: number) => {
-    // Solo el host puede cambiar de track
     if (role !== 'host') return;
 
     const track = tracks.find((t) => t.id === trackId);
     if (!track) return;
 
-    // Actualizar playlist
     dispatch(setCurrentTrackIndex({ index }));
 
-    // Actualizar audio
     dispatch(
       setTrack({
         trackId: track.id,
@@ -55,7 +50,6 @@ export function Playlist() {
       })
     );
 
-    // Notificar al servidor
     if (sessionId) {
       try {
         const wsService = getWebSocketService({ url: WS_URL });

@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@app/hooks';
-import { joinSessionStart } from '@features/session/sessionSlice';
+import { joinSessionStart, setRole } from '@features/session/sessionSlice';
 import { useWebSocket } from '@shared/hooks/useWebSocket';
 import { Button } from '@shared/components/Button/Button';
 import { Input } from '@shared/components/Input/Input';
@@ -21,6 +21,7 @@ export function JoinSessionForm() {
     e.preventDefault();
     if (!sessionIdInput.trim()) return;
 
+    dispatch(setRole({ role: 'listener' }));
     dispatch(joinSessionStart({ sessionId: sessionIdInput.trim() }));
     joinSession(sessionIdInput.trim());
   };

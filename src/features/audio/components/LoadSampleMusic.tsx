@@ -56,7 +56,7 @@ export function LoadSampleMusic() {
         // Obtener playlist actualizada después de agregar el track
         const updatedPlaylist = store.getState().playlist.tracks;
         wsService.emit('playlist:update', {
-          tracks: updatedPlaylist.map(({ addedAt, ...track }) => track),
+          tracks: updatedPlaylist.map(({ addedAt: _addedAt, ...track }) => track),
         });
         wsService.emit('audio:track-change', {
           trackId: track.id,
@@ -112,7 +112,7 @@ export function LoadSampleMusic() {
         // Obtener playlist actualizada después de agregar el track
         const updatedPlaylist = store.getState().playlist.tracks;
         wsService.emit('playlist:update', {
-          tracks: updatedPlaylist.map(({ addedAt, ...track }) => track),
+          tracks: updatedPlaylist.map(({ addedAt: _addedAt, ...track }) => track),
         });
         wsService.emit('audio:track-change', {
           trackId,

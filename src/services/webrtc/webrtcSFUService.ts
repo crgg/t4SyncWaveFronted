@@ -1,10 +1,3 @@
-/**
- * Servicio de WebRTC para SFU (Selective Forwarding Unit)
- *
- * En un SFU, todos los clientes se conectan al servidor SFU,
- * no entre ellos directamente. El SFU reenvía los streams/media.
- */
-
 import { SOCKET_EVENTS, RECONNECTION_CONFIG } from '@shared/constants';
 import type { SocketEventHandlers, WebSocketServiceConfig } from '../websocket/types';
 import type { AudioState } from '@shared/types';
@@ -46,13 +39,10 @@ class WebRTCSFUService {
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private peerId: string | null = null;
 
-  // STUN/TURN servers para NAT traversal
   private readonly RTC_CONFIG: RTCConfiguration = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
-      // Agregar TURN servers si están disponibles
-      // { urls: 'turn:your-turn-server.com:3478', username: 'user', credential: 'pass' }
     ],
   };
 
@@ -64,20 +54,15 @@ class WebRTCSFUService {
       ...config,
     };
 
-    // El SFU normalmente usa WebSocket para señalización
-    // IMPORTANTE: Si la URL ya es ws:// o wss://, mantenerla así
-    // NO convertir wss:// a https:// (eso causaría errores de CORS con fetch)
     if (config.url.startsWith('ws://') || config.url.startsWith('wss://')) {
       this.signalingUrl = config.url.replace(/\/$/, '');
     } else {
-      // Convertir http:// a ws:// o https:// a wss:// solo si no es ya WebSocket
       this.signalingUrl = config.url
         .replace(/^http:/, 'ws:')
         .replace(/^https:/, 'wss:')
         .replace(/\/$/, '');
     }
 
-    // Validar que la URL final sea WebSocket
     if (!this.signalingUrl.startsWith('ws://') && !this.signalingUrl.startsWith('wss://')) {
       console.error(
         'ERROR: La URL de señalización debe ser WebSocket (ws:// o wss://), pero es:',
@@ -89,9 +74,6 @@ class WebRTCSFUService {
     }
   }
 
-  /**
-   * Conecta al servidor SFU
-   */
   async connect(): Promise<void> {
     if (this.isConnecting) {
       console.warn('WebRTC SFU ya se está conectando');
@@ -110,23 +92,16 @@ class WebRTCSFUService {
     this.isConnecting = true;
 
     try {
-      // 1. Conectar WebSocket para señalización
       await this.connectSignalingWebSocket();
-
-      // 2. Inicializar conexión peer-to-SFU
       await this.initializePeerConnection();
-
-      // 3. Crear data channel para mensajes de control
       this.createDataChannel();
 
-      // 4. Crear offer y enviarlo al SFU
       const offer = await this.peerConnection!.createOffer({
         offerToReceiveAudio: true,
-        offerToReceiveVideo: false, // Solo audio para esta aplicación
+        offerToReceiveVideo: false,
       });
       await this.peerConnection!.setLocalDescription(offer);
 
-      // 5. Enviar offer al SFU a través del WebSocket de señalización
       this.sendSignalingMessage({
         type: 'offer',
         data: offer,
@@ -148,13 +123,9 @@ class WebRTCSFUService {
     }
   }
 
-  /**
-   * Conecta el WebSocket de señalización
-   */
   private connectSignalingWebSocket(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        // IMPORTANTE: Validar que la URL sea WebSocket antes de usarla
         if (!this.signalingUrl.startsWith('ws://') && !this.signalingUrl.startsWith('wss://')) {
           const error = new Error(
             `URL de señalización debe ser WebSocket (ws:// o wss://), pero es: ${this.signalingUrl}`
@@ -164,16 +135,12 @@ class WebRTCSFUService {
           return;
         }
 
-        // Usar la URL directamente - el usuario ya proporciona la URL completa del SFU
-        // Ejemplo: wss://t4videocall.t4ever.com/sfu/ws
         const wsUrl = this.signalingUrl;
 
         this.signalingWebSocket = new WebSocket(wsUrl);
 
         this.signalingWebSocket.onopen = () => {
           this.reconnectAttempts = 0;
-          // Disparar evento de conexión cuando el WebSocket se conecta
-          // El evento se disparará nuevamente cuando el data channel se abra
           this.handleEvent(SOCKET_EVENTS.CONNECTION_STATUS, { connected: true });
           resolve();
         };
@@ -205,14 +172,9 @@ class WebRTCSFUService {
     });
   }
 
-  /**
-   * Maneja mensajes de señalización del SFU
-   */
   private async handleSignalingMessage(message: SFUSignalingMessage): Promise<void> {
-    console.log('debugger handleSignalingMessage', message);
     switch (message.type) {
       case 'answer': {
-        // El SFU responde con un answer
         if (this.peerConnection && message.data) {
           await this.peerConnection.setRemoteDescription(
             new RTCSessionDescription(message.data as RTCSessionDescriptionInit)
@@ -222,7 +184,6 @@ class WebRTCSFUService {
       }
 
       case 'ice-candidate': {
-        // El SFU envía un ICE candidate
         if (this.peerConnection && message.data) {
           try {
             await this.peerConnection.addIceCandidate(
@@ -246,7 +207,6 @@ class WebRTCSFUService {
       }
 
       case 'playback-state': {
-        // El payload viene en formato playback-state, necesitamos transformarlo a AudioState
         const playbackState = message as {
           type: string;
           room: string;
@@ -257,16 +217,11 @@ class WebRTCSFUService {
           truckUrl: string;
         };
 
-        // Validar que truckUrl exista
         if (!playbackState.truckUrl) {
           console.warn('Received playback-state without truckUrl:', playbackState);
           return;
         }
 
-        console.log('Received Playback State', playbackState);
-
-        // Obtener el estado actual de audio desde el store si está disponible
-        // Para preservar campos que no vienen en el payload
         let currentAudioState: Partial<AudioState> = {};
         try {
           const state = store.getState();
@@ -274,85 +229,34 @@ class WebRTCSFUService {
             currentAudioState = state.audio;
           }
         } catch (error) {
-          // Si no podemos acceder al store, continuamos con valores por defecto
-          console.debug('No se pudo acceder al estado de audio actual:', error);
+          console.error('Error to get audio state:', error);
         }
 
-        // Transformar el payload playback-state al formato AudioState
         const audioState: AudioState = {
           isPlaying: playbackState.isPlaying ?? false,
           currentPosition:
             isNaN(playbackState.position) || playbackState.position < 0
               ? (currentAudioState.currentPosition ?? 0)
               : playbackState.position,
-          volume: currentAudioState.volume ?? 100, // Preservar volumen local
-          trackId: currentAudioState.trackId || '', // Preservar trackId si existe
-          trackUrl: playbackState.truckUrl || currentAudioState.trackUrl || '', // Mapear truckUrl a trackUrl
+          volume: currentAudioState.volume ?? 100,
+          trackId: currentAudioState.trackId || '',
+          trackUrl: playbackState.truckUrl || currentAudioState.trackUrl || '',
           trackTitle: currentAudioState.trackTitle,
           trackArtist: currentAudioState.trackArtist,
           trackDuration: currentAudioState.trackDuration,
           timestamp: playbackState.timestamp ?? Date.now(),
-          truckUrl: playbackState.truckUrl, // También preservar truckUrl original
+          truckUrl: playbackState.truckUrl,
         };
 
         this.handleEvent(SOCKET_EVENTS.AUDIO_STATE, audioState);
         break;
       }
 
-      // case 'session-created': {
-      //   // Sesión creada
-      //   if (message.data && typeof message.data === 'object' && 'sessionId' in message.data) {
-      //     this.sessionId = (message.data as { sessionId: string }).sessionId;
-      //     this.handleEvent(SOCKET_EVENTS.SESSION_CREATED, message.data);
-      //   }
-      //   break;
-      // }
-
-      // case 'session-joined': {
-      //   // Unido a sesión
-      //   this.handleEvent(SOCKET_EVENTS.SESSION_JOINED, message.data || {});
-      //   break;
-      // }
-
-      // case 'session-error': {
-      //   // Error de sesión
-      //   this.handleEvent(
-      //     SOCKET_EVENTS.SESSION_ERROR,
-      //     message.data || { error: 'Error desconocido' }
-      //   );
-      //   break;
-      // }
-
-      // case 'audio-state': {
-      //   // Estado de audio del SFU
-      //   this.handleEvent(SOCKET_EVENTS.AUDIO_STATE, message.data as any);
-      //   break;
-      // }
-
-      // case 'playlist-sync': {
-      //   // Sincronización de playlist
-      //   this.handleEvent(SOCKET_EVENTS.PLAYLIST_SYNC, message.data as any);
-      //   break;
-      // }
-
-      // case 'participant-joined': {
-      //   this.handleEvent(SOCKET_EVENTS.PARTICIPANT_JOINED, message.data || {});
-      //   break;
-      // }
-
-      // case 'participant-left': {
-      //   this.handleEvent(SOCKET_EVENTS.PARTICIPANT_LEFT, message.data || {});
-      //   break;
-      // }
-
       default:
         console.warn('Tipo de mensaje de señalización desconocido:', message.type);
     }
   }
 
-  /**
-   * Envía un mensaje de señalización al SFU
-   */
   private sendSignalingMessage(message: SFUSignalingMessage): void {
     if (!this.signalingWebSocket || this.signalingWebSocket.readyState !== WebSocket.OPEN) {
       console.warn('WebSocket de señalización no está conectado');
@@ -373,9 +277,6 @@ class WebRTCSFUService {
     }
   }
 
-  /**
-   * Inicializa la conexión peer-to-SFU
-   */
   private async initializePeerConnection(): Promise<void> {
     if (this.peerConnection) {
       this.peerConnection.close();
@@ -383,7 +284,6 @@ class WebRTCSFUService {
 
     this.peerConnection = new RTCPeerConnection(this.RTC_CONFIG);
 
-    // Manejar ICE candidates
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         this.sendSignalingMessage({
@@ -393,7 +293,6 @@ class WebRTCSFUService {
       }
     };
 
-    // Manejar cambios en el estado de conexión
     this.peerConnection.onconnectionstatechange = () => {
       const state = this.peerConnection?.connectionState;
 
@@ -409,16 +308,9 @@ class WebRTCSFUService {
       }
     };
 
-    // Manejar tracks recibidos del SFU (si es necesario)
-    this.peerConnection.ontrack = (_event) => {
-      // En esta aplicación, no necesitamos manejar tracks de audio directamente
-      // porque usamos el elemento HTML5 Audio en lugar de WebRTC audio tracks
-    };
+    this.peerConnection.ontrack = (_event) => {};
   }
 
-  /**
-   * Crea el data channel para comunicación de control
-   */
   private createDataChannel(): void {
     if (!this.peerConnection) return;
 
@@ -450,9 +342,6 @@ class WebRTCSFUService {
     };
   }
 
-  /**
-   * Programa una reconexión
-   */
   private scheduleReconnect(): void {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
@@ -472,9 +361,6 @@ class WebRTCSFUService {
     }, delay);
   }
 
-  /**
-   * Desconecta del SFU
-   */
   disconnect(): void {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
@@ -501,28 +387,17 @@ class WebRTCSFUService {
     this.handleEvent(SOCKET_EVENTS.CONNECTION_STATUS, { connected: false });
   }
 
-  /**
-   * Verifica si está conectado
-   */
   isConnected(): boolean {
-    // Considerar conectado si el WebSocket de señalización está abierto
-    // El data channel puede tardar en abrirse, pero el WebSocket es suficiente para comunicación básica
     const signalingConnected = this.signalingWebSocket?.readyState === WebSocket.OPEN;
     const dataChannelOpen = this.dataChannel?.readyState === 'open';
 
-    // Si el data channel está abierto, definitivamente está conectado
     if (dataChannelOpen && signalingConnected) {
       return true;
     }
 
-    // Si solo el WebSocket está conectado, también considerarlo conectado
-    // (el data channel puede tardar en establecerse)
     return signalingConnected;
   }
 
-  /**
-   * Maneja eventos recibidos
-   */
   private handleEvent(event: string, data: unknown): void {
     const handlers = this.eventHandlers.get(event);
     if (handlers) {
@@ -536,9 +411,6 @@ class WebRTCSFUService {
     }
   }
 
-  /**
-   * Registra un handler para un evento específico
-   */
   on<K extends keyof SocketEventHandlers>(event: K, handler: SocketEventHandlers[K]): void {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, new Set());
@@ -546,27 +418,17 @@ class WebRTCSFUService {
     this.eventHandlers.get(event)?.add(handler);
   }
 
-  /**
-   * Elimina un handler de evento
-   */
   off<K extends keyof SocketEventHandlers>(event: K, handler: SocketEventHandlers[K]): void {
     this.eventHandlers.get(event)?.delete(handler);
   }
 
-  /**
-   * Emite un evento al SFU a través del data channel o WebSocket
-   */
   emit(_event: string, data?: unknown): void {
-    // Intentar enviar por data channel primero (más rápido)
     if (this.dataChannel && this.dataChannel.readyState === 'open') {
       try {
         this.dataChannel.send(
           JSON.stringify({
             type: 'playback-state',
-            // event,
-            // payload: data,
             ...(data as Record<string, unknown>),
-            // sessionId: this.sessionId || undefined,
           })
         );
         return;
@@ -575,18 +437,12 @@ class WebRTCSFUService {
       }
     }
 
-    // Fallback a WebSocket de señalización
     this.sendSignalingMessage({
       type: 'playback-state',
-      // event,
       ...(data as Record<string, unknown>),
-      // payload: data,
     });
   }
 
-  /**
-   * Crea una nueva sesión (solo host)
-   */
   async createSession(name?: string): Promise<void> {
     try {
       this.role = 'host';
@@ -601,9 +457,6 @@ class WebRTCSFUService {
     }
   }
 
-  /**
-   * Se une a una sesión existente
-   */
   async joinSession(sessionIdToJoin: string): Promise<void> {
     try {
       this.sessionId = sessionIdToJoin;
@@ -615,7 +468,6 @@ class WebRTCSFUService {
         userName: 'FredyMax',
       });
 
-      // También enviar join-room si el SFU lo requiere
       this.sendSignalingMessage({
         type: 'join',
         room: sessionIdToJoin,
@@ -627,9 +479,6 @@ class WebRTCSFUService {
     }
   }
 
-  /**
-   * Abandona la sesión actual
-   */
   async leaveSession(sessionIdToLeave: string): Promise<void> {
     try {
       this.sendSignalingMessage({
@@ -650,12 +499,9 @@ class WebRTCSFUService {
     }
   }
 
-  /**
-   * Emite el estado de playback usando el nuevo evento playback-state
-   */
   private emitPlaybackState(position: number, isPlaying: boolean, trackUrl: string): void {
     const room = this.sessionId || '';
-    const userName = 'FredyMax'; // TODO: obtener del estado de sesión
+    const userName = 'FredyMax';
 
     this.emit(SOCKET_EVENTS.PLAYBACK_STATE, {
       room,
@@ -666,19 +512,7 @@ class WebRTCSFUService {
     });
   }
 
-  /**
-   * Reproduce el audio (solo host)
-   */
   playAudio(timestamp: number, position?: number, trackUrl?: string): void {
-    console.log('Emit Play', {
-      room: this.sessionId || '',
-      userName: 'FredyMax',
-      position: position ?? 0,
-      isPlaying: true,
-      truckUrl: trackUrl,
-      timestamp,
-    });
-    // Mantener compatibilidad con el evento antiguo
     this.emit(SOCKET_EVENTS.AUDIO_PLAY, {
       room: this.sessionId || '',
       userName: 'FredyMax',
@@ -687,18 +521,9 @@ class WebRTCSFUService {
       truckUrl: trackUrl,
       timestamp,
     });
-
-    // Emitir nuevo evento playback-state si se proporcionan los parámetros
-    // if (position !== undefined && trackUrl) {
-    //   this.emitPlaybackState(position, true, trackUrl);
-    // }
   }
 
-  /**
-   * Pausa el audio (solo host)
-   */
   pauseAudio(timestamp: number, position?: number, trackUrl?: string): void {
-    // Mantener compatibilidad con el evento antiguo
     this.emit(SOCKET_EVENTS.AUDIO_PAUSE, {
       room: this.sessionId || '',
       userName: 'FredyMax',
@@ -707,58 +532,31 @@ class WebRTCSFUService {
       truckUrl: trackUrl,
       timestamp,
     });
-
-    // Emitir nuevo evento playback-state si se proporcionan los parámetros
-    if (position !== undefined && trackUrl) {
-      this.emitPlaybackState(position, false, trackUrl);
-    }
   }
 
-  /**
-   * Cambia la posición del audio (solo host)
-   */
   seekAudio(position: number, _timestamp: number, trackUrl?: string): void {
-    // Mantener compatibilidad con el evento antiguo
-    // this.emit(SOCKET_EVENTS.AUDIO_SEEK, { position, timestamp });
-
-    // Emitir nuevo evento playback-state si se proporciona trackUrl
     if (trackUrl) {
-      // Obtener isPlaying del estado actual si es posible
-      // Por ahora, asumimos que sigue reproduciendo después de seek
       this.emitPlaybackState(position, true, trackUrl);
     }
   }
 
-  /**
-   * Cambia el volumen (solo host)
-   */
   setVolume(volume: number): void {
     this.emit(SOCKET_EVENTS.AUDIO_VOLUME, { volume });
   }
 
-  /**
-   * Siguiente canción (solo host)
-   */
   nextTrack(timestamp: number): void {
     this.emit(SOCKET_EVENTS.AUDIO_NEXT, { timestamp });
   }
 
-  /**
-   * Solicita sincronización (solo listener)
-   */
   requestSync(sessionId: string): void {
     this.emit(SOCKET_EVENTS.SYNC_REQUEST, { sessionId });
   }
 
-  /**
-   * Obtiene el ID del peer
-   */
   getSocketId(): string | undefined {
     return this.peerId || this.sessionId || undefined;
   }
 }
 
-// Singleton instance
 let instance: WebRTCSFUService | null = null;
 
 export function getWebRTCSFUService(config?: WebSocketServiceConfig): WebRTCSFUService {
