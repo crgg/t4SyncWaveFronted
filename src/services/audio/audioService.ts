@@ -139,13 +139,35 @@ class AudioService {
         });
 
         if (this.currentState?.isPlaying && this.audioElement.paused) {
-          setTimeout(() => {
-            if (this.audioElement && this.currentState?.isPlaying && this.audioElement.paused) {
+          const tryPlay = () => {
+            if (!this.audioElement || !this.currentState) return;
+            if (
+              this.audioElement.readyState >= 2 &&
+              this.currentState.isPlaying &&
+              this.audioElement.paused
+            ) {
+              if (
+                this.currentState.currentPosition > 0 &&
+                !isNaN(this.currentState.currentPosition)
+              ) {
+                try {
+                  const targetPosition = Math.max(
+                    0,
+                    Math.min(this.currentState.currentPosition, this.audioElement.duration)
+                  );
+                  this.audioElement.currentTime = targetPosition;
+                } catch (error) {
+                  console.error('Error al establecer posición en canplay:', error);
+                }
+              }
               this.play().catch((error) => {
                 console.error('Error al reproducir automáticamente después de canplay:', error);
               });
+            } else if (this.audioElement.readyState < 2 && this.currentState.isPlaying) {
+              setTimeout(tryPlay, 100);
             }
-          }, 200);
+          };
+          setTimeout(tryPlay, 100);
         }
       }
     };
@@ -216,6 +238,28 @@ class AudioService {
 
     this.audioElement.addEventListener('canplay', canplayHandler);
     this.eventListeners.set('canplay', canplayHandler);
+
+    const canplaythroughHandler = () => {
+      if (this.audioElement && this.currentState?.isPlaying && this.audioElement.paused) {
+        if (this.currentState.currentPosition > 0 && !isNaN(this.currentState.currentPosition)) {
+          try {
+            const targetPosition = Math.max(
+              0,
+              Math.min(this.currentState.currentPosition, this.audioElement.duration || 0)
+            );
+            this.audioElement.currentTime = targetPosition;
+          } catch (error) {
+            console.error('Error al establecer posición en canplaythrough:', error);
+          }
+        }
+        this.play().catch((error) => {
+          console.error('Error al reproducir automáticamente después de canplaythrough:', error);
+        });
+      }
+    };
+
+    this.audioElement.addEventListener('canplaythrough', canplaythroughHandler);
+    this.eventListeners.set('canplaythrough', canplaythroughHandler);
 
     this.audioElement.addEventListener('error', errorHandler);
     this.eventListeners.set('error', errorHandler);
@@ -297,8 +341,11 @@ class AudioService {
     const currentTrackUrl = this.currentState?.trackUrl || '';
     const newTrackUrl = trackUrl?.trim() || '';
 
-    if (newTrackUrl && newTrackUrl !== currentTrackUrl && newTrackUrl !== '') {
-      if (!this.audioElement || currentTrackUrl === '' || currentTrackUrl !== newTrackUrl) {
+    if (newTrackUrl && newTrackUrl !== '') {
+      const shouldInitialize =
+        !this.audioElement || currentTrackUrl === '' || currentTrackUrl !== newTrackUrl;
+
+      if (shouldInitialize) {
         if (!this.currentState) {
           this.currentState = {
             isPlaying: false,
@@ -315,6 +362,46 @@ class AudioService {
         this.currentState.timestamp = serverTimestamp;
 
         this.init(newTrackUrl, this.onStateChange || undefined);
+
+        if (isPlaying) {
+          const trySyncAfterInit = () => {
+            if (!this.audioElement || !this.currentState) return;
+            if (this.audioElement.readyState >= 2) {
+              if (
+                this.audioElement.duration &&
+                !isNaN(this.audioElement.duration) &&
+                this.audioElement.duration > 0
+              ) {
+                const targetPosition = Math.max(
+                  0,
+                  Math.min(serverPosition, this.audioElement.duration)
+                );
+                try {
+                  (this.audioElement as any).__isUpdatingFromCode = true;
+                  this.audioElement.currentTime = targetPosition;
+                  setTimeout(() => {
+                    if (this.audioElement) {
+                      (this.audioElement as any).__isUpdatingFromCode = false;
+                    }
+                  }, 100);
+                } catch (error) {
+                  console.error('Error al establecer posición inicial:', error);
+                  if (this.audioElement) {
+                    (this.audioElement as any).__isUpdatingFromCode = false;
+                  }
+                }
+              }
+              if (this.currentState.isPlaying && this.audioElement.paused) {
+                this.play().catch((error) => {
+                  console.error('Error al reproducir después de inicializar:', error);
+                });
+              }
+            } else if (this.audioElement.readyState < 2 && this.currentState.isPlaying) {
+              setTimeout(trySyncAfterInit, 100);
+            }
+          };
+          setTimeout(trySyncAfterInit, 200);
+        }
         return;
       }
     }

@@ -88,16 +88,17 @@ export function useWebSocket() {
         return;
       }
 
+      const isNewTrack = trackUrl && trackUrl !== currentAudioState?.trackUrl;
       const positionDiff = Math.abs(
         (data.currentPosition || 0) - (currentAudioState?.currentPosition || 0)
       );
       const hasSignificantChange =
+        isNewTrack ||
         positionDiff > 0.1 ||
         data.isPlaying !== currentAudioState?.isPlaying ||
-        trackUrl !== currentAudioState?.trackUrl ||
         (data.trackDuration && data.trackDuration !== currentAudioState?.trackDuration);
 
-      if (!hasSignificantChange && trackUrl) {
+      if (!hasSignificantChange && trackUrl && currentAudioState?.trackUrl) {
         return;
       }
 
@@ -111,6 +112,7 @@ export function useWebSocket() {
           isNaN(data.currentPosition) || data.currentPosition < 0
             ? (currentAudioState?.currentPosition ?? 0)
             : data.currentPosition,
+        timestamp: data.timestamp || Date.now(),
       };
 
       dispatch(setAudioState(audioStateToDispatch));
@@ -154,6 +156,7 @@ export function useWebSocket() {
       position: number;
       isPlaying: boolean;
       trackUrl: string;
+      timestamp?: number;
     }) => {
       updateAudioStateRef();
       const currentAudioState = audioStateRef.current;
@@ -167,6 +170,7 @@ export function useWebSocket() {
         return;
       }
 
+      const serverTimestamp = data.timestamp || Date.now();
       const audioStateToDispatch: AudioState = {
         isPlaying: data.isPlaying,
         currentPosition:
@@ -179,15 +183,23 @@ export function useWebSocket() {
         trackTitle: currentAudioState?.trackTitle,
         trackArtist: currentAudioState?.trackArtist,
         trackDuration: currentAudioState?.trackDuration,
-        timestamp: Date.now(),
+        timestamp: serverTimestamp,
       };
 
       dispatch(setAudioState(audioStateToDispatch));
 
-      if (role === 'listener' && audioStateToDispatch.trackUrl) {
+      const currentRole = store.getState().session.role;
+      if (currentRole === 'listener' && audioStateToDispatch.trackUrl) {
         try {
           const audioService = getAudioService();
           const audioServiceState = audioService.getState();
+
+          audioService.sync(
+            audioStateToDispatch.currentPosition,
+            serverTimestamp,
+            audioStateToDispatch.isPlaying,
+            audioStateToDispatch.trackUrl
+          );
 
           if (audioServiceState) {
             (audioServiceState as any).isPlaying = audioStateToDispatch.isPlaying;

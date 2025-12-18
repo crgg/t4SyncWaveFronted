@@ -55,9 +55,13 @@ export function useAudio() {
       return;
     }
 
+    const audioService = getAudioService();
+    const audioServiceState = audioService.getState();
+    const currentServiceUrl = audioServiceState?.trackUrl || '';
+
     if (audioServiceRef.current) {
       const currentUrl = audioServiceRef.current.getState()?.trackUrl;
-      if (currentUrl === audioState.trackUrl) {
+      if (currentUrl === audioState.trackUrl || currentServiceUrl === audioState.trackUrl) {
         const currentVolume = audioState.volume || 100;
         try {
           audioServiceRef.current.setVolume(currentVolume);
@@ -66,11 +70,30 @@ export function useAudio() {
         }
         return;
       }
-      audioServiceRef.current.cleanup();
-      audioServiceRef.current = null;
+      if (currentUrl !== audioState.trackUrl) {
+        audioServiceRef.current.cleanup();
+        audioServiceRef.current = null;
+      }
     }
 
-    const audioService = getAudioService();
+    if (currentServiceUrl === audioState.trackUrl && audioServiceState) {
+      audioServiceRef.current = audioService;
+      if (role === 'listener') {
+        (audioServiceState as any).isPlaying = audioState.isPlaying || false;
+        (audioServiceState as any).currentPosition = audioState.currentPosition || 0;
+        if (audioState.trackDuration) {
+          (audioServiceState as any).trackDuration = audioState.trackDuration;
+        }
+      }
+      const currentVolume = audioState.volume || 100;
+      try {
+        audioService.setVolume(currentVolume);
+      } catch (error) {
+        console.error('Error al establecer volumen:', error);
+      }
+      return;
+    }
+
     audioServiceRef.current = audioService;
 
     if (role === 'listener') {
