@@ -28,6 +28,14 @@ export default {
           text: '#ffffff',
           'text-secondary': '#b3b3b3',
         },
+        light: {
+          bg: '#ffffff',
+          surface: '#f8f9fa',
+          card: '#ffffff',
+          hover: '#e9ecef',
+          text: '#000000',
+          'text-secondary': '#6c757d',
+        },
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',

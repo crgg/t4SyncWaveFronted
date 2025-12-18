@@ -60,29 +60,37 @@ export function HostPage() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg p-4">
+    <div className="min-h-[calc(100vh-4rem)] bg-light-bg dark:bg-dark-bg p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-dark-card rounded-xl shadow-2xl p-6 mb-6">
+        {/* Banner */}
+        <div className="mb-6 rounded-xl overflow-hidden shadow-xl">
+          <div className="relative h-32 sm:h-40 bg-gradient-to-r from-primary-600 to-primary-400 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/20" />
+            <div className="relative z-10 text-center text-white px-4">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-2">Sesión Host</h1>
+              <p className="text-sm opacity-90">
+                ID: <code className="bg-white/20 px-2 py-1 rounded font-mono">{sessionId}</code>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-light-card dark:bg-dark-card rounded-xl shadow-2xl p-6 mb-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-dark-text">Sesión Host</h1>
-              <p className="text-sm text-dark-text-secondary mt-1">
-                ID de sesión:{' '}
-                <code className="bg-dark-hover px-2 py-1 rounded text-primary-600 font-mono">
-                  {sessionId}
-                </code>
+              <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                <span className="font-medium text-light-text dark:text-dark-text">
+                  {participantCount}
+                </span>{' '}
+                participantes escuchando
               </p>
             </div>
             <div className="flex items-center gap-4">
               <ConnectionStatus />
               <Button variant="outline" onClick={handleLeave}>
-                Salir
+                Leave
               </Button>
             </div>
-          </div>
-          <div className="mt-4 text-sm text-dark-text-secondary">
-            <span className="font-medium text-dark-text">{participantCount}</span> participantes
-            escuchando
           </div>
         </div>
 
@@ -94,13 +102,15 @@ export function HostPage() {
 
         <AudioPlayerHost />
 
-        <div className="mt-6 bg-dark-surface border border-dark-hover rounded-xl p-4">
-          <h3 className="font-semibold text-dark-text mb-2">Instrucciones para el Host:</h3>
-          <ul className="list-disc list-inside text-sm text-dark-text-secondary space-y-1">
-            <li>Comparte el ID de sesión con otros usuarios para que se unan</li>
-            <li>Solo tú puedes controlar la reproducción (play, pause, adelantar, retroceder)</li>
-            <li>Cada usuario puede controlar su propio volumen</li>
-            <li>Los cambios se sincronizan automáticamente con todos los listeners</li>
+        <div className="mt-6 bg-light-surface dark:bg-dark-surface border border-light-hover dark:border-dark-hover rounded-xl p-4">
+          <h3 className="font-semibold text-light-text dark:text-dark-text mb-2">
+            Instructions for the Host:
+          </h3>
+          <ul className="list-disc list-inside text-sm text-light-text-secondary dark:text-dark-text-secondary space-y-1">
+            <li>Share the session ID with other users to join</li>
+            <li>Only you can control the playback (play, pause, forward, backward)</li>
+            <li>Each user can control their own volume</li>
+            <li>The changes are automatically synchronized with all listeners</li>
           </ul>
         </div>
       </div>

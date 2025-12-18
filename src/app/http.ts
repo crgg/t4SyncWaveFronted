@@ -9,3 +9,11 @@ const sanitizeUrl = (url: string) => {
 export const http = axios.create({
   baseURL: sanitizeUrl(API_BASE_URL + '/api'),
 });
+
+http.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});

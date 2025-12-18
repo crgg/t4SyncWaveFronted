@@ -35,12 +35,12 @@ export function JoinSessionForm() {
 
   return (
     <div className="max-w-md mx-auto p-6 bg-dark-card rounded-xl shadow-2xl">
-      <h2 className="text-2xl font-bold text-dark-text mb-6 text-center">Unirse a Sesión</h2>
+      <h2 className="text-2xl font-bold text-dark-text mb-6 text-center">Join Session</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          label="ID de Sesión"
-          placeholder="Ingresa el ID de la sesión"
+          label="Session ID"
+          placeholder="Enter the session ID"
           value={sessionIdInput}
           onChange={(e) => setSessionIdInput(e.target.value)}
           disabled={isJoining}
@@ -59,7 +59,7 @@ export function JoinSessionForm() {
           isLoading={isJoining}
           disabled={isJoining || !sessionIdInput.trim()}
         >
-          Unirse
+          Join Session
         </Button>
       </form>
     </div>

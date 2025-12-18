@@ -21,10 +21,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-lg',
-      secondary: 'bg-dark-surface text-dark-text hover:bg-dark-hover focus:ring-dark-hover',
+      secondary:
+        'bg-light-surface dark:bg-dark-surface text-light-text dark:text-dark-text hover:bg-light-hover dark:hover:bg-dark-hover focus:ring-light-hover dark:focus:ring-dark-hover',
       outline:
-        'border-2 border-primary-600 text-primary-600 hover:bg-dark-hover focus:ring-primary-500',
-      ghost: 'text-dark-text-secondary hover:bg-dark-hover focus:ring-dark-hover',
+        'border-2 border-primary-600 text-primary-600 hover:bg-light-hover dark:hover:bg-dark-hover focus:ring-primary-500',
+      ghost:
+        'text-light-text-secondary dark:text-dark-text-secondary hover:bg-light-hover dark:hover:bg-dark-hover focus:ring-light-hover dark:focus:ring-dark-hover',
     };
 
     const sizes = {

@@ -47,17 +47,26 @@ export function ListenerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg p-4">
+    <div className="min-h-[calc(100vh-4rem)] bg-light-bg dark:bg-dark-bg p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-dark-card rounded-xl shadow-2xl p-6 mb-6">
+        {/* Banner */}
+        <div className="mb-6 rounded-xl overflow-hidden shadow-xl">
+          <div className="relative h-32 sm:h-40 bg-gradient-to-r from-primary-600 to-primary-400 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/20" />
+            <div className="relative z-10 text-center text-white px-4">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-2">Modo Escucha</h1>
+              <p className="text-sm opacity-90">
+                ID: <code className="bg-white/20 px-2 py-1 rounded font-mono">{sessionId}</code>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-light-card dark:bg-dark-card rounded-xl shadow-2xl p-6 mb-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-dark-text">Modo Escucha</h1>
-              <p className="text-sm text-dark-text-secondary mt-1">
-                Sesión:{' '}
-                <code className="bg-dark-hover px-2 py-1 rounded text-primary-600 font-mono">
-                  {sessionId}
-                </code>
+              <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                Modo escucha activo
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -75,9 +84,9 @@ export function ListenerPage() {
 
         <AudioPlayerListener />
 
-        <div className="mt-6 bg-dark-surface border border-dark-hover rounded-xl p-4">
-          <h3 className="font-semibold text-dark-text mb-2">Modo Escucha</h3>
-          <p className="text-sm text-dark-text-secondary">
+        <div className="mt-6 bg-light-surface dark:bg-dark-surface border border-light-hover dark:border-dark-hover rounded-xl p-4">
+          <h3 className="font-semibold text-light-text dark:text-dark-text mb-2">Modo Escucha</h3>
+          <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
             Estás escuchando la reproducción del host. Solo puedes controlar tu volumen. La
             sincronización se realiza automáticamente.
           </p>

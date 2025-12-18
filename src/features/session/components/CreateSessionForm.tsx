@@ -31,12 +31,12 @@ export function CreateSessionForm() {
 
   return (
     <div className="max-w-md mx-auto p-6 bg-dark-card rounded-xl shadow-2xl">
-      <h2 className="text-2xl font-bold text-dark-text mb-6 text-center">Crear Sesión</h2>
+      <h2 className="text-2xl font-bold text-dark-text mb-6 text-center">Create Session</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          label="Nombre de la sesión (opcional)"
-          placeholder="Mi sesión de música"
+          label="Session name (optional)"
+          placeholder="My music session"
           value={sessionName}
           onChange={(e) => setSessionName(e.target.value)}
           disabled={isCreating}
@@ -49,7 +49,7 @@ export function CreateSessionForm() {
         )}
 
         <Button type="submit" className="w-full" isLoading={isCreating} disabled={isCreating}>
-          Crear Sesión
+          Create Session
         </Button>
       </form>
     </div>
