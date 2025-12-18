@@ -139,11 +139,19 @@ export function useAudio() {
       const currentReduxState = store.getState().audio;
 
       if (role === 'listener') {
-        if (state.trackDuration && state.trackDuration !== currentReduxState.trackDuration) {
+        const positionDiff = Math.abs(
+          (state.currentPosition || 0) - (currentReduxState.currentPosition || 0)
+        );
+        const hasPositionChange = positionDiff > 0.05;
+        const hasDurationChange =
+          state.trackDuration && state.trackDuration !== currentReduxState.trackDuration;
+
+        if (hasPositionChange || hasDurationChange) {
           dispatch(
             setAudioState({
               ...currentReduxState,
-              trackDuration: state.trackDuration,
+              currentPosition: state.currentPosition,
+              trackDuration: state.trackDuration || currentReduxState.trackDuration,
             })
           );
         }

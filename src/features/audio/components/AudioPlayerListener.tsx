@@ -2,9 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useAudio } from '@shared/hooks/useAudio';
 import { formatTime } from '@shared/utils';
 import { motion } from 'framer-motion';
+import { useAppDispatch } from '@app/hooks';
+import { setAudioState } from '@features/audio/audioSlice';
+import { getAudioService } from '@services/audio/audioService';
 
 export function AudioPlayerListener() {
   const { audioState, setVolume } = useAudio();
+  const dispatch = useAppDispatch();
   const [localVolume, setLocalVolume] = useState(audioState.volume || 100);
   const volumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -66,6 +70,33 @@ export function AudioPlayerListener() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!audioState.trackDuration && audioState.trackUrl) {
+      const audioService = getAudioService();
+      const audioServiceState = audioService.getState();
+
+      if (audioServiceState?.trackDuration && audioServiceState.trackDuration > 0) {
+        dispatch(
+          setAudioState({
+            ...audioState,
+            trackDuration: audioServiceState.trackDuration,
+          })
+        );
+        return;
+      }
+
+      const audioElement = (audioService as any).audioElement as HTMLAudioElement | null;
+      if (audioElement && !isNaN(audioElement.duration) && audioElement.duration > 0) {
+        dispatch(
+          setAudioState({
+            ...audioState,
+            trackDuration: audioElement.duration,
+          })
+        );
+      }
+    }
+  }, [audioState.trackDuration, audioState.trackUrl, audioState, dispatch]);
 
   const progressPercentage = audioState.trackDuration
     ? (audioState.currentPosition / audioState.trackDuration) * 100
