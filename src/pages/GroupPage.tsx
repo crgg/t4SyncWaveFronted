@@ -81,15 +81,11 @@ const GroupPage = () => {
 
     // Evitar procesar el mismo grupo múltiples veces
     if (processedGroupIdRef.current === data.group.id) return;
-    console.log('I arrived here');
 
     const connectToSession = () => {
       if (isConnectingRef.current) return; // Evitar múltiples llamadas
       isConnectingRef.current = true;
       processedGroupIdRef.current = data.group.id;
-
-      console.log('connectToSession', data.group.created_by, userId);
-      console.log('match', data.group.created_by === userId);
 
       if (data.group.created_by !== userId) {
         if (data.group.members?.some((member) => member.user_id === userId)) {

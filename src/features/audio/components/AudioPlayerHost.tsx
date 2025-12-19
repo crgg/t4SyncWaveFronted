@@ -115,7 +115,7 @@ export function AudioPlayerHost() {
   }, [audioState.currentPosition, audioState.isPlaying, emitSeek]);
 
   return (
-    <div className="bg-dark-card rounded-xl shadow-2xl p-6 space-y-6">
+    <div className="bg-dark-card rounded-xl shadow-2xl p-6 space-y-6 mt-6">
       <div className="text-center">
         <motion.h3
           className="text-xl font-bold text-dark-text mb-1"
@@ -123,7 +123,7 @@ export function AudioPlayerHost() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {audioState.trackTitle || 'Sin título'}
+          {audioState.trackTitle || 'No title'}
         </motion.h3>
         {audioState.trackArtist && (
           <p className="text-sm text-dark-text-secondary">{audioState.trackArtist}</p>
@@ -175,7 +175,7 @@ export function AudioPlayerHost() {
           onClick={restart}
           disabled={!audioState.trackUrl}
           className="p-2 rounded-full hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Reiniciar"
+          title="Restart"
         >
           <svg className="w-5 h-5 text-dark-text-secondary" fill="currentColor" viewBox="0 0 20 20">
             <path
@@ -192,7 +192,7 @@ export function AudioPlayerHost() {
           onClick={handleSkipBackward}
           disabled={!audioState.trackUrl}
           className="p-2 rounded-full hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
-          title="Retroceder 10s"
+          title="Rewind 10s"
         >
           <svg className="w-6 h-6 text-dark-text-secondary" fill="currentColor" viewBox="0 0 20 20">
             <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z" />
@@ -234,7 +234,7 @@ export function AudioPlayerHost() {
           onClick={handleSkipForward}
           disabled={!audioState.trackUrl}
           className="p-2 rounded-full hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
-          title="Adelantar 10s"
+          title="Forward 10s"
         >
           <svg className="w-6 h-6 text-dark-text-secondary" fill="currentColor" viewBox="0 0 20 20">
             <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0011 6v2.798l-5.445-3.63z" />
@@ -250,7 +250,7 @@ export function AudioPlayerHost() {
           onClick={next}
           disabled={!audioState.trackUrl}
           className="p-2 rounded-full hover:bg-dark-hover transition-colors disabled:opacity-50"
-          title="Siguiente"
+          title="Next"
         >
           <svg className="w-5 h-5 text-dark-text-secondary" fill="currentColor" viewBox="0 0 20 20">
             <path

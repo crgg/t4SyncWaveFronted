@@ -42,7 +42,7 @@ const SidebarLayout = () => {
         initial={{ x: '-100%' }}
         animate={{ x: isSidebarOpen ? 0 : '-100%' }}
         transition={{ duration: 0.3 }}
-        className="w-[80%] px-4 pb-3 gap-4 fixed left-0 z-[52] max-h-screen h-full bg-white dark:bg-zinc-900 border-r border-zinc-700 dark:border-zinc-700 grid grid-rows-[auto_1fr_auto]"
+        className="max-w-[270px] w-full px-4 pb-3 gap-4 fixed left-0 z-[52] max-h-screen h-full bg-white dark:bg-zinc-900 border-r border-zinc-700 dark:border-zinc-700 grid grid-rows-[auto_1fr_auto]"
       >
         <div>
           <div className="flex items-center justify-between py-2">

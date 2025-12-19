@@ -104,10 +104,10 @@ export function AudioPlayerListener() {
     : 0;
 
   return (
-    <div className="bg-dark-card rounded-xl shadow-2xl p-6 space-y-6">
+    <div className="bg-dark-card rounded-xl shadow-2xl p-6 space-y-6 mt-6">
       <div className="text-center">
         <h3 className="text-xl font-bold text-dark-text mb-1">
-          {audioState.trackTitle || 'Sin título'}
+          {audioState.trackTitle || 'No title'}
         </h3>
         {audioState.trackArtist && (
           <p className="text-sm text-dark-text-secondary">{audioState.trackArtist}</p>
@@ -144,12 +144,12 @@ export function AudioPlayerListener() {
                 transition={{ duration: 1, repeat: Infinity }}
                 className="w-3 h-3 bg-primary-600 rounded-full"
               />
-              <span className="text-sm text-dark-text-secondary">Reproduciendo</span>
+              <span className="text-sm text-dark-text-secondary">Playing</span>
             </>
           ) : (
             <>
               <div className="w-3 h-3 bg-dark-text-secondary rounded-full" />
-              <span className="text-sm text-dark-text-secondary">Pausado</span>
+              <span className="text-sm text-dark-text-secondary">Paused</span>
             </>
           )}
         </div>
@@ -194,7 +194,7 @@ export function AudioPlayerListener() {
       </div>
 
       <div className="text-center text-sm text-dark-text-secondary">
-        Modo escucha - Solo puedes controlar tu volumen
+        Listening mode - You can only control your volume
       </div>
     </div>
   );

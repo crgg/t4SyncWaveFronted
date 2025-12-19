@@ -38,8 +38,8 @@ export function PlaylistListener() {
 
   if (tracks.length === 0) {
     return (
-      <div className="bg-dark-card rounded-xl shadow-2xl p-6">
-        <h3 className="text-lg font-semibold text-dark-text mb-4">Lista de Reproducción</h3>
+      <div className="">
+        {/* <h3 className="text-lg font-semibold text-dark-text mb-4"> Lista de Reproducción</h3> */}
         <div className="text-center py-8 text-dark-text-secondary">
           <svg
             className="w-16 h-16 mx-auto mb-4 opacity-50"
@@ -52,20 +52,15 @@ export function PlaylistListener() {
               clipRule="evenodd"
             />
           </svg>
-          <p>No hay canciones en la lista</p>
-          <p className="text-sm mt-2">Esperando a que el host agregue canciones</p>
+          <p>There are no songs in the playlist</p>
+          <p className="text-sm mt-2">Waiting for the host to add songs</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-dark-card rounded-xl shadow-2xl p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-dark-text">Lista de Reproducción</h3>
-        <span className="text-sm text-dark-text-secondary">{tracks.length} canciones</span>
-      </div>
-
+    <div className="">
       <div className="space-y-1 max-h-[600px] overflow-y-auto">
         <AnimatePresence>
           {tracks.map((track, index) => {
