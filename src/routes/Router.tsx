@@ -30,6 +30,10 @@ const routes: RouteObject[] = [
         element: <GroupsPage />,
       },
       {
+        path: '/groups/me/:groupId',
+        element: <GroupPage />,
+      },
+      {
         path: '/groups/:groupId',
         element: <GroupPage />,
       },

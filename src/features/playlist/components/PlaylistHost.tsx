@@ -4,20 +4,20 @@
  */
 
 import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+// import { useQuery } from '@tanstack/react-query';
 
 import { useAppDispatch, useAppSelector } from '@app/hooks';
 import {
   setCurrentTrackIndex,
   removeTrack,
-  setPlaylistFromApi,
+  // setPlaylistFromApi,
 } from '@features/playlist/playlistSlice';
 import { setTrack } from '@features/audio/audioSlice';
 import { formatTime } from '@shared/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 // import { getWebSocketService } from '@services/websocket/websocketService';
 // import { WS_URL } from '@shared/constants';
-import { playListApi } from '../playListApi';
+// import { playListApi } from '../playListApi';
 import { useAudio } from '@/shared/hooks/useAudio';
 
 export function PlaylistHost() {
@@ -26,22 +26,6 @@ export function PlaylistHost() {
   const { sessionId } = useAppSelector((state) => state.session);
   const { trackId: currentTrackId } = useAppSelector((state) => state.audio);
   const { play } = useAudio();
-  const { data: playlist } = useQuery({
-    queryKey: ['playlist'],
-    queryFn: () => playListApi.getPlaylist(),
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 5 * 60 * 1000, // 5 minutos
-    // enabled: !!sessionId,
-  });
-
-  useEffect(() => {
-    if (playlist) {
-      const tracks = Array.isArray(playlist) ? playlist : (playlist as any)?.tracks || [];
-      if (tracks.length > 0) {
-        dispatch(setPlaylistFromApi({ tracks }));
-      }
-    }
-  }, [playlist, dispatch]);
 
   // Sincronizar playlist con el servidor cuando se actualiza
   useEffect(() => {
@@ -119,7 +103,7 @@ export function PlaylistHost() {
   }
 
   return (
-    <div className="bg-dark-card rounded-xl shadow-2xl p-6">
+    <>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-dark-text">Lista de Reproducción</h3>
         <span className="text-sm text-dark-text-secondary">{tracks.length} canciones</span>
@@ -140,7 +124,7 @@ export function PlaylistHost() {
                 transition={{ duration: 0.2 }}
                 onClick={() => handleTrackSelect(track.id, index)}
                 className={`
-                  flex items-center gap-4 p-3 rounded-lg transition-colors cursor-pointer hover:bg-dark-surface
+                  flex items-center gap-4 rounded-lg transition-colors cursor-pointer hover:bg-dark-surface
                   ${isCurrentTrack ? 'bg-dark-hover' : ''}
                   ${isPlaying ? 'ring-2 ring-primary-600' : ''}
                 `}
@@ -167,7 +151,7 @@ export function PlaylistHost() {
 
                 <div className="flex-1 min-w-0">
                   <div
-                    className={`font-medium truncate ${
+                    className={`font-medium text-sm truncate ${
                       isCurrentTrack ? 'text-primary-600' : 'text-dark-text'
                     }`}
                   >
@@ -198,6 +182,6 @@ export function PlaylistHost() {
           })}
         </AnimatePresence>
       </div>
-    </div>
+    </>
   );
 }

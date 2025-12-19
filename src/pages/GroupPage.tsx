@@ -9,7 +9,6 @@ import {
   Users,
   Music,
   Copy,
-  Play,
   Clock,
   ArrowLeft,
   Calendar,
@@ -18,14 +17,24 @@ import {
   Crown,
   UserPlus,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'react-toastify';
 
 import { groupsApi } from '@/features/groups/groupsApi';
-import { useAppSelector } from '@/app/hooks';
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { Button } from '@shared/components/Button/Button';
 import { AddMemberModal } from '@/features/groups/components/AddMemberModal';
-import { toast } from 'react-toastify';
 import type { Member } from '@/features/groups/groups.types';
+import { PlaylistHost } from '@/features/playlist/components/PlaylistHost';
+import { playListApi } from '@/features/playlist/playListApi';
+import { setPlaylistFromApi } from '@/features/playlist/playlistSlice';
+import { AudioPlayerHost } from '@/features/audio/components/AudioPlayerHost';
+import { useWebSocket } from '@/shared/hooks/useWebSocket';
+import { createSessionStart, joinSessionStart, setRole } from '@/features/session/sessionSlice';
+import { PlaylistListener } from '@/features/playlist/components/PlaylistListener';
+import { AudioPlayerListener } from '@/features/audio/components/AudioPlayerListener';
+import { ConnectionStatus } from '@/shared/components/ConnectionStatus/ConnectionStatus';
+import { getAudioService } from '@/services/audio/audioService';
 
 const GroupPage = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -33,6 +42,14 @@ const GroupPage = () => {
   const userId = useAppSelector((state) => state.auth.user?.id);
   const [copiedCode, setCopiedCode] = useState(false);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const dispatch = useAppDispatch();
+  const { createSession, joinSession, leaveSession } = useWebSocket();
+  const isHostRef = useRef<boolean | null>(null);
+  const isConnectingRef = useRef(false);
+  const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const processedGroupIdRef = useRef<string | null>(null);
+
+  const isConnected = useAppSelector((state) => state.connection.isConnected);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['group', groupId],
@@ -42,9 +59,149 @@ const GroupPage = () => {
     gcTime: 1000 * 60 * 5, // 5 minutes
   });
 
+  const { data: playlist } = useQuery({
+    queryKey: ['playlist'],
+    queryFn: () => playListApi.getPlaylist(),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos
+  });
+
+  useEffect(() => {
+    return () => {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
+      isConnectingRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!data || !userId || isConnectingRef.current) return;
+
+    // Evitar procesar el mismo grupo múltiples veces
+    if (processedGroupIdRef.current === data.group.id) return;
+    console.log('I arrived here');
+
+    const connectToSession = () => {
+      if (isConnectingRef.current) return; // Evitar múltiples llamadas
+      isConnectingRef.current = true;
+      processedGroupIdRef.current = data.group.id;
+
+      console.log('connectToSession', data.group.created_by, userId);
+      console.log('match', data.group.created_by === userId);
+
+      if (data.group.created_by !== userId) {
+        if (data.group.members?.some((member) => member.user_id === userId)) {
+          const sessionName = data.group.id + ' - ' + data.group.name;
+          dispatch(setRole({ role: 'listener' }));
+          dispatch(joinSessionStart({ sessionId: sessionName }));
+          joinSession(sessionName);
+          isHostRef.current = false;
+        }
+        return;
+      }
+      const sessionName = data.group.id + ' - ' + data.group.name;
+      dispatch(createSessionStart({ name: sessionName }));
+      createSession(sessionName);
+      isHostRef.current = true;
+    };
+
+    // Si ya está conectado, esperar un pequeño delay para asegurar que WebRTC esté listo
+    if (isConnected) {
+      connectionTimeoutRef.current = setTimeout(() => {
+        connectToSession();
+      }, 800); // Delay de 800ms para asegurar que WebRTC esté completamente inicializado
+    } else {
+      // Si no está conectado, esperar a que se conecte
+      let checkConnectionInterval: ReturnType<typeof setInterval> | null = null;
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+      checkConnectionInterval = setInterval(() => {
+        if (isConnected && !isConnectingRef.current) {
+          clearInterval(checkConnectionInterval!);
+          if (timeoutId) clearTimeout(timeoutId);
+          connectionTimeoutRef.current = setTimeout(() => {
+            connectToSession();
+          }, 800);
+        }
+      }, 100);
+
+      // Timeout después de 10 segundos
+      timeoutId = setTimeout(() => {
+        if (checkConnectionInterval) clearInterval(checkConnectionInterval);
+        if (!isConnected) {
+          console.warn('Timeout: No se pudo establecer conexión WebSocket');
+          toast.error('Failed to connect to server. Please refresh the page.');
+          isConnectingRef.current = false;
+        }
+      }, 10000);
+
+      return () => {
+        if (checkConnectionInterval) clearInterval(checkConnectionInterval);
+        if (timeoutId) clearTimeout(timeoutId);
+      };
+    }
+
+    return () => {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
+    };
+  }, [data, userId, isConnected, dispatch, createSession, joinSession]);
+
+  // Reset cuando cambia el groupId
+  useEffect(() => {
+    processedGroupIdRef.current = null;
+    isConnectingRef.current = false;
+    isHostRef.current = null;
+  }, [groupId]);
+
+  useEffect(() => {
+    if (playlist) {
+      const tracks = Array.isArray(playlist) ? playlist : (playlist as any)?.tracks || [];
+      if (tracks.length > 0) {
+        dispatch(setPlaylistFromApi({ tracks }));
+      }
+    }
+  }, [playlist, dispatch]);
+
   const group = data?.status && data?.group ? data.group : null;
   const members = group?.members || [];
-  const currentTracks = group?.current_tracks || [];
+  // const currentTracks = group?.current_tracks || [];
+
+  useEffect(() => {
+    return () => {
+      handleLeave();
+    };
+  }, []);
+
+  const handleLeave = () => {
+    try {
+      const audioService = getAudioService();
+      const audioState = audioService.getState();
+
+      if (audioState && audioState.trackUrl) {
+        try {
+          audioService.pause();
+        } catch (error) {
+          console.warn('Error al pausar audio al salir:', error);
+        }
+      }
+
+      try {
+        audioService.cleanup();
+      } catch (error) {
+        console.warn('Error al limpiar audio al salir:', error);
+      }
+    } catch (error) {
+      console.warn('Error al obtener servicio de audio al salir:', error);
+    }
+
+    leaveSession();
+    // navigate('/');
+  };
 
   const handleCopyCode = () => {
     if (group?.code) {
@@ -115,7 +272,7 @@ const GroupPage = () => {
               <Button onClick={() => refetch()} variant="outline">
                 Try Again
               </Button>
-              <Button onClick={() => navigate('/groups')} variant="primary">
+              <Button onClick={() => navigate(-1)} variant="primary">
                 Back to Groups
               </Button>
             </div>
@@ -132,13 +289,18 @@ const GroupPage = () => {
       {/* Back Button */}
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-4">
         <Link
-          to="/groups"
+          to={'/groups' + (isOwner ? '/me' : '')}
           className="inline-flex items-center gap-2 text-light-text-secondary dark:text-dark-text-secondary hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
         >
           <ArrowLeft size={18} />
           <span>Back to Groups</span>
         </Link>
       </motion.div>
+
+      <div className="my-4">
+        <ConnectionStatus />
+        {/* <span className="text-xs">(Role: {role})</span> */}
+      </div>
 
       {/* Header Section */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
@@ -184,7 +346,7 @@ const GroupPage = () => {
 
           {/* Code Section */}
           {group.code && (
-            <div className="mt-4 pt-4 border-t border-light-hover dark:border-dark-hover">
+            <div className="mt-4 pt-4 border-t border-light-hover dark:border-dark-hover hidden">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <Copy
@@ -257,7 +419,7 @@ const GroupPage = () => {
                 Tracks
               </p>
               <p className="text-xl font-bold text-light-text dark:text-dark-text">
-                {currentTracks.length}
+                {playlist?.length ?? 0}
               </p>
             </div>
           </div>
@@ -340,53 +502,17 @@ const GroupPage = () => {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-light-text dark:text-dark-text flex items-center gap-2">
               <Music size={20} />
-              Current Tracks ({currentTracks.length})
+              Current Tracks ({playlist?.length ?? 0})
             </h2>
           </div>
 
-          {currentTracks.length === 0 ? (
-            <div className="text-center py-8">
-              <Music
-                size={48}
-                className="mx-auto text-light-text-secondary dark:text-dark-text-secondary mb-2 opacity-50"
-              />
-              <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                No tracks in queue
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {currentTracks.map((track: any, index: number) => (
-                <div
-                  key={track.id || index}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-light-surface dark:bg-dark-surface border border-light-hover dark:border-dark-hover"
-                >
-                  <div className="flex-shrink-0 w-8 text-center text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-light-text dark:text-dark-text truncate">
-                      {track.title || track.name || 'Unknown Track'}
-                    </p>
-                    {track.artist && (
-                      <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary truncate">
-                        {track.artist}
-                      </p>
-                    )}
-                  </div>
-                  {group.is_playing && group.current_track_id === track.id && (
-                    <Play
-                      size={16}
-                      className="text-primary-600 flex-shrink-0"
-                      fill="currentColor"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          {isHostRef.current === true && <PlaylistHost />}
+          {isHostRef.current === false && <PlaylistListener />}
         </motion.div>
       </div>
+
+      {isHostRef.current === true && <AudioPlayerHost />}
+      {isHostRef.current === false && <AudioPlayerListener />}
 
       {/* Additional Info */}
       <motion.div

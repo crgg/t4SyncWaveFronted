@@ -196,6 +196,7 @@ const GroupsPage = () => {
               index={index}
               copiedCode={copiedCode}
               onCopyCode={handleCopyCode}
+              isMyGroups={isMyGroups}
             />
           ))}
         </AnimatePresence>
@@ -218,9 +219,10 @@ interface GroupCardProps {
   index: number;
   copiedCode: string | null;
   onCopyCode: (code: string) => void;
+  isMyGroups: boolean;
 }
 
-const GroupCard = ({ group, index, copiedCode, onCopyCode }: GroupCardProps) => {
+const GroupCard = ({ group, index, copiedCode, onCopyCode, isMyGroups }: GroupCardProps) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -310,7 +312,7 @@ const GroupCard = ({ group, index, copiedCode, onCopyCode }: GroupCardProps) => 
 
       {/* Code Section */}
       {group.code && (
-        <div className="mb-3 p-3 rounded-lg bg-light-surface dark:bg-dark-surface border border-light-hover dark:border-dark-hover">
+        <div className="mb-3 p-3 rounded-lg bg-light-surface dark:bg-dark-surface border border-light-hover dark:border-dark-hover hidden">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <Copy
@@ -351,8 +353,8 @@ const GroupCard = ({ group, index, copiedCode, onCopyCode }: GroupCardProps) => 
             <span>Created {formatDate(group.created_at)}</span>
           </div>
           <Link
-            to={`/groups/${group.id}`}
-            className="inline-flex items-center gap-1 text-light-text-secondary dark:text-dark-text-secondary hover:text-primary-600 dark:hover:text-primary-400"
+            to={isMyGroups ? `/groups/me/${group.id}` : `/groups/${group.id}`}
+            className="inline-flex items-center gap-1 text-light-text-secondary dark:text-primary-400 hover:text-primary-600 dark:hover:text-primary-400 underline underline-offset-4"
           >
             <span>Go to group</span> <MoveRight size={12} />
           </Link>

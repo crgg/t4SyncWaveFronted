@@ -197,6 +197,7 @@ class WebRTCSFUService {
       }
 
       case 'role': {
+        console.log('I arrived here', message);
         if (this.role === 'host') {
           this.sessionId = 'Spotty-Fredy';
           this.handleEvent(SOCKET_EVENTS.SESSION_CREATED, { sessionId: this.sessionId });

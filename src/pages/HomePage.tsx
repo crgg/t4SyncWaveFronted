@@ -49,14 +49,12 @@ export function HomePage() {
           Sync your music in real time
         </p> */}
       </motion.div>
-
-      {/* Connection Status */}
-      {/* <div className="mb-6 flex justify-center">
+      {/*       
+      <div className="mb-6 flex justify-center">
         <ConnectionStatus />
-      </div> */}
-
-      {/* Tabs */}
-      {/* <div className="bg-light-card dark:bg-dark-card rounded-xl shadow-2xl p-1 mb-6 flex gap-1">
+      </div>
+      
+      <div className="bg-light-card dark:bg-dark-card rounded-xl shadow-2xl p-1 mb-6 flex gap-1">
         <button
           onClick={() => setMode('create')}
           className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
@@ -77,10 +75,9 @@ export function HomePage() {
         >
           Join Session
         </button>
-      </div> */}
-
-      {/* Form */}
-      {/* <motion.div
+      </div>
+      
+      <motion.div
         key={mode}
         initial={{ opacity: 0, x: mode === 'create' ? -20 : 20 }}
         animate={{ opacity: 1, x: 0 }}
