@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAudio } from '@shared/hooks/useAudio';
 import { formatTime } from '@shared/utils';
 import { motion } from 'framer-motion';
+import { STORAGE_KEYS } from '@/shared/constants';
 
 export function AudioPlayerHost() {
   const { audioState, play, pause, seek, setVolume, next, restart, emitSeek } = useAudio();
@@ -11,7 +12,7 @@ export function AudioPlayerHost() {
   const volumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const savedVolume = localStorage.getItem('audioVolume');
+    const savedVolume = localStorage.getItem(STORAGE_KEYS.VOLUME);
     if (savedVolume) {
       const volume = parseFloat(savedVolume);
       if (!isNaN(volume) && volume >= 0 && volume <= 100) {
@@ -35,7 +36,7 @@ export function AudioPlayerHost() {
 
   useEffect(() => {
     if (localVolume >= 0 && localVolume <= 100) {
-      localStorage.setItem('audioVolume', localVolume.toString());
+      localStorage.setItem(STORAGE_KEYS.VOLUME, localVolume.toString());
     }
   }, [localVolume]);
 

@@ -54,3 +54,9 @@ export interface Track {
   duration?: number; // Duración en segundos
   addedAt: number; // Timestamp cuando se agregó
 }
+
+export interface Auth {
+  id: string;
+  name: string;
+  email: string;
+}

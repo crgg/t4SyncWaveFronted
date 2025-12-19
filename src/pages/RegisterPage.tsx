@@ -3,12 +3,18 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+
 import { authService } from '@services/auth';
 import { Input } from '@shared/components/Input/Input';
 import { Button } from '@shared/components/Button/Button';
-import { motion } from 'framer-motion';
+import { STORAGE_KEYS } from '@shared/constants';
+import { withGuest } from '@shared/hoc/withGuest';
+import { useAppDispatch } from '@/app/hooks';
+import { authActions } from '@/features/auth/authSlice';
 
 const schema = yup.object({
+  name: yup.string().required('Name is required'),
   email: yup.string().email('Invalid email').required('Email is required'),
   password: yup
     .string()
@@ -22,11 +28,11 @@ const schema = yup.object({
 
 type RegisterFormData = yup.InferType<typeof schema>;
 
-export function RegisterPage() {
+function RegisterPage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const dispatch = useAppDispatch();
   const {
     register,
     handleSubmit,
@@ -43,9 +49,11 @@ export function RegisterPage() {
       const response = await authService.register({
         email: data.email,
         password: data.password,
+        name: data.name,
       });
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      localStorage.setItem(STORAGE_KEYS.TOKEN, response.token);
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
+      dispatch(authActions.login(response));
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error registering');
@@ -78,6 +86,14 @@ export function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <Input
+              label="Name"
+              type="text"
+              placeholder="John Doe"
+              {...register('name')}
+              error={errors.name?.message}
+            />
+
             <Input
               label="Email"
               type="email"
@@ -120,3 +136,5 @@ export function RegisterPage() {
     </div>
   );
 }
+
+export default withGuest(RegisterPage);

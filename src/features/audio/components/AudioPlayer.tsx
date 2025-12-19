@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAudio } from '@shared/hooks/useAudio';
 import { formatTime } from '@shared/utils';
 import { motion } from 'framer-motion';
+import { STORAGE_KEYS } from '@/shared/constants';
 
 export function AudioPlayer() {
   const { audioState, isHost, play, pause, seek, setVolume, next, restart } = useAudio();
@@ -16,7 +17,7 @@ export function AudioPlayer() {
 
   // Inicializar volumen desde localStorage solo una vez al montar
   useEffect(() => {
-    const savedVolume = localStorage.getItem('audioVolume');
+    const savedVolume = localStorage.getItem(STORAGE_KEYS.VOLUME);
     if (savedVolume) {
       const volume = parseFloat(savedVolume);
       if (!isNaN(volume) && volume >= 0 && volume <= 100) {
@@ -40,7 +41,7 @@ export function AudioPlayer() {
 
   useEffect(() => {
     if (localVolume >= 0 && localVolume <= 100) {
-      localStorage.setItem('audioVolume', localVolume.toString());
+      localStorage.setItem(STORAGE_KEYS.VOLUME, localVolume.toString());
     }
   }, [localVolume]);
 

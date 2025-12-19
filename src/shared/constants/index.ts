@@ -55,3 +55,12 @@ export const UI_CONFIG = {
   DEBOUNCE_DELAY: 300,
   ANIMATION_DURATION: 200,
 } as const;
+
+export const STORAGE_PREFIX = 't4syncwave';
+
+export const STORAGE_KEYS = Object.freeze({
+  TOKEN: `${STORAGE_PREFIX}:token`,
+  USER: `${STORAGE_PREFIX}:user`,
+  THEME: `${STORAGE_PREFIX}:theme`,
+  VOLUME: `${STORAGE_PREFIX}:volume`,
+} as const);

@@ -27,11 +27,11 @@ export function PlaylistHost() {
   const { trackId: currentTrackId } = useAppSelector((state) => state.audio);
   const { play } = useAudio();
   const { data: playlist } = useQuery({
-    queryKey: ['playlist', sessionId],
+    queryKey: ['playlist'],
     queryFn: () => playListApi.getPlaylist(),
     staleTime: 5 * 60 * 1000, // 5 minutos
     gcTime: 5 * 60 * 1000, // 5 minutos
-    enabled: !!sessionId,
+    // enabled: !!sessionId,
   });
 
   useEffect(() => {

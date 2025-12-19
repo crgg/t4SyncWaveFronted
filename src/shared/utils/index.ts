@@ -137,3 +137,14 @@ export function isValidAudioUrl(url: string): boolean {
 
   return false;
 }
+
+export function getInitials(name?: string): string {
+  if (!name) return '';
+
+  const [firstName] = name.trim().split(' ');
+
+  return firstName[0].toUpperCase();
+  // const [firstName, ...others] = name.trim().split(' ');
+
+  // return `${firstName} ${others.map((n) => n[0].toUpperCase()).join('')}`;
+}

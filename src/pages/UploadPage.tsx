@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { uploadService } from '@services/upload';
 import { motion, AnimatePresence } from 'framer-motion';
+
+import { uploadService } from '@services/upload';
+import { withAuth } from '@shared/hoc/withAuth';
 
 const ACCEPTED_AUDIO_TYPES = {
   'audio/mpeg': ['.mp3'],
@@ -11,7 +13,7 @@ const ACCEPTED_AUDIO_TYPES = {
   'audio/flac': ['.flac'],
 };
 
-export function UploadPage() {
+function UploadPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<{ name: string; url: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -158,3 +160,5 @@ export function UploadPage() {
     </div>
   );
 }
+
+export default withAuth(UploadPage);

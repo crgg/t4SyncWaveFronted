@@ -3,6 +3,7 @@ import { http } from '@app/http';
 export interface RegisterData {
   email: string;
   password: string;
+  name: string;
 }
 
 export interface LoginData {

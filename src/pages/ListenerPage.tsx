@@ -7,8 +7,9 @@ import { ConnectionStatus } from '@shared/components/ConnectionStatus/Connection
 import { Button } from '@shared/components/Button/Button';
 import { useWebSocket } from '@shared/hooks/useWebSocket';
 import { getAudioService } from '@services/audio/audioService';
+import { withAuth } from '@shared/hoc/withAuth';
 
-export function ListenerPage() {
+function ListenerPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const { leaveSession } = useWebSocket();
@@ -95,3 +96,5 @@ export function ListenerPage() {
     </div>
   );
 }
+
+export default withAuth(ListenerPage);

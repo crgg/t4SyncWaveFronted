@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useAppDispatch } from '@app/hooks';
 import { setAudioState } from '@features/audio/audioSlice';
 import { getAudioService } from '@services/audio/audioService';
+import { STORAGE_KEYS } from '@/shared/constants';
 
 export function AudioPlayerListener() {
   const { audioState, setVolume } = useAudio();
@@ -13,7 +14,7 @@ export function AudioPlayerListener() {
   const volumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const savedVolume = localStorage.getItem('audioVolume');
+    const savedVolume = localStorage.getItem(STORAGE_KEYS.VOLUME);
     if (savedVolume) {
       const volume = parseFloat(savedVolume);
       if (!isNaN(volume) && volume >= 0 && volume <= 100) {
@@ -38,7 +39,7 @@ export function AudioPlayerListener() {
   // Guardar volumen en localStorage cuando cambia
   useEffect(() => {
     if (localVolume >= 0 && localVolume <= 100) {
-      localStorage.setItem('audioVolume', localVolume.toString());
+      localStorage.setItem(STORAGE_KEYS.VOLUME, localVolume.toString());
     }
   }, [localVolume]);
 

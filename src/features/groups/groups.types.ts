@@ -1,0 +1,79 @@
+export interface Group {
+  id: string;
+  name: string;
+  code: string;
+  is_active: boolean;
+  current_track_id?: any;
+  current_time_ms: number;
+  is_playing: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  created_by_name: string;
+  created_by_avatar_url?: any;
+  members?: Member[];
+  current_tracks?: any[];
+}
+
+export interface GroupsResponse extends ResponseBase {
+  groups: Group[];
+}
+
+export interface CreateResponse extends ResponseBase {
+  group: Omit<Group, 'created_by_name' | 'created_by_avatar_url'>;
+  member: PartialMember[];
+}
+
+type PartialMember = Omit<Member, 'name' | 'email' | 'avatar_url'>;
+
+export interface Member {
+  id: string;
+  group_id: string;
+  user_id: string;
+  guest_name?: any;
+  role: string;
+  joined_at: string;
+  name: string;
+  email: string;
+  avatar_url?: any;
+}
+
+export interface GroupByIdResponse extends ResponseBase {
+  group: Group;
+}
+
+export interface FormCreateGroup {
+  name: string;
+}
+
+export interface FormAddMemberToGroup {
+  groupId: string;
+  email: string;
+  role: string; // dj or member
+}
+
+export interface User {
+  id: string;
+  username?: any;
+  name: string;
+  password: string;
+  email: string;
+  avatar_url?: any;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MemberStored {
+  id: string;
+  group_id: string;
+  user_id: string;
+  guest_name?: any;
+  role: string;
+  joined_at: string;
+  user: User;
+  group: Group;
+}
+
+export interface AddMemberToGroupResponse extends ResponseBase {
+  member: MemberStored;
+}

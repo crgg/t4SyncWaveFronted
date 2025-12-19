@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { API_BASE_URL } from '@shared/constants';
+import { API_BASE_URL, STORAGE_KEYS } from '@shared/constants';
 
 const sanitizeUrl = (url: string) => {
   return url.replace(/\/$/, '');
@@ -11,7 +11,7 @@ export const http = axios.create({
 });
 
 http.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

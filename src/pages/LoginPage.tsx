@@ -3,10 +3,15 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+
 import { authService } from '@services/auth';
 import { Input } from '@shared/components/Input/Input';
 import { Button } from '@shared/components/Button/Button';
-import { motion } from 'framer-motion';
+import { withGuest } from '@shared/hoc/withGuest';
+import { STORAGE_KEYS } from '@/shared/constants';
+import { useAppDispatch } from '@/app/hooks';
+import { authActions } from '@/features/auth/authSlice';
 
 const schema = yup.object({
   email: yup.string().email('Invalid email').required('Email is required'),
@@ -18,10 +23,11 @@ const schema = yup.object({
 
 type LoginFormData = yup.InferType<typeof schema>;
 
-export function LoginPage() {
+function LoginPage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
 
   const {
     register,
@@ -37,8 +43,9 @@ export function LoginPage() {
 
     try {
       const response = await authService.login(data);
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      localStorage.setItem(STORAGE_KEYS.TOKEN, response.token);
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
+      dispatch(authActions.login(response));
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error logging in');
@@ -103,3 +110,5 @@ export function LoginPage() {
     </div>
   );
 }
+
+export default withGuest(LoginPage);
