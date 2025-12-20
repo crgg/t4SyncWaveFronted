@@ -60,3 +60,28 @@ export interface Auth {
   name: string;
   email: string;
 }
+
+export interface Group {
+  id: string;
+  name: string;
+  code: string;
+  is_active: boolean;
+  current_track_id?: any;
+  current_time_ms: number;
+  is_playing: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AudioV2 {
+  id: string;
+  title: string;
+  artist: string;
+  file_url: string;
+  duration_ms: number;
+  added_by: string;
+  uploaded_by: string;
+  created_at: string;
+  groups: Group[];
+}

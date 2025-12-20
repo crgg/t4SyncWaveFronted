@@ -12,6 +12,7 @@ import { STORAGE_KEYS } from '@shared/constants';
 import { withGuest } from '@shared/hoc/withGuest';
 import { useAppDispatch } from '@/app/hooks';
 import { authActions } from '@/features/auth/authSlice';
+import { validationIsObject } from '@/shared/utils';
 
 const schema = yup.object({
   name: yup.string().required('Name is required'),
@@ -56,7 +57,11 @@ function RegisterPage() {
       dispatch(authActions.login(response));
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error registering');
+      if (validationIsObject(err.response?.data)) {
+        setError(err.response?.data?.error || 'Error registering');
+      } else {
+        setError('Error registering');
+      }
     } finally {
       setIsLoading(false);
     }

@@ -12,6 +12,7 @@ import { withGuest } from '@shared/hoc/withGuest';
 import { STORAGE_KEYS } from '@/shared/constants';
 import { useAppDispatch } from '@/app/hooks';
 import { authActions } from '@/features/auth/authSlice';
+import { validationIsObject } from '@/shared/utils';
 
 const schema = yup.object({
   email: yup.string().email('Invalid email').required('Email is required'),
@@ -48,7 +49,11 @@ function LoginPage() {
       dispatch(authActions.login(response));
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error logging in');
+      if (validationIsObject(err.response?.data)) {
+        setError(err.response?.data?.error || 'Error logging in');
+      } else {
+        setError('Error logging in');
+      }
     } finally {
       setIsLoading(false);
     }

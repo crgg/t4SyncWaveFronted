@@ -18,6 +18,7 @@ const SidebarLayout = () => {
   };
 
   const handleLogout = () => {
+    onCloseSidebar();
     localStorage.removeItem(STORAGE_KEYS.TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER);
     navigate('/login');
@@ -57,7 +58,7 @@ const SidebarLayout = () => {
             </button>
           </div>
           <div className="py-2 flex gap-2">
-            <div className="rounded-full bg-gradient-to-r from-primary-500 to-primary-600 border-zinc-600 font-bold text-sm w-8 h-8 flex items-center justify-center">
+            <div className="rounded-full dark:bg-[#B0FFEF] bg-[#5bfada] font-bold w-8 h-8 flex items-center justify-center text-zinc-800 text-xs">
               {getInitials(user?.name)}
             </div>
             <div>

@@ -148,3 +148,7 @@ export function getInitials(name?: string): string {
 
   // return `${firstName} ${others.map((n) => n[0].toUpperCase()).join('')}`;
 }
+
+export function validationIsObject(value: unknown): boolean {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}

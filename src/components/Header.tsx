@@ -22,7 +22,7 @@ export function Header() {
           <div className="flex items-center justify-between h-16">
             <Link
               to="/"
-              className="text-sm sm:text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent"
+              className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent"
             >
               T4SyncWave
             </Link>
@@ -30,12 +30,12 @@ export function Header() {
             <div className="flex items-center gap-2">
               <ThemeToggle />
 
-              <div
+              <button
                 onClick={handleToggleSidebar}
-                className="rounded-full bg-blue-600 font-bold w-8 h-8 flex items-center justify-center"
+                className="rounded-full dark:bg-[#B0FFEF] bg-[#5bfada] font-bold w-8 h-8 flex items-center justify-center text-zinc-800 text-xs"
               >
                 {getInitials(user?.name)}
-              </div>
+              </button>
             </div>
           </div>
         </div>

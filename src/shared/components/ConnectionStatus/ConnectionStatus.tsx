@@ -1,23 +1,24 @@
-/**
- * Componente para mostrar el estado de la conexión
- */
+import { CheckCircle2, XCircle } from 'lucide-react';
+import { twMerge } from 'tailwind-merge';
 
 import { useAppSelector } from '@app/hooks';
-import { cn } from '@shared/utils';
 
 export function ConnectionStatus() {
-  const { isConnected, latency, lastError } = useAppSelector((state) => state.connection);
+  const { isConnected, lastError } = useAppSelector((state) => state.connection);
 
   return (
     <div className="flex items-center gap-2 text-sm">
-      <div
-        className={cn(
-          'w-2 h-2 rounded-full',
-          isConnected ? 'bg-primary-600 animate-pulse-slow' : 'bg-red-500'
+      <span
+        className={twMerge(
+          'inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30',
+          isConnected
+            ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30'
+            : 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30'
         )}
-      />
-      <span className={cn(isConnected ? 'text-primary-600' : 'text-red-400')}>
-        {isConnected ? `Conectado (${latency}ms)` : 'Desconectado'}
+      >
+        {isConnected && <CheckCircle2 size={12} />}
+        {!isConnected && <XCircle size={12} />}
+        {isConnected ? 'Active' : 'Inactive'}
       </span>
       {lastError && <span className="text-red-400 text-xs">({lastError})</span>}
     </div>

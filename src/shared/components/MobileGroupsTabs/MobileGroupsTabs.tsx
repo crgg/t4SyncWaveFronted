@@ -44,7 +44,7 @@ export function MobileGroupsTabs({
   return (
     <nav
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-50 max-w-screen-sm mx-auto',
+        'fixed bottom-0 left-0 right-0 z-[49] max-w-screen-sm mx-auto',
         'bg-light-bg dark:bg-dark-bg',
         'border-t border-light-hover dark:border-dark-hover',
         'pb-safe',
