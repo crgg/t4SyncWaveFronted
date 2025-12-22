@@ -258,10 +258,10 @@ class WebSocketService {
     this.socket.emit(event, data);
   }
 
-  async createSession(name?: string): Promise<void> {
+  async createSession(name: string, user: IUserData): Promise<void> {
     if (this.useWebRTC) {
       if (this.useSFU && this.webrtcSFUService) {
-        await this.webrtcSFUService.createSession(name);
+        await this.webrtcSFUService.createSession(name, user);
         return;
       }
       if (this.webrtcService) {
@@ -272,10 +272,10 @@ class WebSocketService {
     this.emit(SOCKET_EVENTS.SESSION_CREATE, { name });
   }
 
-  async joinSession(sessionId: string): Promise<void> {
+  async joinSession(sessionId: string, user: IUserData): Promise<void> {
     if (this.useWebRTC) {
       if (this.useSFU && this.webrtcSFUService) {
-        await this.webrtcSFUService.joinSession(sessionId);
+        await this.webrtcSFUService.joinSession(sessionId, user);
         return;
       }
       if (this.webrtcService) {

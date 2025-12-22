@@ -18,8 +18,7 @@ export function LoadSampleMusic() {
   const [isLoading, setIsLoading] = useState(false);
   const [customUrl, setCustomUrl] = useState('');
 
-  // Solo mostrar si es host
-  if (role !== 'host') {
+  if (role !== 'dj') {
     return null;
   }
 

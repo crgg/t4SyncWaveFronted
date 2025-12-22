@@ -1,10 +1,9 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AuthResponse } from '@/services/auth';
-import { Auth } from '@shared/types';
 import { STORAGE_KEYS } from '@shared/constants';
 
 export interface AuthState {
-  user: Auth | null;
+  user: IUserData | null;
   token: string | null;
 }
 
@@ -21,7 +20,7 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<Auth>) => {
+    setUser: (state, action: PayloadAction<IUserData>) => {
       state.user = action.payload;
     },
     login: (state, action: PayloadAction<AuthResponse>) => {

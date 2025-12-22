@@ -34,16 +34,16 @@ import { createSessionStart, joinSessionStart, setRole } from '@/features/sessio
 import { PlaylistListener } from '@/features/playlist/components/PlaylistListener';
 import { AudioPlayerListener } from '@/features/audio/components/AudioPlayerListener';
 import { ConnectionStatus } from '@/shared/components/ConnectionStatus/ConnectionStatus';
-import { getAudioService } from '@/services/audio/audioService';
+// import { getAudioService } from '@/services/audio/audioService';
 
 const GroupPage = () => {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
-  const userId = useAppSelector((state) => state.auth.user?.id);
+  const user = useAppSelector((state) => state.auth.user);
   const [copiedCode, setCopiedCode] = useState(false);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const dispatch = useAppDispatch();
-  const { createSession, joinSession, leaveSession } = useWebSocket();
+  const { createSession, joinSession } = useWebSocket();
   const isHostRef = useRef<boolean | null>(null);
   const isConnectingRef = useRef(false);
   const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -77,7 +77,7 @@ const GroupPage = () => {
   }, []);
 
   useEffect(() => {
-    if (!data || !userId || isConnectingRef.current) return;
+    if (!data || !user || isConnectingRef.current || !user) return;
 
     // Evitar procesar el mismo grupo múltiples veces
     if (processedGroupIdRef.current === data.group.id) return;
@@ -87,19 +87,19 @@ const GroupPage = () => {
       isConnectingRef.current = true;
       processedGroupIdRef.current = data.group.id;
 
-      if (data.group.created_by !== userId) {
-        if (data.group.members?.some((member) => member.user_id === userId)) {
-          const sessionName = data.group.id + ' - ' + data.group.name;
-          dispatch(setRole({ role: 'listener' }));
+      if (data.group.created_by !== user?.id) {
+        if (data.group.members?.some((member) => member.user_id === user?.id)) {
+          const sessionName = data.group.id;
+          dispatch(setRole({ role: 'member' }));
           dispatch(joinSessionStart({ sessionId: sessionName }));
           joinSession(sessionName);
           isHostRef.current = false;
         }
         return;
       }
-      const sessionName = data.group.id + ' - ' + data.group.name;
+      const sessionName = data.group.id;
       dispatch(createSessionStart({ name: sessionName }));
-      createSession(sessionName);
+      createSession(sessionName, user);
       isHostRef.current = true;
     };
 
@@ -107,7 +107,7 @@ const GroupPage = () => {
     if (isConnected) {
       connectionTimeoutRef.current = setTimeout(() => {
         connectToSession();
-      }, 800); // Delay de 800ms para asegurar que WebRTC esté completamente inicializado
+      }, 500);
     } else {
       // Si no está conectado, esperar a que se conecte
       let checkConnectionInterval: ReturnType<typeof setInterval> | null = null;
@@ -123,11 +123,10 @@ const GroupPage = () => {
         }
       }, 100);
 
-      // Timeout después de 10 segundos
       timeoutId = setTimeout(() => {
         if (checkConnectionInterval) clearInterval(checkConnectionInterval);
         if (!isConnected) {
-          console.warn('Timeout: No se pudo establecer conexión WebSocket');
+          console.warn('Timeout: Could not establish WebSocket connection');
           toast.error('Failed to connect to server. Please refresh the page.');
           isConnectingRef.current = false;
         }
@@ -145,9 +144,8 @@ const GroupPage = () => {
         connectionTimeoutRef.current = null;
       }
     };
-  }, [data, userId, isConnected, dispatch, createSession, joinSession]);
+  }, [data, user, isConnected, dispatch, createSession, joinSession]);
 
-  // Reset cuando cambia el groupId
   useEffect(() => {
     processedGroupIdRef.current = null;
     isConnectingRef.current = false;
@@ -165,39 +163,42 @@ const GroupPage = () => {
 
   const group = data?.status && data?.group ? data.group : null;
   const members = group?.members || [];
-  // const currentTracks = group?.current_tracks || [];
 
   useEffect(() => {
+    // Cleanup cuando se desmonta el componente o cambia el groupId
     return () => {
-      handleLeave();
+      // console.log('GroupPage: Desmontando, limpiando recursos...');
+      // handleLeave();
     };
-  }, []);
+  }, [groupId]);
 
-  const handleLeave = () => {
-    try {
-      const audioService = getAudioService();
-      const audioState = audioService.getState();
+  // const handleLeave = async () => {
+  //   console.log('GroupPage: Saliendo de la sesión...');
 
-      if (audioState && audioState.trackUrl) {
-        try {
-          audioService.pause();
-        } catch (error) {
-          console.warn('Error al pausar audio al salir:', error);
-        }
-      }
+  //   // Limpiar audio
+  //   try {
+  //     const audioService = getAudioService();
+  //     const audioState = audioService.getState();
 
-      try {
-        audioService.cleanup();
-      } catch (error) {
-        console.warn('Error al limpiar audio al salir:', error);
-      }
-    } catch (error) {
-      console.warn('Error al obtener servicio de audio al salir:', error);
-    }
+  //     if (audioState && audioState.trackUrl) {
+  //       try {
+  //         audioService.pause();
+  //       } catch (error) {
+  //         console.warn('Error al pausar audio al salir:', error);
+  //       }
+  //     }
 
-    leaveSession();
-    // navigate('/');
-  };
+  //     try {
+  //       audioService.cleanup();
+  //     } catch (error) {
+  //       console.warn('Error al limpiar audio al salir:', error);
+  //     }
+  //   } catch (error) {
+  //     console.warn('Error al obtener servicio de audio al salir:', error);
+  //   }
+
+  //   leaveSession();
+  // };
 
   const handleCopyCode = () => {
     if (group?.code) {
@@ -233,7 +234,6 @@ const GroupPage = () => {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
-  // Loading State
   if (isLoading) {
     return (
       <div className="w-full max-w-4xl mx-auto pb-24">
@@ -249,7 +249,6 @@ const GroupPage = () => {
     );
   }
 
-  // Error State
   if (error || !group) {
     return (
       <div className="w-full max-w-4xl mx-auto pb-24">
@@ -278,12 +277,11 @@ const GroupPage = () => {
     );
   }
 
-  const isOwner = group.created_by === userId;
+  const isOwner = group.created_by === user?.id;
 
   return (
     <div className="w-full max-w-4xl mx-auto pb-24">
-      {/* Back Button */}
-      <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-4">
+      <div className="mb-4 mt-2">
         <Link
           to={'/groups' + (isOwner ? '/me' : '')}
           className="inline-flex items-center gap-2 text-light-text-secondary dark:text-dark-text-secondary hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
@@ -291,24 +289,16 @@ const GroupPage = () => {
           <ArrowLeft size={18} />
           <span>Back to Groups</span>
         </Link>
-      </motion.div>
-
-      <div className="my-4">
-        <ConnectionStatus />
-        {/* <span className="text-xs">(Role: {role})</span> */}
       </div>
 
-      {/* Header Section */}
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+      <div className="mb-6">
         <div className="bg-light-card dark:bg-dark-card rounded-xl shadow-xl border border-light-hover dark:border-dark-hover p-6">
-          <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4 flex-1 min-w-0">
-              {/* Avatar */}
               <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white font-bold text-2xl shadow-lg">
                 {group.name.charAt(0).toUpperCase()}
               </div>
 
-              {/* Name and Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
                   <h1 className="text-2xl sm:text-3xl font-bold text-light-text dark:text-dark-text truncate">
@@ -323,12 +313,7 @@ const GroupPage = () => {
                   )}
                 </div>
                 <div className="flex items-center gap-4 flex-wrap">
-                  {group.is_active && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30">
-                      <CheckCircle2 size={12} />
-                      Active
-                    </span>
-                  )}
+                  <ConnectionStatus />
                   {group.is_playing && (
                     <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-primary-600/20 text-primary-600 dark:text-primary-400 border border-primary-600/30">
                       <Radio size={12} />
@@ -340,7 +325,6 @@ const GroupPage = () => {
             </div>
           </div>
 
-          {/* Code Section */}
           {group.code && (
             <div className="mt-4 pt-4 border-t border-light-hover dark:border-dark-hover hidden">
               <div className="flex items-center justify-between gap-4">
@@ -378,7 +362,7 @@ const GroupPage = () => {
             </div>
           )}
         </div>
-      </motion.div>
+      </div>
 
       {/* Stats Grid */}
       <motion.div
@@ -387,7 +371,6 @@ const GroupPage = () => {
         transition={{ delay: 0.1 }}
         className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"
       >
-        {/* Members Count */}
         <div className="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary-600/10">
@@ -404,7 +387,6 @@ const GroupPage = () => {
           </div>
         </div>
 
-        {/* Tracks Count */}
         <div className="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary-600/10">
@@ -421,7 +403,6 @@ const GroupPage = () => {
           </div>
         </div>
 
-        {/* Created Date */}
         <div className="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary-600/10">
@@ -442,9 +423,7 @@ const GroupPage = () => {
         </div>
       </motion.div>
 
-      {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Members Section */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -464,7 +443,6 @@ const GroupPage = () => {
                 className="flex items-center gap-2"
               >
                 <UserPlus size={16} />
-                Add Member
               </Button>
             )}
           </div>

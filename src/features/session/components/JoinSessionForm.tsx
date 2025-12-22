@@ -21,7 +21,7 @@ export function JoinSessionForm() {
     e.preventDefault();
     if (!sessionIdInput.trim()) return;
 
-    dispatch(setRole({ role: 'listener' }));
+    dispatch(setRole({ role: 'member' }));
     dispatch(joinSessionStart({ sessionId: sessionIdInput.trim() }));
     joinSession(sessionIdInput.trim());
   };

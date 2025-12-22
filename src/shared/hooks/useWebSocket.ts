@@ -24,6 +24,8 @@ export function useWebSocket() {
   const dispatch = useAppDispatch();
   const { isConnected, latency } = useAppSelector((state) => state.connection);
   const { sessionId, role } = useAppSelector((state) => state.session);
+  const user = useAppSelector((state) => state.auth?.user);
+  const socketServiceRef = useRef<ReturnType<typeof getWebSocketService> | null>(null);
 
   const audioStateRef = useRef(store.getState().audio);
   const connectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -42,10 +44,11 @@ export function useWebSocket() {
     let wsService: ReturnType<typeof getWebSocketService>;
     try {
       wsService = getWebSocketService({ url: WS_URL });
+      socketServiceRef.current = wsService;
     } catch {
       wsService = initializeWebSocketService({ url: WS_URL });
     }
-    const handleConnectionStatus = (data: { connected: boolean }) => {
+    const handleConnectionStatus = (data: { connected: boolean; reason?: string }) => {
       if (data.connected) {
         dispatch(connected());
         isConnectingRef.current = false;
@@ -66,7 +69,7 @@ export function useWebSocket() {
 
     const handleSessionError = (data: { error: string }) => {
       console.error('Error de sesión:', data.error);
-      if (role === 'host') {
+      if (role === 'dj') {
         dispatch(createSessionFailure({ error: data.error }));
       } else {
         dispatch(joinSessionFailure({ error: data.error }));
@@ -118,7 +121,7 @@ export function useWebSocket() {
       dispatch(setAudioState(audioStateToDispatch));
 
       const currentRole = store.getState().session.role;
-      if (currentRole === 'listener' && trackUrl) {
+      if (currentRole === 'member' && trackUrl) {
         try {
           const audioService = getAudioService();
           const audioServiceState = audioService.getState();
@@ -189,7 +192,7 @@ export function useWebSocket() {
       dispatch(setAudioState(audioStateToDispatch));
 
       const currentRole = store.getState().session.role;
-      if (currentRole === 'listener' && audioStateToDispatch.trackUrl) {
+      if (currentRole === 'member' && audioStateToDispatch.trackUrl) {
         try {
           const audioService = getAudioService();
           const audioServiceState = audioService.getState();
@@ -283,11 +286,12 @@ export function useWebSocket() {
   }, [dispatch, role]);
 
   const createSession = useCallback(
-    async (name?: string) => {
+    async (roomName: string, user: IUserData) => {
       try {
+        if (!user) return console.warn('User not found');
         const wsService = getWebSocketService({ url: WS_URL });
         if (wsService.isConnected()) {
-          await wsService.createSession(name);
+          await wsService.createSession(roomName, user);
           return;
         }
 
@@ -296,33 +300,34 @@ export function useWebSocket() {
         const interval = setInterval(async () => {
           attempts++;
           if (wsService.isConnected()) {
-            await wsService.createSession(name);
+            await wsService.createSession(roomName, user);
             clearInterval(interval);
           } else if (attempts >= maxAttempts) {
-            console.error('Timeout: No se pudo conectar al socket después de 5 segundos');
+            console.error('Timeout: Could not connect to socket after 5 seconds');
             dispatch(
               createSessionFailure({
-                error: 'No se pudo conectar al servidor. Intenta nuevamente.',
+                error: 'Could not connect to server. Try again.',
               })
             );
             clearInterval(interval);
           }
         }, 100);
       } catch (error) {
-        console.error('Error al crear sesión:', error);
-        dispatch(createSessionFailure({ error: 'Error al conectar con el servidor' }));
+        console.error('Error creating session:', error);
+        dispatch(createSessionFailure({ error: 'Error connecting to server' }));
       }
     },
-    [dispatch]
+    [dispatch, user?.id]
   );
 
   const joinSession = useCallback(
     async (sessionIdToJoin: string) => {
       try {
+        if (!user) return;
         const wsService = getWebSocketService({ url: WS_URL });
 
         if (wsService.isConnected()) {
-          await wsService.joinSession(sessionIdToJoin);
+          await wsService.joinSession(sessionIdToJoin, user);
           return;
         }
 
@@ -331,22 +336,20 @@ export function useWebSocket() {
         const interval = setInterval(async () => {
           attempts++;
           if (wsService.isConnected()) {
-            await wsService.joinSession(sessionIdToJoin);
+            await wsService.joinSession(sessionIdToJoin, user);
             clearInterval(interval);
           } else if (attempts >= maxAttempts) {
-            console.error('Timeout: No se pudo conectar al socket después de 5 segundos');
-            dispatch(
-              joinSessionFailure({ error: 'No se pudo conectar al servidor. Intenta nuevamente.' })
-            );
+            console.error('Timeout: Could not connect to socket after 5 seconds');
+            dispatch(joinSessionFailure({ error: 'Could not connect to server. Try again.' }));
             clearInterval(interval);
           }
         }, 100);
       } catch (error) {
-        console.error('Error al unirse a sesión:', error);
-        dispatch(joinSessionFailure({ error: 'Error al conectar con el servidor' }));
+        console.error('Error joining session:', error);
+        dispatch(joinSessionFailure({ error: 'Error connecting to server' }));
       }
     },
-    [dispatch]
+    [dispatch, user?.id]
   );
 
   const leaveSession = useCallback(async () => {
@@ -386,5 +389,6 @@ export function useWebSocket() {
     createSession,
     joinSession,
     leaveSession,
+    wsRef: socketServiceRef,
   };
 }

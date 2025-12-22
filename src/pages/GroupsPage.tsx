@@ -1,9 +1,5 @@
-/**
- * Página de Grupos - Muestra grupos del usuario o todos los grupos disponibles
- */
-
 import { useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Users, Music, Copy, Play, Clock, Plus, MoveRight } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
@@ -188,18 +184,17 @@ const GroupsPage = () => {
 
       {/* Groups Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <AnimatePresence>
-          {displayedGroups.map((group, index) => (
-            <GroupCard
-              key={group.id}
-              group={group}
-              index={index}
-              copiedCode={copiedCode}
-              onCopyCode={handleCopyCode}
-              isMyGroups={isMyGroups}
-            />
-          ))}
-        </AnimatePresence>
+        {displayedGroups.map((group, index) => (
+          <GroupCard
+            key={group.id}
+            group={group}
+            index={index}
+            copiedCode={copiedCode}
+            onCopyCode={handleCopyCode}
+            isMyGroups={isMyGroups}
+            onDblClick={() => navigate(`/groups${isMyGroups ? '/me' : ''}/${group.id}`)}
+          />
+        ))}
       </div>
 
       {/* Create Group Modal */}
@@ -220,9 +215,10 @@ interface GroupCardProps {
   copiedCode: string | null;
   onCopyCode: (code: string) => void;
   isMyGroups: boolean;
+  onDblClick: (e: React.MouseEvent<HTMLDivElement>) => void;
 }
 
-const GroupCard = ({ group, index, copiedCode, onCopyCode, isMyGroups }: GroupCardProps) => {
+const GroupCard = ({ group, copiedCode, onCopyCode, isMyGroups, onDblClick }: GroupCardProps) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -242,12 +238,15 @@ const GroupCard = ({ group, index, copiedCode, onCopyCode, isMyGroups }: GroupCa
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (e.detail === 2) {
+      onDblClick(e);
+    }
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.2, delay: index * 0.05 }}
+    <div
       className={cn(
         'group relative p-2 rounded-xl',
         'bg-light-card dark:bg-dark-card',
@@ -256,6 +255,7 @@ const GroupCard = ({ group, index, copiedCode, onCopyCode, isMyGroups }: GroupCa
         'hover:shadow-lg transition-all duration-200',
         'cursor-pointer'
       )}
+      onClick={handleClick}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
@@ -270,21 +270,23 @@ const GroupCard = ({ group, index, copiedCode, onCopyCode, isMyGroups }: GroupCa
             <h3 className="font-semibold text-light-text dark:text-dark-text truncate text-lg">
               {group.name}
             </h3>
-            <div className="flex items-center gap-2 mt-1">
-              <Users
-                size={14}
-                className="text-light-text-secondary dark:text-dark-text-secondary"
-              />
-              <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary truncate">
-                {group.created_by_name || 'Unknown'}
-              </p>
-            </div>
+            {!isMyGroups && (
+              <div className="flex items-center gap-2 mt-1">
+                <Users
+                  size={14}
+                  className="text-light-text-secondary dark:text-dark-text-secondary"
+                />
+                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary truncate">
+                  {group.created_by_name || 'Unknown'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Status Badge */}
-        {group.is_active && (
-          <div className="flex-shrink-0">
+        {group.is_active && !isMyGroups && (
+          <div className="flex-shrink-0 hide">
             <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30">
               Active
             </span>
@@ -312,7 +314,7 @@ const GroupCard = ({ group, index, copiedCode, onCopyCode, isMyGroups }: GroupCa
 
       {/* Code Section */}
       {group.code && (
-        <div className="mb-3 p-3 rounded-lg bg-light-surface dark:bg-dark-surface border border-light-hover dark:border-dark-hover hidden">
+        <div className="mb-3 p-3 rounded-lg bg-light-surface dark:bg-dark-surface border border-light-hover dark:border-dark-hover">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <Copy
@@ -366,7 +368,7 @@ const GroupCard = ({ group, index, copiedCode, onCopyCode, isMyGroups }: GroupCa
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 };
 

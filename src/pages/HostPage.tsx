@@ -24,20 +24,17 @@ function HostPage() {
     participantCount,
   } = useAppSelector((state) => state.session);
 
-  // Verificar que el usuario es el host
   useEffect(() => {
-    if (currentSessionId !== sessionId || role !== 'host') {
+    if (currentSessionId !== sessionId || role !== 'dj') {
       navigate('/');
     }
   }, [sessionId, currentSessionId, role, navigate]);
 
   const handleLeave = () => {
-    // Detener audio antes de salir (solo si está inicializado)
     try {
       const audioService = getAudioService();
       const audioState = audioService.getState();
 
-      // Solo intentar pausar y limpiar si el audio está inicializado
       if (audioState && audioState.trackUrl) {
         try {
           audioService.pause();
@@ -46,7 +43,6 @@ function HostPage() {
         }
       }
 
-      // Siempre limpiar, cleanup() maneja el caso cuando no está inicializado
       try {
         audioService.cleanup();
       } catch (error) {

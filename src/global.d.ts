@@ -8,4 +8,9 @@ declare global {
     status: boolean;
     data: T;
   }
+  interface IUserData {
+    id: string;
+    name: string;
+    email: string;
+  }
 }

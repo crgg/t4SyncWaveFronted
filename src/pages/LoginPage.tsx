@@ -87,6 +87,7 @@ function LoginPage() {
               placeholder="tu@email.com"
               {...register('email')}
               error={errors.email?.message}
+              maxLength={100}
             />
 
             <Input
@@ -95,6 +96,7 @@ function LoginPage() {
               placeholder="••••••••"
               {...register('password')}
               error={errors.password?.message}
+              maxLength={50}
             />
 
             <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>

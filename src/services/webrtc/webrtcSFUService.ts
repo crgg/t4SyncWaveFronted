@@ -1,6 +1,6 @@
 import { SOCKET_EVENTS, RECONNECTION_CONFIG } from '@shared/constants';
 import type { SocketEventHandlers, WebSocketServiceConfig } from '../websocket/types';
-import type { AudioState } from '@shared/types';
+import type { AudioState, UserRole } from '@shared/types';
 import { store } from '@app/store';
 
 interface SFUSignalingMessage {
@@ -16,7 +16,10 @@ interface SFUSignalingMessage {
     | 'join-room'
     | 'leave-room'
     | 'role'
-    | 'playback-state';
+    | 'playback-state'
+    | 'server-ping'
+    | 'welcome'
+    | 'room-users';
   data?: unknown;
   sessionId?: string;
   event?: string;
@@ -35,7 +38,7 @@ class WebRTCSFUService {
   private isConnecting = false;
   private signalingUrl: string;
   private sessionId: string | null = null;
-  private role: 'host' | 'listener' | null = null;
+  private role: UserRole | null = null;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private peerId: string | null = null;
 
@@ -76,7 +79,6 @@ class WebRTCSFUService {
 
   async connect(): Promise<void> {
     if (this.isConnecting) {
-      console.warn('WebRTC SFU ya se está conectando');
       return;
     }
 
@@ -173,6 +175,7 @@ class WebRTCSFUService {
   }
 
   private async handleSignalingMessage(message: SFUSignalingMessage): Promise<void> {
+    // NOTE - Received message from signaling server
     switch (message.type) {
       case 'answer': {
         if (this.peerConnection && message.data) {
@@ -198,10 +201,10 @@ class WebRTCSFUService {
 
       case 'role': {
         console.log('I arrived here', message);
-        if (this.role === 'host') {
+        if (this.role === 'dj') {
           this.sessionId = 'Spotty-Fredy';
           this.handleEvent(SOCKET_EVENTS.SESSION_CREATED, { sessionId: this.sessionId });
-        } else if (this.role === 'listener') {
+        } else if (this.role === 'member') {
           this.handleEvent(SOCKET_EVENTS.SESSION_JOINED, { sessionId: this.sessionId });
         }
         break;
@@ -253,6 +256,20 @@ class WebRTCSFUService {
         break;
       }
 
+      case 'server-ping': {
+        break;
+      }
+
+      case 'welcome': {
+        console.log('Welcome message received:', message);
+        break;
+      }
+
+      case 'room-users': {
+        console.log('Join users message received:', message);
+        break;
+      }
+
       default:
         console.warn('Tipo de mensaje de señalización desconocido:', message.type);
     }
@@ -267,7 +284,7 @@ class WebRTCSFUService {
     try {
       const messageToSend = {
         ...message,
-        sessionId: this.sessionId || undefined,
+        // sessionId: this.sessionId || undefined,
         role: this.role || undefined,
         peerId: this.peerId || undefined,
       };
@@ -296,6 +313,7 @@ class WebRTCSFUService {
 
     this.peerConnection.onconnectionstatechange = () => {
       const state = this.peerConnection?.connectionState;
+      console.log('PeerConnection state changed:', state);
 
       if (state === 'connected') {
         this.reconnectAttempts = 0;
@@ -444,35 +462,31 @@ class WebRTCSFUService {
     });
   }
 
-  async createSession(name?: string): Promise<void> {
+  async createSession(name: string, user: IUserData): Promise<void> {
     try {
-      this.role = 'host';
+      this.role = 'dj';
       this.sendSignalingMessage({
-        room: name ?? 'Demo01',
-        userName: 'FredyMax',
+        room: name,
+        userName: user.name,
+        userId: user.id,
         type: 'join',
       });
     } catch (error) {
-      console.error('Error al crear sesión:', error);
-      this.handleEvent(SOCKET_EVENTS.SESSION_ERROR, { error: 'Error al crear sesión' });
+      console.error('Error creating session:', error);
+      this.handleEvent(SOCKET_EVENTS.SESSION_ERROR, { error: 'Error creating session' });
     }
   }
 
-  async joinSession(sessionIdToJoin: string): Promise<void> {
+  async joinSession(sessionIdToJoin: string, user: IUserData): Promise<void> {
     try {
       this.sessionId = sessionIdToJoin;
-      this.role = 'listener';
+      this.role = 'member';
 
       this.sendSignalingMessage({
         type: 'join',
         room: sessionIdToJoin,
-        userName: 'FredyMax',
-      });
-
-      this.sendSignalingMessage({
-        type: 'join',
-        room: sessionIdToJoin,
-        userName: 'FredyMax',
+        userId: user.id,
+        userName: user.name,
       });
     } catch (error) {
       console.error('Error al unirse a sesión:', error);

@@ -13,11 +13,7 @@ export interface LoginData {
 
 export interface AuthResponse {
   message: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  user: IUserData;
   token: string;
 }
 

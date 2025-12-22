@@ -55,6 +55,9 @@ export function AddMemberModal({ isOpen, onClose, groupId, onSuccess }: AddMembe
       onClose();
       onSuccess?.();
     },
+    onError: (error) => {
+      console.error('Error al agregar miembro al grupo:', error);
+    },
   });
 
   const onSubmit = (data: AddMemberFormData) => {
@@ -94,6 +97,7 @@ export function AddMemberModal({ isOpen, onClose, groupId, onSuccess }: AddMembe
             error={errors.email?.message}
             disabled={mutation.isPending}
             autoComplete="off"
+            maxLength={100}
             autoFocus
           />
 

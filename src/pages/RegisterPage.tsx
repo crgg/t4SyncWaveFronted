@@ -97,6 +97,7 @@ function RegisterPage() {
               placeholder="John Doe"
               {...register('name')}
               error={errors.name?.message}
+              maxLength={150}
             />
 
             <Input
@@ -105,6 +106,7 @@ function RegisterPage() {
               placeholder="tu@email.com"
               {...register('email')}
               error={errors.email?.message}
+              maxLength={100}
             />
 
             <Input
@@ -113,6 +115,7 @@ function RegisterPage() {
               placeholder="••••••••"
               {...register('password')}
               error={errors.password?.message}
+              maxLength={50}
             />
 
             <Input
@@ -121,6 +124,7 @@ function RegisterPage() {
               placeholder="••••••••"
               {...register('confirmPassword')}
               error={errors.confirmPassword?.message}
+              maxLength={50}
             />
 
             <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>

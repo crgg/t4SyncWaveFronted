@@ -1,7 +1,3 @@
-/**
- * Componente de lista de reproducción para el Listener
- * Solo lectura, muestra la playlist sincronizada del host
- */
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -20,15 +16,13 @@ export function PlaylistListener() {
   const { data: playlist } = useQuery({
     queryKey: ['playlist', sessionId],
     queryFn: () => playListApi.getPlaylist(),
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     enabled: !!sessionId,
   });
 
-  // Sincronizar playlist desde la API con Redux
   useEffect(() => {
     if (playlist) {
-      // La API puede devolver un array de tracks directamente o un objeto con tracks
       const tracks = Array.isArray(playlist) ? playlist : (playlist as any)?.tracks || [];
       if (tracks.length > 0) {
         dispatch(setPlaylistFromApi({ tracks }));
@@ -39,7 +33,6 @@ export function PlaylistListener() {
   if (tracks.length === 0) {
     return (
       <div className="">
-        {/* <h3 className="text-lg font-semibold text-dark-text mb-4"> Lista de Reproducción</h3> */}
         <div className="text-center py-8 text-dark-text-secondary">
           <svg
             className="w-16 h-16 mx-auto mb-4 opacity-50"
@@ -53,7 +46,7 @@ export function PlaylistListener() {
             />
           </svg>
           <p>There are no songs in the playlist</p>
-          <p className="text-sm mt-2">Waiting for the host to add songs</p>
+          <p className="text-sm mt-2">Waiting for the DJ to add songs</p>
         </div>
       </div>
     );

@@ -36,7 +36,7 @@ const sessionSlice = createSlice({
       state.isCreating = false;
       state.sessionId = action.payload.sessionId;
       state.hostId = action.payload.sessionId;
-      state.role = 'host';
+      state.role = 'dj';
       state.error = null;
     },
     createSessionFailure: (state, action: PayloadAction<{ error: string }>) => {
@@ -51,7 +51,7 @@ const sessionSlice = createSlice({
       state.isJoining = false;
       state.sessionId = action.payload.sessionId;
       state.hostId = action.payload.hostId;
-      state.role = 'listener';
+      state.role = 'member';
       state.participantCount = action.payload.participantCount;
       state.error = null;
     },

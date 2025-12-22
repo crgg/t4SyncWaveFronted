@@ -5,6 +5,7 @@
 
 import { SOCKET_EVENTS, RECONNECTION_CONFIG } from '@shared/constants';
 import type { SocketEventHandlers, WebSocketServiceConfig } from '../websocket/types';
+import { UserRole } from '@/shared/types';
 
 interface SignalingMessage {
   type:
@@ -30,7 +31,7 @@ class WebRTCService {
   private isConnecting = false;
   private signalingUrl: string;
   private sessionId: string | null = null;
-  private role: 'host' | 'listener' | null = null;
+  private role: UserRole | null = null;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
   // STUN servers para NAT traversal
@@ -351,9 +352,6 @@ class WebRTCService {
     }
   }
 
-  /**
-   * Crea una nueva sesión (solo host)
-   */
   async createSession(name?: string): Promise<void> {
     try {
       const response = await this.sendSignalingMessage({
@@ -364,7 +362,7 @@ class WebRTCService {
       if (response && response.data) {
         const sessionData = response.data as { sessionId: string };
         this.sessionId = sessionData.sessionId;
-        this.role = 'host';
+        this.role = 'dj';
 
         // Conectar después de crear la sesión
         await this.connect();
@@ -377,13 +375,10 @@ class WebRTCService {
     }
   }
 
-  /**
-   * Se une a una sesión existente
-   */
   async joinSession(sessionIdToJoin: string): Promise<void> {
     try {
       this.sessionId = sessionIdToJoin;
-      this.role = 'listener';
+      this.role = 'member';
 
       const response = await this.sendSignalingMessage({
         type: 'session-join',
@@ -402,9 +397,6 @@ class WebRTCService {
     }
   }
 
-  /**
-   * Abandona la sesión actual
-   */
   async leaveSession(sessionIdToLeave: string): Promise<void> {
     try {
       await this.sendSignalingMessage({
@@ -420,9 +412,6 @@ class WebRTCService {
     }
   }
 
-  /**
-   * Reproduce el audio (solo host)
-   */
   playAudio(timestamp: number, position?: number, trackUrl?: string): void {
     // Mantener compatibilidad con el evento antiguo
     this.emit(SOCKET_EVENTS.AUDIO_PLAY, { timestamp });
@@ -440,9 +429,6 @@ class WebRTCService {
     }
   }
 
-  /**
-   * Pausa el audio (solo host)
-   */
   pauseAudio(timestamp: number, position?: number, trackUrl?: string): void {
     // Mantener compatibilidad con el evento antiguo
     this.emit(SOCKET_EVENTS.AUDIO_PAUSE, { timestamp });
@@ -460,9 +446,6 @@ class WebRTCService {
     }
   }
 
-  /**
-   * Cambia la posición del audio (solo host)
-   */
   seekAudio(position: number, timestamp: number, trackUrl?: string): void {
     // Mantener compatibilidad con el evento antiguo
     this.emit(SOCKET_EVENTS.AUDIO_SEEK, { position, timestamp });
@@ -480,23 +463,14 @@ class WebRTCService {
     }
   }
 
-  /**
-   * Cambia el volumen (solo host)
-   */
   setVolume(volume: number): void {
     this.emit(SOCKET_EVENTS.AUDIO_VOLUME, { volume });
   }
 
-  /**
-   * Siguiente canción (solo host)
-   */
   nextTrack(timestamp: number): void {
     this.emit(SOCKET_EVENTS.AUDIO_NEXT, { timestamp });
   }
 
-  /**
-   * Solicita sincronización (solo listener)
-   */
   requestSync(sessionId: string): void {
     this.emit(SOCKET_EVENTS.SYNC_REQUEST, { sessionId });
   }

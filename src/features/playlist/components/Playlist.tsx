@@ -19,7 +19,7 @@ export function Playlist() {
   const { role, sessionId } = useAppSelector((state) => state.session);
 
   useEffect(() => {
-    if (role !== 'host' || !sessionId || tracks.length === 0) return;
+    if (role !== 'dj' || !sessionId || tracks.length === 0) return;
 
     try {
       const wsService = getWebSocketService({ url: WS_URL });
@@ -34,7 +34,7 @@ export function Playlist() {
   }, [tracks, role, sessionId]);
 
   const handleTrackSelect = (trackId: string, index: number) => {
-    if (role !== 'host') return;
+    if (role !== 'dj') return;
 
     const track = tracks.find((t) => t.id === trackId);
     if (!track) return;
@@ -68,7 +68,7 @@ export function Playlist() {
 
   const handleRemoveTrack = (trackId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (role === 'host') {
+    if (role === 'dj') {
       dispatch(removeTrack({ trackId }));
       // La sincronización se hará automáticamente por el useEffect
     }
@@ -120,7 +120,7 @@ export function Playlist() {
                 onClick={() => handleTrackSelect(track.id, index)}
                 className={`
                   flex items-center gap-4 p-3 rounded-lg transition-colors
-                  ${role === 'host' ? 'cursor-pointer hover:bg-dark-surface' : 'cursor-default'}
+                  ${role === 'dj' ? 'cursor-pointer hover:bg-dark-surface' : 'cursor-default'}
                   ${isCurrentTrack ? 'bg-dark-hover' : ''}
                   ${isPlaying ? 'ring-2 ring-primary-600' : ''}
                 `}
@@ -163,8 +163,7 @@ export function Playlist() {
                   {track.duration ? formatTime(track.duration) : '--:--'}
                 </div>
 
-                {/* Botón eliminar (solo host) */}
-                {role === 'host' && (
+                {role === 'dj' && (
                   <button
                     onClick={(e) => handleRemoveTrack(track.id, e)}
                     className="p-1 rounded-full hover:bg-red-500/20 text-dark-text-secondary hover:text-red-400 transition-colors flex-shrink-0"

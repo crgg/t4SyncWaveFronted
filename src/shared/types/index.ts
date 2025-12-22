@@ -24,7 +24,7 @@ export interface SessionInfo {
   name?: string;
 }
 
-export type UserRole = 'host' | 'listener';
+export type UserRole = 'dj' | 'member';
 
 export interface ConnectionState {
   isConnected: boolean;

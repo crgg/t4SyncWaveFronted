@@ -323,11 +323,7 @@ export function AudioPlayer() {
         </span>
       </div>
 
-      {!isHost && (
-        <div className="text-center text-sm text-dark-text-secondary">
-          Modo escucha - Solo el host puede controlar la reproducción
-        </div>
-      )}
+      {!isHost && <div className="text-center text-sm text-dark-text-secondary">Member mode</div>}
     </div>
   );
 }

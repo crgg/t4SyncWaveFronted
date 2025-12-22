@@ -78,7 +78,7 @@ export function useAudio() {
 
     if (currentServiceUrl === audioState.trackUrl && audioServiceState) {
       audioServiceRef.current = audioService;
-      if (role === 'listener') {
+      if (role === 'member') {
         (audioServiceState as any).isPlaying = audioState.isPlaying || false;
         (audioServiceState as any).currentPosition = audioState.currentPosition || 0;
         if (audioState.trackDuration) {
@@ -96,7 +96,7 @@ export function useAudio() {
 
     audioServiceRef.current = audioService;
 
-    if (role === 'listener') {
+    if (role === 'member') {
       const audioServiceState = audioService.getState();
       if (!audioServiceState) {
         (audioService as any).currentState = {
@@ -138,7 +138,7 @@ export function useAudio() {
 
       const currentReduxState = store.getState().audio;
 
-      if (role === 'listener') {
+      if (role === 'member') {
         const positionDiff = Math.abs(
           (state.currentPosition || 0) - (currentReduxState.currentPosition || 0)
         );
@@ -221,7 +221,7 @@ export function useAudio() {
   ]);
 
   useEffect(() => {
-    if (role !== 'listener' || !audioState.trackUrl) return;
+    if (role !== 'member' || !audioState.trackUrl) return;
 
     if (!audioServiceRef.current) {
       return;
@@ -280,7 +280,7 @@ export function useAudio() {
   }, [role, audioState.trackUrl, dispatch]);
 
   useEffect(() => {
-    if (role !== 'host' || !audioState.isPlaying || !audioState.trackUrl) return;
+    if (role !== 'dj' || !audioState.isPlaying || !audioState.trackUrl) return;
 
     const interval = setInterval(() => {
       if (audioServiceRef.current && audioState.isPlaying) {
@@ -302,7 +302,7 @@ export function useAudio() {
   }, [role, audioState.isPlaying, audioState.trackUrl, audioState.currentPosition]);
 
   useEffect(() => {
-    if (role !== 'host' || tracks.length === 0) return;
+    if (role !== 'dj' || tracks.length === 0) return;
 
     const checkEnded = () => {
       if (
@@ -350,7 +350,7 @@ export function useAudio() {
   ]);
 
   const handlePlay = useCallback(() => {
-    if (role !== 'host') return;
+    if (role !== 'dj') return;
 
     if (!audioState.trackUrl) {
       console.warn('There is no track loaded to play');
@@ -387,7 +387,7 @@ export function useAudio() {
   }, [role, dispatch, audioState.trackUrl]);
 
   const handlePause = useCallback(() => {
-    if (role !== 'host') return;
+    if (role !== 'dj') return;
 
     const timestamp = Date.now();
     dispatch(pause({ timestamp }));
@@ -404,7 +404,7 @@ export function useAudio() {
 
   const handleSeek = useCallback(
     (position: number) => {
-      if (role !== 'host') return;
+      if (role !== 'dj') return;
 
       const timestamp = Date.now();
       dispatch(seek({ position, timestamp }));
@@ -421,7 +421,7 @@ export function useAudio() {
 
   const emitSeek = useCallback(
     (position: number) => {
-      if (role !== 'host') return;
+      if (role !== 'dj') return;
 
       const timestamp = Date.now();
 
@@ -453,7 +453,7 @@ export function useAudio() {
   );
 
   const handleNext = useCallback(() => {
-    if (role !== 'host') return;
+    if (role !== 'dj') return;
 
     if (tracks.length === 0) return;
 
@@ -491,7 +491,7 @@ export function useAudio() {
   }, [role, dispatch, tracks, currentTrackIndex]);
 
   const handlePrevious = useCallback(() => {
-    if (role !== 'host') return;
+    if (role !== 'dj') return;
 
     if (audioState.currentPosition < 3 && tracks.length > 0 && currentTrackIndex !== null) {
       const prevIndex = currentTrackIndex === 0 ? tracks.length - 1 : currentTrackIndex - 1;
@@ -535,7 +535,7 @@ export function useAudio() {
   }, [role, dispatch, audioState.currentPosition, tracks, currentTrackIndex]);
 
   const handleRestart = useCallback(() => {
-    if (role !== 'host') return;
+    if (role !== 'dj') return;
 
     const timestamp = Date.now();
     dispatch(seek({ position: 0, timestamp }));
@@ -560,7 +560,7 @@ export function useAudio() {
 
   return {
     audioState,
-    isHost: role === 'host',
+    isHost: role === 'dj',
     play: handlePlay,
     pause: handlePause,
     seek: handleSeek,

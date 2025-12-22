@@ -16,11 +16,13 @@ export function CreateSessionForm() {
   const { createSession } = useWebSocket();
   const { isCreating, error, sessionId } = useAppSelector((state) => state.session);
   const [sessionName, setSessionName] = useState('Spotty-Fredy');
+  const user = useAppSelector((state) => state.auth.user);
 
   const handleSubmit = (e: React.FormEvent) => {
+    if (!user || !sessionName) return;
     e.preventDefault();
-    dispatch(createSessionStart({ name: sessionName || undefined }));
-    createSession(sessionName || undefined);
+    dispatch(createSessionStart({ name: sessionName }));
+    createSession(sessionName, user);
   };
 
   useEffect(() => {

@@ -9,11 +9,14 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { layoutActions, LayoutState } from '@/app/slices/layoutSlice';
 import { playListApi } from '@/features/playlist/playListApi';
 import { setPlaylistFromApi } from '@/features/playlist/playlistSlice';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 const AppLayout = () => {
   const activeTab = useAppSelector((state) => state.layout.activeTab);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+
+  useWebSocket();
 
   const onTabChange = (tab: LayoutState['activeTab']) => {
     dispatch(layoutActions.setActiveTab(tab));
