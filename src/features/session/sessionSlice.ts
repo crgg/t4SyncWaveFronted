@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { SessionInfo, UserRole } from '@shared/types';
+import { IRoomUser, IRoomUsers } from '../groups/groups.types';
 
 interface SessionState {
   sessionId: string | null;
@@ -10,6 +11,7 @@ interface SessionState {
   isJoining: boolean;
   error: string | null;
   sessionName?: string;
+  connectionUsers: Record<string, IRoomUser>;
 }
 
 const initialState: SessionState = {
@@ -21,6 +23,7 @@ const initialState: SessionState = {
   isJoining: false,
   error: null,
   sessionName: undefined,
+  connectionUsers: {},
 };
 
 const sessionSlice = createSlice({
@@ -76,6 +79,19 @@ const sessionSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    updateConnectionUsers: (state, action: PayloadAction<IRoomUsers>) => {
+      const { users } = action.payload;
+      const newConnectionUsers: Record<string, IRoomUser> = {};
+      users.forEach((user) => (newConnectionUsers[user.odooUserId] = user));
+      state.connectionUsers = { ...state.connectionUsers, ...newConnectionUsers };
+    },
+    addConnectionUser: (state, action: PayloadAction<IRoomUser>) => {
+      state.connectionUsers[action.payload.odooUserId] = action.payload;
+    },
+    removeConnectionUser: (state, action: PayloadAction<IRoomUser>) => {
+      const { odooUserId } = action.payload;
+      delete state.connectionUsers[odooUserId];
+    },
   },
 });
 
@@ -90,6 +106,9 @@ export const {
   updateParticipantCount,
   clearError,
   setRole,
+  updateConnectionUsers,
+  addConnectionUser,
+  removeConnectionUser,
 } = sessionSlice.actions;
 
 export default sessionSlice.reducer;

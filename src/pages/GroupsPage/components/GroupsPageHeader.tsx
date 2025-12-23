@@ -23,15 +23,17 @@ export function GroupsPageHeader({
           <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
             {groupsCount} {groupsCount === 1 ? 'group' : 'groups'}
           </span>
-          <Button
-            onClick={onCreateGroup}
-            variant="primary"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <Plus size={16} />
-            <span className="hidden sm:inline">Create Group</span>
-          </Button>
+          {isMyGroups && (
+            <Button
+              onClick={onCreateGroup}
+              variant="primary"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Plus size={16} />
+              <span className="hidden sm:inline">Create Group</span>
+            </Button>
+          )}
         </div>
       </div>
       <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-4">

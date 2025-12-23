@@ -1,7 +1,3 @@
-/**
- * Página de detalle de un grupo específico
- */
-
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -16,6 +12,7 @@ import {
   Radio,
   Crown,
   UserPlus,
+  UserMinus,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -37,9 +34,13 @@ import { paths } from '@/routes/paths';
 import PlaylistAdapter from '@/features/playlist/playlistAdapter';
 import { setTrack } from '@/features/audio/audioSlice';
 import { useAudio } from '@/shared/hooks/useAudio';
+import DeleteDialog from '@/shared/components/DeleteDialog/DeleteDialog';
 
 const GroupPage = () => {
   const { groupId } = useParams<{ groupId: string }>();
+  const [isDeleteMember, setIsDeleteMember] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const connectionUsers = useAppSelector((state) => state.session.connectionUsers);
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -258,6 +259,11 @@ const GroupPage = () => {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
+  const handleRemoveMember = (member: Member) => {
+    setSelectedMember(member);
+    setIsDeleteMember(true);
+  };
+
   if (isLoading) {
     return (
       <div className="w-full max-w-4xl mx-auto pb-24">
@@ -470,7 +476,6 @@ const GroupPage = () => {
               </Button>
             )}
           </div>
-
           {members.length === 0 ? (
             <div className="text-center py-8">
               <Users
@@ -484,7 +489,13 @@ const GroupPage = () => {
           ) : (
             <div className="space-y-3">
               {members.map((member) => (
-                <MemberCard key={member.id} member={member} isOwner={isOwner} />
+                <MemberCard
+                  key={member.id}
+                  member={member}
+                  isOwner={isOwner}
+                  onRemove={handleRemoveMember}
+                  isConnected={!!connectionUsers[member.user_id]}
+                />
               ))}
             </div>
           )}
@@ -579,6 +590,18 @@ const GroupPage = () => {
           }}
         />
       )}
+      <DeleteDialog
+        modelNameValue={selectedMember?.name || 'Unknown'}
+        mutationFn={groupsApi.removeMemberFromGroup}
+        onClose={() => setIsDeleteMember(false)}
+        queryKeys={[['group', groupId!]]}
+        isOpen={isDeleteMember}
+        payload={{ groupId }}
+        modelName="member"
+        onSuccess={() => {
+          toast.success('Member deleted successfully');
+        }}
+      />
     </div>
   );
 };
@@ -586,9 +609,11 @@ const GroupPage = () => {
 interface MemberCardProps {
   member: Member;
   isOwner: boolean;
+  onRemove: (member: Member) => void;
+  isConnected: boolean;
 }
 
-const MemberCard = ({ member }: MemberCardProps) => {
+const MemberCard = ({ member, isOwner, onRemove, isConnected }: MemberCardProps) => {
   const getInitials = (name?: string) => {
     if (!name) return '?';
     const parts = name.trim().split(' ');
@@ -610,7 +635,7 @@ const MemberCard = ({ member }: MemberCardProps) => {
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg bg-light-surface dark:bg-dark-surface border border-light-hover dark:border-dark-hover hover:border-primary-600/30 transition-colors">
-      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white text-sm font-bold">
+      <div className="relative flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white text-sm font-bold">
         {member.avatar_url ? (
           <img
             src={member.avatar_url}
@@ -619,6 +644,9 @@ const MemberCard = ({ member }: MemberCardProps) => {
           />
         ) : (
           getInitials(member.name || member.guest_name)
+        )}
+        {isConnected && (
+          <div className="w-3.5 h-3.5 rounded-full bg-green-500 absolute -bottom-0.5 -right-0.5 border-2 border-white dark:border-dark-hover"></div>
         )}
       </div>
       <div className="flex-1 min-w-0">
@@ -640,6 +668,16 @@ const MemberCard = ({ member }: MemberCardProps) => {
           </span>
         </div>
       </div>
+      {isOwner && member.role !== 'dj' && (
+        <Button
+          onClick={() => onRemove(member)}
+          variant="ghost-danger"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          <UserMinus size={16} />
+        </Button>
+      )}
     </div>
   );
 };

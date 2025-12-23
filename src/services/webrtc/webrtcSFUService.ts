@@ -22,7 +22,11 @@ interface SFUSignalingMessage {
     | 'room-users'
     | 'get-room-users'
     | 'ping'
-    | 'pong';
+    | 'pong'
+    | 'left'
+    | 'joined'
+    | 'user-left'
+    | 'user-joined';
   data?: unknown;
   sessionId?: string;
   event?: string;
@@ -203,7 +207,6 @@ class WebRTCSFUService {
       }
 
       case 'role': {
-        console.log('I arrived here', message);
         if (this.role === 'dj') {
           this.sessionId = 'Spotty-Fredy';
           this.handleEvent(SOCKET_EVENTS.SESSION_CREATED, { sessionId: this.sessionId });
@@ -261,12 +264,23 @@ class WebRTCSFUService {
 
       case 'server-ping':
       case 'pong':
-      case 'welcome': {
+      case 'user-left':
+      case 'user-joined': {
         break;
       }
-
+      case 'welcome':
+        this.handleEvent(SOCKET_EVENTS.CONNECTION_STATUS, { connected: true });
+        break;
       case 'room-users': {
-        console.log('Join users message received:', message);
+        this.handleEvent(SOCKET_EVENTS.ROOM_USERS, message);
+        break;
+      }
+      case 'joined': {
+        this.handleEvent(SOCKET_EVENTS.PARTICIPANT_JOINED, message);
+        break;
+      }
+      case 'left': {
+        this.handleEvent(SOCKET_EVENTS.PARTICIPANT_LEFT, message);
         break;
       }
 

@@ -5,6 +5,7 @@ import { Button } from '@shared/components/Button/Button';
 import { CreateGroupModal } from '@/features/groups/components/CreateGroupModal';
 import { layoutActions } from '@/app/slices/layoutSlice';
 import { useAppDispatch } from '@/app/hooks';
+import { paths } from '@/routes/paths';
 
 interface EmptyGroupsStateProps {
   isMyGroups: boolean;
@@ -53,7 +54,7 @@ export function EmptyGroupsState({
               <Button
                 variant="primary"
                 onClick={() => {
-                  navigate('/groups/me');
+                  navigate(paths.GROUPS(null));
                   dispatch(layoutActions.setActiveTab('my-groups'));
                 }}
               >

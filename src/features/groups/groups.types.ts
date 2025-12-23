@@ -101,3 +101,24 @@ export interface IPayloadUpdateGroup {
 export interface IPayloadDeleteGroup {
   id: string;
 }
+
+export interface IPayloadRemoveMember {
+  groupId: string;
+}
+
+export interface IRoomUser {
+  odooUserId: string;
+  odooName: string;
+  peerId: string;
+  userName: string;
+  role: string;
+  isHost: boolean;
+  joinedAt: string;
+}
+
+export interface IRoomUsers {
+  type: string;
+  room: string;
+  users: IRoomUser[];
+  count: number;
+}

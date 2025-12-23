@@ -7,6 +7,7 @@ import type {
   GroupResponse,
   GroupsResponse,
   IPayloadDeleteGroup,
+  IPayloadRemoveMember,
   IPayloadUpdateGroup,
 } from './groups.types';
 
@@ -29,6 +30,10 @@ class GroupsApi {
   }
   async addMemberToGroup(data: FormAddMemberToGroup): Promise<AddMemberToGroupResponse> {
     const response = await http.post<AddMemberToGroupResponse>('/groups/add-member', data);
+    return response.data;
+  }
+  async removeMemberFromGroup(data: IPayloadRemoveMember): Promise<AddMemberToGroupResponse> {
+    const response = await http.post<AddMemberToGroupResponse>('/groups/remove-member', data);
     return response.data;
   }
   async addMemberToGroupByCode(data: FormAddMemberToGroup): Promise<AddMemberToGroupResponse> {

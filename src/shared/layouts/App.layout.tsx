@@ -1,5 +1,4 @@
 import { Outlet, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
 
 import { Header } from '@/components/Header';
 import SidebarLayout from './Sidebar.layout';
@@ -14,7 +13,7 @@ const AppLayout = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const { ping } = useWebSocket();
+  useWebSocket();
 
   const onTabChange = (tab: LayoutState['activeTab']) => {
     dispatch(layoutActions.setActiveTab(tab));
@@ -27,13 +26,6 @@ const AppLayout = () => {
       navigate(paths.HOME);
     }
   };
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      ping();
-    }, 1000 * 30);
-    return () => clearInterval(interval);
-  }, [ping]);
 
   return (
     <>

@@ -7,6 +7,9 @@ import {
   joinSessionSuccess,
   joinSessionFailure,
   leaveSession as leaveSessionAction,
+  updateConnectionUsers,
+  addConnectionUser,
+  removeConnectionUser,
 } from '@features/session/sessionSlice';
 import { setAudioState, reset as resetAudio } from '@features/audio/audioSlice';
 import { syncPlaylist } from '@features/playlist/playlistSlice';
@@ -19,6 +22,7 @@ import { WS_URL, SOCKET_EVENTS } from '@shared/constants';
 import type { AudioState, SessionInfo, Track } from '@shared/types';
 import { isValidAudioUrl } from '@shared/utils';
 import { store } from '@app/store';
+import { IRoomUser, IRoomUsers } from '@/features/groups/groups.types';
 
 export function useWebSocket() {
   const dispatch = useAppDispatch();
@@ -55,6 +59,7 @@ export function useWebSocket() {
       wsService = initializeWebSocketService({ url: WS_URL });
     }
     const handleConnectionStatus = (data: { connected: boolean; reason?: string }) => {
+      console.log('Connection status:', data);
       if (data.connected) {
         dispatch(connected());
         isConnectingRef.current = false;
@@ -224,16 +229,19 @@ export function useWebSocket() {
       }
     };
 
+    const handleRoomUsers = (data: IRoomUsers) => dispatch(updateConnectionUsers(data));
+    const handleConnectionUserJoined = (data: IRoomUser) => dispatch(addConnectionUser(data));
+    const handleConnectionUserLeft = (data: IRoomUser) => dispatch(removeConnectionUser(data));
+
     wsService.on(SOCKET_EVENTS.SESSION_CREATED, handleSessionCreated);
     wsService.on(SOCKET_EVENTS.SESSION_JOINED, handleSessionJoined);
     wsService.on(SOCKET_EVENTS.SESSION_ERROR, handleSessionError);
     wsService.on(SOCKET_EVENTS.AUDIO_STATE, handleAudioState);
     wsService.on(SOCKET_EVENTS.PLAYLIST_SYNC, handlePlaylistSync);
     wsService.on(SOCKET_EVENTS.PLAYBACK_STATE, handlePlaybackState);
-
-    wsService.on(SOCKET_EVENTS.PARTICIPANT_JOINED, () => {});
-
-    wsService.on(SOCKET_EVENTS.PARTICIPANT_LEFT, () => {});
+    wsService.on(SOCKET_EVENTS.ROOM_USERS, handleRoomUsers);
+    wsService.on(SOCKET_EVENTS.PARTICIPANT_JOINED, handleConnectionUserJoined);
+    wsService.on(SOCKET_EVENTS.PARTICIPANT_LEFT, handleConnectionUserLeft);
 
     if (wsService.isConnected()) {
       return () => {
@@ -244,6 +252,7 @@ export function useWebSocket() {
         wsService.off(SOCKET_EVENTS.AUDIO_STATE, handleAudioState);
         wsService.off(SOCKET_EVENTS.PLAYLIST_SYNC, handlePlaylistSync);
         wsService.off(SOCKET_EVENTS.PLAYBACK_STATE, handlePlaybackState);
+        wsService.off(SOCKET_EVENTS.ROOM_USERS, handleRoomUsers);
       };
     }
 

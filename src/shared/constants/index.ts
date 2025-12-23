@@ -25,13 +25,14 @@ export const SOCKET_EVENTS = {
 
   // Servidor -> Cliente
   SESSION_CREATED: 'session:created',
-  SESSION_JOINED: 'session:joined',
+  SESSION_JOINED: 'sessionjoined',
   SESSION_ERROR: 'session:error',
   AUDIO_STATE: 'audio:state',
   AUDIO_SYNC: 'audio:sync',
   CONNECTION_STATUS: 'connection:status',
-  PARTICIPANT_JOINED: 'participant:joined',
-  PARTICIPANT_LEFT: 'participant:left',
+  ROOM_USERS: 'room:users',
+  PARTICIPANT_JOINED: 'joined',
+  PARTICIPANT_LEFT: 'left',
   PLAYLIST_SYNC: 'playlist:sync',
 } as const;
 
