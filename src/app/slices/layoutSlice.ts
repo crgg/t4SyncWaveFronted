@@ -1,6 +1,7 @@
+import { paths } from '@/routes/paths';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-type ActiveTab = 'my-groups' | 'groups' | 'home';
+type ActiveTab = 'my-groups' | 'listeners' | 'home' | 'playlist';
 
 export interface LayoutState {
   isSidebarOpen: boolean;
@@ -11,16 +12,14 @@ const initialState = (): LayoutState => {
   const isMyGroups = new URL(window.location.href);
   let activeTab: ActiveTab = 'my-groups';
 
-  switch (isMyGroups.pathname) {
-    case '/groups/me':
-      activeTab = 'my-groups';
-      break;
-    case '/groups':
-      activeTab = 'groups';
-      break;
-    case '/':
-      activeTab = 'home';
-      break;
+  if (isMyGroups.pathname.startsWith(paths.LISTENERS(null))) {
+    activeTab = 'listeners';
+  } else if (isMyGroups.pathname.startsWith(paths.GROUPS(null))) {
+    activeTab = 'my-groups';
+    // } else if (isMyGroups.pathname.startsWith(paths.PLAYLIST)) {
+    //   activeTab = 'playlist';
+  } else {
+    activeTab = 'home';
   }
 
   return {

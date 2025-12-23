@@ -17,7 +17,7 @@ import {
   Crown,
   UserPlus,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 
 import { groupsApi } from '@/features/groups/groupsApi';
@@ -26,7 +26,6 @@ import { Button } from '@shared/components/Button/Button';
 import { AddMemberModal } from '@/features/groups/components/AddMemberModal';
 import type { Member } from '@/features/groups/groups.types';
 import { PlaylistHost } from '@/features/playlist/components/PlaylistHost';
-import { playListApi } from '@/features/playlist/playListApi';
 import { setPlaylistFromApi } from '@/features/playlist/playlistSlice';
 import { AudioPlayerHost } from '@/features/audio/components/AudioPlayerHost';
 import { useWebSocket } from '@/shared/hooks/useWebSocket';
@@ -34,7 +33,8 @@ import { createSessionStart, joinSessionStart, setRole } from '@/features/sessio
 import { PlaylistListener } from '@/features/playlist/components/PlaylistListener';
 import { AudioPlayerListener } from '@/features/audio/components/AudioPlayerListener';
 import { ConnectionStatus } from '@/shared/components/ConnectionStatus/ConnectionStatus';
-// import { getAudioService } from '@/services/audio/audioService';
+import { paths } from '@/routes/paths';
+import PlaylistAdapter from '@/features/playlist/playlistAdapter';
 
 const GroupPage = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -59,12 +59,20 @@ const GroupPage = () => {
     gcTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  const { data: playlist } = useQuery({
-    queryKey: ['playlist'],
-    queryFn: () => playListApi.getPlaylist(),
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 5 * 60 * 1000, // 5 minutos
-  });
+  const playlist = useMemo(() => {
+    return data?.group
+      ? (Array.isArray(data.group.current_track)
+          ? data.group.current_track
+          : [data.group.current_track]
+        ).filter((track) => !!track)
+      : null;
+  }, [data]);
+
+  useEffect(() => {
+    if (playlist) {
+      dispatch(setPlaylistFromApi({ tracks: playlist.map(PlaylistAdapter.toCurrentTrack) }));
+    }
+  }, [dispatch, playlist]);
 
   useEffect(() => {
     return () => {
@@ -79,11 +87,10 @@ const GroupPage = () => {
   useEffect(() => {
     if (!data || !user || isConnectingRef.current || !user) return;
 
-    // Evitar procesar el mismo grupo múltiples veces
     if (processedGroupIdRef.current === data.group.id) return;
 
     const connectToSession = () => {
-      if (isConnectingRef.current) return; // Evitar múltiples llamadas
+      if (isConnectingRef.current) return;
       isConnectingRef.current = true;
       processedGroupIdRef.current = data.group.id;
 
@@ -98,18 +105,17 @@ const GroupPage = () => {
         return;
       }
       const sessionName = data.group.id;
+      dispatch(setRole({ role: 'dj' }));
       dispatch(createSessionStart({ name: sessionName }));
       createSession(sessionName, user);
       isHostRef.current = true;
     };
 
-    // Si ya está conectado, esperar un pequeño delay para asegurar que WebRTC esté listo
     if (isConnected) {
       connectionTimeoutRef.current = setTimeout(() => {
         connectToSession();
       }, 500);
     } else {
-      // Si no está conectado, esperar a que se conecte
       let checkConnectionInterval: ReturnType<typeof setInterval> | null = null;
       let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -151,15 +157,6 @@ const GroupPage = () => {
     isConnectingRef.current = false;
     isHostRef.current = null;
   }, [groupId]);
-
-  useEffect(() => {
-    if (playlist) {
-      const tracks = Array.isArray(playlist) ? playlist : (playlist as any)?.tracks || [];
-      if (tracks.length > 0) {
-        dispatch(setPlaylistFromApi({ tracks }));
-      }
-    }
-  }, [playlist, dispatch]);
 
   const group = data?.status && data?.group ? data.group : null;
   const members = group?.members || [];
@@ -283,7 +280,7 @@ const GroupPage = () => {
     <div className="w-full max-w-4xl mx-auto pb-24">
       <div className="mb-4 mt-2">
         <Link
-          to={'/groups' + (isOwner ? '/me' : '')}
+          to={isOwner ? paths.GROUPS(null) : paths.LISTENERS(null)}
           className="inline-flex items-center gap-2 text-light-text-secondary dark:text-dark-text-secondary hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
         >
           <ArrowLeft size={18} />

@@ -12,7 +12,21 @@ export interface Group {
   created_by_name: string;
   created_by_avatar_url?: any;
   members?: Member[];
-  current_tracks?: any[];
+  current_track: Array<any> | ICurrentTrack;
+}
+
+export interface ICurrentTrack {
+  id: string;
+  group_id: string;
+  track_id: string;
+  position: number;
+  added_by: string;
+  created_at: string;
+  title: string;
+  artist: string;
+  file_url: string;
+  duration_ms: number;
+  uploaded_by: string;
 }
 
 export interface GroupsResponse extends ResponseBase {
@@ -38,7 +52,7 @@ export interface Member {
   avatar_url?: any;
 }
 
-export interface GroupByIdResponse extends ResponseBase {
+export interface GroupResponse extends ResponseBase {
   group: Group;
 }
 
@@ -48,7 +62,8 @@ export interface FormCreateGroup {
 
 export interface FormAddMemberToGroup {
   groupId: string;
-  email: string;
+  email?: string;
+  code?: string;
   role: string; // dj or member
 }
 
@@ -76,4 +91,13 @@ export interface MemberStored {
 
 export interface AddMemberToGroupResponse extends ResponseBase {
   member: MemberStored;
+}
+
+export interface IPayloadUpdateGroup {
+  id: string;
+  name: string;
+}
+
+export interface IPayloadDeleteGroup {
+  id: string;
 }

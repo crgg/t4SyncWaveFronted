@@ -31,6 +31,12 @@ export function useWebSocket() {
   const connectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isConnectingRef = useRef(false);
 
+  const ping = useCallback(() => {
+    const wsService = getWebSocketService({ url: WS_URL });
+    if (!wsService.isConnected()) return;
+    wsService.ping();
+  }, []);
+
   const updateAudioStateRef = () => {
     audioStateRef.current = store.getState().audio;
   };
@@ -320,6 +326,12 @@ export function useWebSocket() {
     [dispatch, user?.id]
   );
 
+  const getRoomUsers = useCallback(async () => {
+    const wsService = getWebSocketService({ url: WS_URL });
+    if (!wsService.isConnected()) return;
+    await wsService.getRoomUsers();
+  }, [sessionId]);
+
   const joinSession = useCallback(
     async (sessionIdToJoin: string) => {
       try {
@@ -389,6 +401,8 @@ export function useWebSocket() {
     createSession,
     joinSession,
     leaveSession,
+    getRoomUsers,
     wsRef: socketServiceRef,
+    ping,
   };
 }

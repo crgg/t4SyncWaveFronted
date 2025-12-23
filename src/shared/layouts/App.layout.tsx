@@ -1,5 +1,4 @@
 import { Outlet, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
 import { Header } from '@/components/Header';
@@ -7,44 +6,34 @@ import SidebarLayout from './Sidebar.layout';
 import { MobileGroupsTabs } from '../components/MobileGroupsTabs/MobileGroupsTabs';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { layoutActions, LayoutState } from '@/app/slices/layoutSlice';
-import { playListApi } from '@/features/playlist/playListApi';
-import { setPlaylistFromApi } from '@/features/playlist/playlistSlice';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { paths } from '@/routes/paths';
 
 const AppLayout = () => {
   const activeTab = useAppSelector((state) => state.layout.activeTab);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  useWebSocket();
+  const { ping } = useWebSocket();
 
   const onTabChange = (tab: LayoutState['activeTab']) => {
     dispatch(layoutActions.setActiveTab(tab));
+
     if (tab === 'my-groups') {
-      navigate('/groups/me');
-    } else if (tab === 'groups') {
-      navigate('/groups');
+      navigate(paths.GROUPS(null));
+    } else if (tab === 'listeners') {
+      navigate(paths.LISTENERS(null));
     } else {
-      navigate('/');
+      navigate(paths.HOME);
     }
   };
 
-  const { data: playlist } = useQuery({
-    queryKey: ['playlist'],
-    queryFn: () => playListApi.getPlaylist(),
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 5 * 60 * 1000, // 5 minutos
-    // enabled: !!sessionId,
-  });
-
   useEffect(() => {
-    if (playlist) {
-      const tracks = Array.isArray(playlist) ? playlist : (playlist as any)?.tracks || [];
-      if (tracks.length > 0) {
-        dispatch(setPlaylistFromApi({ tracks }));
-      }
-    }
-  }, [playlist, dispatch]);
+    const interval = setInterval(() => {
+      ping();
+    }, 1000 * 30);
+    return () => clearInterval(interval);
+  }, [ping]);
 
   return (
     <>

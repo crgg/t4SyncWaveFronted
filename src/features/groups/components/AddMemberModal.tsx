@@ -1,23 +1,43 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Mail, KeyRound } from 'lucide-react';
 
 import { groupsApi } from '../groupsApi';
 import { Modal } from '@shared/components/Modal/Modal';
 import { Input } from '@shared/components/Input/Input';
 import { Button } from '@shared/components/Button/Button';
+import { FormAddMemberToGroup } from '../groups.types';
 
-const schema = yup.object({
-  email: yup.string().email('Invalid email address').required('Email is required'),
+type InviteMethod = 'email' | 'code';
+
+const baseSchema = yup.object({
+  email: yup.string().when('_method', {
+    is: 'email',
+    then: (schema) => schema.email('Invalid email address').required('Email is required'),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  code: yup.string().when('_method', {
+    is: 'code',
+    then: (schema) =>
+      schema.min(6, 'Code must be at least 6 characters').required('Group code is required'),
+    otherwise: (schema) => schema.notRequired(),
+  }),
   role: yup
     .string()
     .oneOf(['dj', 'member'], 'Role must be either "dj" or "member"')
     .required('Role is required'),
+  _method: yup.string().oneOf(['email', 'code']).required(),
 });
 
-type AddMemberFormData = yup.InferType<typeof schema>;
+type AddMemberFormData = {
+  email?: string;
+  code?: string;
+  role: 'dj' | 'member';
+  _method: InviteMethod;
+};
 
 interface AddMemberModalProps {
   isOpen: boolean;
@@ -28,30 +48,46 @@ interface AddMemberModalProps {
 
 export function AddMemberModal({ isOpen, onClose, groupId, onSuccess }: AddMemberModalProps) {
   const queryClient = useQueryClient();
+  const [inviteMethod, setInviteMethod] = useState<InviteMethod>('email');
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    clearErrors,
   } = useForm<AddMemberFormData>({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(baseSchema) as any,
+    mode: 'onSubmit', // Solo validar al hacer submit
+    reValidateMode: 'onSubmit', // Solo re-validar al hacer submit
     defaultValues: {
       role: 'member',
+      _method: 'email',
+      email: '',
+      code: '',
     },
   });
 
   const mutation = useMutation({
-    mutationFn: (data: AddMemberFormData) =>
-      groupsApi.addMemberToGroup({
+    mutationFn: (data: AddMemberFormData) => {
+      const payload: FormAddMemberToGroup = {
         groupId,
-        email: data.email,
         role: data.role,
-      }),
+      };
+      if (data._method === 'email') {
+        payload.email = data.email;
+        return groupsApi.addMemberToGroup(payload);
+      } else {
+        payload.code = data.code;
+        return groupsApi.addMemberToGroupByCode(payload);
+      }
+    },
     onSuccess: () => {
       // Invalidar la query del grupo para refrescar los miembros
       queryClient.invalidateQueries({ queryKey: ['group', groupId] });
       reset();
+      setInviteMethod('email');
       onClose();
       onSuccess?.();
     },
@@ -61,45 +97,105 @@ export function AddMemberModal({ isOpen, onClose, groupId, onSuccess }: AddMembe
   });
 
   const onSubmit = (data: AddMemberFormData) => {
+    clearErrors();
     mutation.mutate(data);
   };
 
   const handleClose = () => {
     if (!mutation.isPending) {
       reset();
+      setInviteMethod('email');
       onClose();
+    }
+  };
+
+  const handleMethodChange = (method: InviteMethod) => {
+    setInviteMethod(method);
+    setValue('_method', method);
+    // Limpiar errores al cambiar de método
+    clearErrors();
+    // Clear the other field when switching methods
+    if (method === 'email') {
+      setValue('code', '');
+      setValue('email', '');
+    } else {
+      setValue('email', '');
+      setValue('code', '');
     }
   };
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Add Member to Group" size="md">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Icon/Illustration */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
         <div className="flex justify-center mb-4">
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center shadow-lg">
             <UserPlus size={32} className="text-white" />
           </div>
         </div>
 
-        {/* Description */}
         <p className="text-center text-sm text-light-text-secondary dark:text-dark-text-secondary">
-          Invite a user to join this group by entering their email address. You can assign them as a
+          Invite a user to join this group by email address or group code. You can assign them as a
           member or DJ.
         </p>
 
-        {/* Form Fields */}
-        <div className="space-y-4">
-          <Input
-            {...register('email')}
-            label="Email Address"
-            type="email"
-            placeholder="user@example.com"
-            error={errors.email?.message}
+        <div className="flex gap-2 p-1 bg-light-surface dark:bg-dark-surface rounded-lg border border-light-hover dark:border-dark-hover">
+          <button
+            type="button"
+            onClick={() => handleMethodChange('email')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-all ${
+              inviteMethod === 'email'
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text dark:hover:text-dark-text'
+            }`}
             disabled={mutation.isPending}
-            autoComplete="off"
-            maxLength={100}
-            autoFocus
-          />
+          >
+            <Mail size={16} />
+            <span>Email</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleMethodChange('code')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-all ${
+              inviteMethod === 'code'
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text dark:hover:text-dark-text'
+            }`}
+            disabled={mutation.isPending}
+          >
+            <KeyRound size={16} />
+            <span>Group Code</span>
+          </button>
+        </div>
+
+        <input type="hidden" {...register('_method')} value={inviteMethod} />
+
+        <div className="space-y-4">
+          {inviteMethod === 'email' ? (
+            <Input
+              {...register('email')}
+              label="Email Address"
+              type="email"
+              placeholder="user@example.com"
+              error={errors.email?.message}
+              disabled={mutation.isPending}
+              autoComplete="off"
+              maxLength={100}
+              autoFocus
+            />
+          ) : (
+            <Input
+              {...register('code')}
+              label="Group Code"
+              type="text"
+              className="uppercase"
+              placeholder="Enter group code"
+              error={errors.code?.message}
+              disabled={mutation.isPending}
+              autoComplete="off"
+              maxLength={10}
+              autoFocus
+            />
+          )}
 
           <div className="hidden">
             <label className="block text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-2">
@@ -137,7 +233,6 @@ export function AddMemberModal({ isOpen, onClose, groupId, onSuccess }: AddMembe
           </div>
         </div>
 
-        {/* Error Message */}
         {mutation.error && (
           <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
             <p className="text-sm text-red-600 dark:text-red-400">
@@ -148,7 +243,6 @@ export function AddMemberModal({ isOpen, onClose, groupId, onSuccess }: AddMembe
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex gap-3 pt-4">
           <Button
             type="button"

@@ -67,7 +67,7 @@ const Trigger = ({ children, className = '', onClick }: SubComponentProps) => {
         onClick?.();
       }}
       className={twMerge(
-        `px-3 py-2 flex text-xs sm:text-sm items-center gap-1 rounded-sm transition-all duration-200 bg-surface border border-hover text-primary hover:bg-hover`,
+        `px-3 py-2 flex text-xs sm:text-sm items-center gap-1 rounded-sm transition-all duration-200 bg-surface border border-hover dark:border-dark-hover text-primary hover:bg-hover`,
         className
       )}
     >

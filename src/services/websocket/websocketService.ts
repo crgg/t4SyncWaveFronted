@@ -286,6 +286,15 @@ class WebSocketService {
     this.emit(SOCKET_EVENTS.SESSION_JOIN, { sessionId });
   }
 
+  async getRoomUsers(): Promise<void> {
+    if (this.useWebRTC) {
+      if (this.useSFU && this.webrtcSFUService) {
+        this.webrtcSFUService.getRoomUsers();
+        return;
+      }
+    }
+  }
+
   async leaveSession(sessionId: string): Promise<void> {
     if (this.useWebRTC) {
       if (this.useSFU && this.webrtcSFUService) {
@@ -400,6 +409,15 @@ class WebSocketService {
       }
     }
     return this.socket?.id;
+  }
+
+  ping(): void {
+    if (this.useWebRTC) {
+      if (this.useSFU && this.webrtcSFUService) {
+        this.webrtcSFUService.ping();
+        return;
+      }
+    }
   }
 }
 

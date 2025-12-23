@@ -21,6 +21,7 @@ export const SOCKET_EVENTS = {
   SYNC_REQUEST: 'sync:request',
   PLAYLIST_UPDATE: 'playlist:update',
   PLAYBACK_STATE: 'playback-state',
+  GET_ROOM_USERS: 'get-room-users',
 
   // Servidor -> Cliente
   SESSION_CREATED: 'session:created',

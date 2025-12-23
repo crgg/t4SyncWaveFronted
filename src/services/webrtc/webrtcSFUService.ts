@@ -19,7 +19,10 @@ interface SFUSignalingMessage {
     | 'playback-state'
     | 'server-ping'
     | 'welcome'
-    | 'room-users';
+    | 'room-users'
+    | 'get-room-users'
+    | 'ping'
+    | 'pong';
   data?: unknown;
   sessionId?: string;
   event?: string;
@@ -218,10 +221,10 @@ class WebRTCSFUService {
           position: number;
           isPlaying: boolean;
           timestamp: number;
-          truckUrl: string;
+          trackUrl: string;
         };
 
-        if (!playbackState.truckUrl) {
+        if (!playbackState.trackUrl) {
           console.warn('Received playback-state without truckUrl:', playbackState);
           return;
         }
@@ -244,24 +247,21 @@ class WebRTCSFUService {
               : playbackState.position,
           volume: currentAudioState.volume ?? 100,
           trackId: currentAudioState.trackId || '',
-          trackUrl: playbackState.truckUrl || currentAudioState.trackUrl || '',
+          trackUrl: playbackState.trackUrl || currentAudioState.trackUrl || '',
           trackTitle: currentAudioState.trackTitle,
           trackArtist: currentAudioState.trackArtist,
           trackDuration: currentAudioState.trackDuration,
           timestamp: playbackState.timestamp ?? Date.now(),
-          truckUrl: playbackState.truckUrl,
+          truckUrl: playbackState.trackUrl,
         };
 
         this.handleEvent(SOCKET_EVENTS.AUDIO_STATE, audioState);
         break;
       }
 
-      case 'server-ping': {
-        break;
-      }
-
+      case 'server-ping':
+      case 'pong':
       case 'welcome': {
-        console.log('Welcome message received:', message);
         break;
       }
 
@@ -275,7 +275,7 @@ class WebRTCSFUService {
     }
   }
 
-  private sendSignalingMessage(message: SFUSignalingMessage): void {
+  private sendSignalingMessage(message: SFUSignalingMessage, simple = false): void {
     if (!this.signalingWebSocket || this.signalingWebSocket.readyState !== WebSocket.OPEN) {
       console.warn('WebSocket de señalización no está conectado');
       return;
@@ -284,10 +284,14 @@ class WebRTCSFUService {
     try {
       const messageToSend = {
         ...message,
-        // sessionId: this.sessionId || undefined,
         role: this.role || undefined,
         peerId: this.peerId || undefined,
       };
+
+      if (simple) {
+        delete messageToSend.role;
+        delete messageToSend.peerId;
+      }
 
       this.signalingWebSocket.send(JSON.stringify(messageToSend));
     } catch (error) {
@@ -430,6 +434,14 @@ class WebRTCSFUService {
     }
   }
 
+  getRoomUsers(): void {
+    this.sendSignalingMessage({ type: 'get-room-users' }, true);
+  }
+
+  ping(): void {
+    this.sendSignalingMessage({ type: 'ping' }, true);
+  }
+
   on<K extends keyof SocketEventHandlers>(event: K, handler: SocketEventHandlers[K]): void {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, new Set());
@@ -515,36 +527,37 @@ class WebRTCSFUService {
   }
 
   private emitPlaybackState(position: number, isPlaying: boolean, trackUrl: string): void {
-    const room = this.sessionId || '';
-    const userName = 'FredyMax';
-
+    // const room = this.sessionId || '';
+    // const userName = 'FredyMax';
+    const timestamp = Date.now();
     this.emit(SOCKET_EVENTS.PLAYBACK_STATE, {
-      room,
-      userName,
+      // room,
+      // userName,
       position,
       isPlaying,
-      truckUrl: trackUrl,
+      trackUrl,
+      timestamp,
     });
   }
 
   playAudio(timestamp: number, position?: number, trackUrl?: string): void {
     this.emit(SOCKET_EVENTS.AUDIO_PLAY, {
-      room: this.sessionId || '',
-      userName: 'FredyMax',
+      // room: this.sessionId || '',
+      // userName: 'FredyMax',
       position: position ?? 0,
       isPlaying: true,
-      truckUrl: trackUrl,
+      trackUrl,
       timestamp,
     });
   }
 
   pauseAudio(timestamp: number, position?: number, trackUrl?: string): void {
     this.emit(SOCKET_EVENTS.AUDIO_PAUSE, {
-      room: this.sessionId || '',
-      userName: 'FredyMax',
+      // room: this.sessionId || '',
+      // userName: 'FredyMax',
       position: position ?? 0,
       isPlaying: false,
-      truckUrl: trackUrl,
+      trackUrl,
       timestamp,
     });
   }

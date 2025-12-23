@@ -7,7 +7,9 @@ import ListenerPage from '@/pages/ListenerPage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import UploadPage from '@/pages/UploadPage';
+import NotFoundPage from '@/pages/NotFoundPage';
 import AppLayout from '@/shared/layouts/App.layout';
+import { paths } from './paths';
 
 const GroupsPage = lazy(() => import('@/pages/GroupsPage'));
 const GroupPage = lazy(() => import('@/pages/GroupPage'));
@@ -22,19 +24,19 @@ const routes: RouteObject[] = [
         element: <HomePage />,
       },
       {
-        path: '/groups',
+        path: paths.GROUPS(null),
         element: <GroupsPage />,
       },
       {
-        path: '/groups/me',
-        element: <GroupsPage />,
-      },
-      {
-        path: '/groups/me/:groupId',
+        path: paths.GROUPS(),
         element: <GroupPage />,
       },
       {
-        path: '/groups/:groupId',
+        path: paths.LISTENERS(null),
+        element: <GroupsPage />,
+      },
+      {
+        path: paths.LISTENERS(),
         element: <GroupPage />,
       },
       {
@@ -52,12 +54,16 @@ const routes: RouteObject[] = [
     ],
   },
   {
-    path: '/login',
+    path: paths.LOGIN,
     element: <LoginPage />,
   },
   {
-    path: '/register',
+    path: paths.REGISTER,
     element: <RegisterPage />,
+  },
+  {
+    path: '*',
+    element: <NotFoundPage />,
   },
 ];
 

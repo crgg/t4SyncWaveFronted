@@ -1,47 +1,16 @@
-/**
- * Componente de lista de reproducción para el Host
- * Permite editar y controlar la playlist
- */
-
-import { useEffect } from 'react';
-// import { useQuery } from '@tanstack/react-query';
-
-import { useAppDispatch, useAppSelector } from '@app/hooks';
-import {
-  setCurrentTrackIndex,
-  removeTrack,
-  // setPlaylistFromApi,
-} from '@features/playlist/playlistSlice';
-import { setTrack } from '@features/audio/audioSlice';
-import { formatTime } from '@shared/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-// import { getWebSocketService } from '@services/websocket/websocketService';
-// import { WS_URL } from '@shared/constants';
-// import { playListApi } from '../playListApi';
+
+import { setCurrentTrackIndex, removeTrack } from '@features/playlist/playlistSlice';
+import { useAppDispatch, useAppSelector } from '@app/hooks';
+import { setTrack } from '@features/audio/audioSlice';
 import { useAudio } from '@/shared/hooks/useAudio';
+import { formatTime } from '@shared/utils';
 
 export function PlaylistHost() {
   const dispatch = useAppDispatch();
   const { tracks, currentTrackIndex } = useAppSelector((state) => state.playlist);
-  const { sessionId } = useAppSelector((state) => state.session);
   const { trackId: currentTrackId } = useAppSelector((state) => state.audio);
   const { play } = useAudio();
-
-  // Sincronizar playlist con el servidor cuando se actualiza
-  useEffect(() => {
-    if (!sessionId || tracks.length === 0) return;
-
-    // try {
-    //   const wsService = getWebSocketService({ url: WS_URL });
-    //   if (wsService.isConnected()) {
-    //     wsService.emit('playlist:update', {
-    //       tracks: tracks.map(({ addedAt, ...track }) => track),
-    //     });
-    //   }
-    // } catch (error) {
-    //   console.error('Error al sincronizar playlist:', error);
-    // }
-  }, [tracks, sessionId]);
 
   const handleTrackSelect = (trackId: string, index: number) => {
     const track = tracks.find((t) => t.id === trackId);
@@ -57,21 +26,6 @@ export function PlaylistHost() {
       })
     );
     setTimeout(play, 1000);
-
-    // if (sessionId) {
-    //   try {
-    //     const wsService = getWebSocketService({ url: WS_URL });
-    //     wsService.emit('audio:track-change', {
-    //       trackId: track.id,
-    //       trackUrl: track.url,
-    //       trackTitle: track.title,
-    //       trackArtist: track.artist,
-    //       timestamp: Date.now(),
-    //     });
-    //   } catch (error) {
-    //     console.error('Error al notificar cambio de track:', error);
-    //   }
-    // }
   };
 
   const handleRemoveTrack = (trackId: string, e: React.MouseEvent) => {
@@ -82,7 +36,6 @@ export function PlaylistHost() {
   if (tracks.length === 0) {
     return (
       <div className="">
-        {/* <h3 className="text-lg font-semibold text-dark-text mb-4">Lista de Reproducción</h3> */}
         <div className="text-center py-8 text-dark-text-secondary">
           <svg
             className="w-16 h-16 mx-auto mb-4 opacity-50"

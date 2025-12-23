@@ -1,34 +1,11 @@
-import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
 
-import { useAppDispatch, useAppSelector } from '@app/hooks';
-import { setPlaylistFromApi } from '../playlistSlice';
-import { playListApi } from '../playListApi';
+import { useAppSelector } from '@app/hooks';
 import { formatTime } from '@shared/utils';
 
 export function PlaylistListener() {
-  const dispatch = useAppDispatch();
   const { tracks, currentTrackIndex } = useAppSelector((state) => state.playlist);
   const { trackId: currentTrackId } = useAppSelector((state) => state.audio);
-  const { sessionId } = useAppSelector((state) => state.session);
-
-  const { data: playlist } = useQuery({
-    queryKey: ['playlist', sessionId],
-    queryFn: () => playListApi.getPlaylist(),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
-    enabled: !!sessionId,
-  });
-
-  useEffect(() => {
-    if (playlist) {
-      const tracks = Array.isArray(playlist) ? playlist : (playlist as any)?.tracks || [];
-      if (tracks.length > 0) {
-        dispatch(setPlaylistFromApi({ tracks }));
-      }
-    }
-  }, [playlist, dispatch]);
 
   if (tracks.length === 0) {
     return (

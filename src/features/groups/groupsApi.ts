@@ -4,8 +4,10 @@ import type {
   CreateResponse,
   FormAddMemberToGroup,
   FormCreateGroup,
-  GroupByIdResponse,
+  GroupResponse,
   GroupsResponse,
+  IPayloadDeleteGroup,
+  IPayloadUpdateGroup,
 } from './groups.types';
 
 class GroupsApi {
@@ -21,12 +23,24 @@ class GroupsApi {
     const response = await http.post<CreateResponse>('/groups/create', data);
     return response.data;
   }
-  async getGroupById(groupId: string): Promise<GroupByIdResponse> {
-    const response = await http.get<GroupByIdResponse>(`/groups/get/${groupId}`);
+  async getGroupById(groupId: string): Promise<GroupResponse> {
+    const response = await http.get<GroupResponse>(`/groups/get/${groupId}`);
     return response.data;
   }
   async addMemberToGroup(data: FormAddMemberToGroup): Promise<AddMemberToGroupResponse> {
     const response = await http.post<AddMemberToGroupResponse>('/groups/add-member', data);
+    return response.data;
+  }
+  async addMemberToGroupByCode(data: FormAddMemberToGroup): Promise<AddMemberToGroupResponse> {
+    const response = await http.post<AddMemberToGroupResponse>('/groups/join', data);
+    return response.data;
+  }
+  async updateGroup(data: IPayloadUpdateGroup): Promise<GroupResponse> {
+    const response = await http.post<GroupResponse>('/groups/update', data);
+    return response.data;
+  }
+  async deleteGroup(data: IPayloadDeleteGroup): Promise<GroupResponse> {
+    const response = await http.post<GroupResponse>('/groups/delete', data);
     return response.data;
   }
 }
