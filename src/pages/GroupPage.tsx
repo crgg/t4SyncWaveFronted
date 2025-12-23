@@ -26,7 +26,7 @@ import { Button } from '@shared/components/Button/Button';
 import { AddMemberModal } from '@/features/groups/components/AddMemberModal';
 import type { Member } from '@/features/groups/groups.types';
 import { PlaylistHost } from '@/features/playlist/components/PlaylistHost';
-import { setPlaylistFromApi } from '@/features/playlist/playlistSlice';
+import { setCurrentTrackIndex, setPlaylistFromApi } from '@/features/playlist/playlistSlice';
 import { AudioPlayerHost } from '@/features/audio/components/AudioPlayerHost';
 import { useWebSocket } from '@/shared/hooks/useWebSocket';
 import { createSessionStart, joinSessionStart, setRole } from '@/features/session/sessionSlice';
@@ -35,6 +35,8 @@ import { AudioPlayerListener } from '@/features/audio/components/AudioPlayerList
 import { ConnectionStatus } from '@/shared/components/ConnectionStatus/ConnectionStatus';
 import { paths } from '@/routes/paths';
 import PlaylistAdapter from '@/features/playlist/playlistAdapter';
+import { setTrack } from '@/features/audio/audioSlice';
+import { useAudio } from '@/shared/hooks/useAudio';
 
 const GroupPage = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -48,6 +50,7 @@ const GroupPage = () => {
   const isConnectingRef = useRef(false);
   const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const processedGroupIdRef = useRef<string | null>(null);
+  const { play } = useAudio();
 
   const isConnected = useAppSelector((state) => state.connection.isConnected);
 
@@ -70,7 +73,29 @@ const GroupPage = () => {
 
   useEffect(() => {
     if (playlist) {
-      dispatch(setPlaylistFromApi({ tracks: playlist.map(PlaylistAdapter.toCurrentTrack) }));
+      const tracks = playlist.map(PlaylistAdapter.toCurrentTrack);
+      dispatch(setPlaylistFromApi({ tracks }));
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+      timeoutId = setTimeout(() => {
+        if (tracks.length > 0) {
+          const index = 0;
+          const track = tracks[index];
+          if (!track) return;
+          dispatch(setCurrentTrackIndex({ index }));
+          dispatch(
+            setTrack({
+              trackId: track.id,
+              trackUrl: track.url,
+              trackTitle: track.title,
+              trackArtist: track.artist,
+            })
+          );
+          setTimeout(play, 1000);
+        }
+      }, 400);
+      return () => {
+        if (timeoutId) clearTimeout(timeoutId);
+      };
     }
   }, [dispatch, playlist]);
 
@@ -470,14 +495,16 @@ const GroupPage = () => {
           transition={{ delay: 0.3 }}
           className="bg-light-card dark:bg-dark-card rounded-xl shadow-xl border border-light-hover dark:border-dark-hover p-6"
         >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-light-text dark:text-dark-text flex items-center gap-2">
-              <Music size={20} />
-              Current Tracks ({playlist?.length ?? 0})
-            </h2>
-          </div>
+          {playlist?.length !== 0 && (
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-light-text dark:text-dark-text flex items-center gap-2">
+                <Music size={20} />
+                Current Tracks
+              </h2>
+            </div>
+          )}
 
-          {isHostRef.current === true && <PlaylistHost />}
+          {isHostRef.current === true && groupId && <PlaylistHost groupId={groupId} />}
           {isHostRef.current === false && <PlaylistListener />}
         </motion.div>
       </div>

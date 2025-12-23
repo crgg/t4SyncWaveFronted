@@ -10,14 +10,12 @@ export interface LayoutState {
 
 const initialState = (): LayoutState => {
   const isMyGroups = new URL(window.location.href);
-  let activeTab: ActiveTab = 'my-groups';
+  let activeTab: ActiveTab;
 
   if (isMyGroups.pathname.startsWith(paths.LISTENERS(null))) {
     activeTab = 'listeners';
   } else if (isMyGroups.pathname.startsWith(paths.GROUPS(null))) {
     activeTab = 'my-groups';
-    // } else if (isMyGroups.pathname.startsWith(paths.PLAYLIST)) {
-    //   activeTab = 'playlist';
   } else {
     activeTab = 'home';
   }

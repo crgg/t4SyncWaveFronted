@@ -1,12 +1,21 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { Upload, Plus } from 'lucide-react';
+import { useState } from 'react';
 
 import { setCurrentTrackIndex, removeTrack } from '@features/playlist/playlistSlice';
 import { useAppDispatch, useAppSelector } from '@app/hooks';
 import { setTrack } from '@features/audio/audioSlice';
 import { useAudio } from '@/shared/hooks/useAudio';
 import { formatTime } from '@shared/utils';
+import { Button } from '@shared/components/Button/Button';
+import { UploadTrackModal } from './UploadTrackModal';
 
-export function PlaylistHost() {
+interface PlaylistHostProps {
+  groupId: string;
+}
+
+export function PlaylistHost({ groupId }: PlaylistHostProps) {
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const dispatch = useAppDispatch();
   const { tracks, currentTrackIndex } = useAppSelector((state) => state.playlist);
   const { trackId: currentTrackId } = useAppSelector((state) => state.audio);
@@ -14,7 +23,7 @@ export function PlaylistHost() {
 
   const handleTrackSelect = (trackId: string, index: number) => {
     const track = tracks.find((t) => t.id === trackId);
-    if (!track) return;
+    if (!track || currentTrackIndex === index) return;
 
     dispatch(setCurrentTrackIndex({ index }));
     dispatch(
@@ -35,29 +44,61 @@ export function PlaylistHost() {
 
   if (tracks.length === 0) {
     return (
-      <div className="">
-        <div className="text-center py-8 text-dark-text-secondary">
-          <svg
-            className="w-16 h-16 mx-auto mb-4 opacity-50"
-            fill="currentColor"
-            viewBox="0 0 20 20"
+      <>
+        <div className="text-center py-12">
+          <div className="mb-6">
+            <svg
+              className="w-20 h-20 mx-auto mb-4 opacity-50 text-light-text-secondary dark:text-dark-text-secondary"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.793L4.383 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.383l4-3.617a1 1 0 011.617.793zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-light-text dark:text-dark-text mb-2">
+            No tracks in playlist
+          </h3>
+          <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-6">
+            Upload your first track to get started
+          </p>
+          <Button
+            onClick={() => setIsUploadModalOpen(true)}
+            variant="primary"
+            className="flex items-center gap-2 mx-auto"
           >
-            <path
-              fillRule="evenodd"
-              d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.793L4.383 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.383l4-3.617a1 1 0 011.617.793zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <p>There are no songs in the playlist</p>
-          <p className="text-sm mt-2">Add songs to start</p>
+            <Upload size={18} />
+            Upload Track
+          </Button>
         </div>
-      </div>
+        <UploadTrackModal
+          isOpen={isUploadModalOpen}
+          onClose={() => setIsUploadModalOpen(false)}
+          groupId={groupId}
+        />
+      </>
     );
   }
 
   return (
     <>
-      <div className="space-y-1 max-h-[600px] overflow-y-auto">
+      {tracks.length === 0 && (
+        <div className="mb-4 flex justify-end">
+          <Button
+            onClick={() => setIsUploadModalOpen(true)}
+            variant="primary"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Plus size={16} />
+            Upload Track
+          </Button>
+        </div>
+      )}
+      <div className="space-y-1 max-h-[600px] overflow-y-auto p-1">
         <AnimatePresence>
           {tracks.map((track, index) => {
             const isCurrentTrack = track.id === currentTrackId;
@@ -72,8 +113,9 @@ export function PlaylistHost() {
                 transition={{ duration: 0.2 }}
                 onClick={() => handleTrackSelect(track.id, index)}
                 className={`
-                  flex items-center gap-4 rounded-lg transition-colors cursor-pointer hover:bg-dark-surface
-                  ${isCurrentTrack ? 'bg-dark-hover' : ''}
+                  flex items-center gap-4 p-3 rounded-lg transition-colors cursor-pointer 
+                  hover:bg-light-hover dark:hover:bg-dark-hover
+                  ${isCurrentTrack ? 'bg-light-surface dark:bg-dark-surface' : ''}
                   ${isPlaying ? 'ring-2 ring-primary-600' : ''}
                 `}
               >
@@ -93,29 +135,35 @@ export function PlaylistHost() {
                       </svg>
                     </motion.div>
                   ) : (
-                    <span className="text-sm text-dark-text-secondary">{index + 1}</span>
+                    <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                      {index + 1}
+                    </span>
                   )}
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div
                     className={`font-medium text-sm truncate ${
-                      isCurrentTrack ? 'text-primary-600' : 'text-dark-text'
+                      isCurrentTrack
+                        ? 'text-primary-600 dark:text-primary-400'
+                        : 'text-light-text dark:text-dark-text'
                     }`}
                   >
                     {track.title}
                   </div>
-                  <div className="text-sm text-dark-text-secondary truncate">{track.artist}</div>
+                  <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary truncate">
+                    {track.artist}
+                  </div>
                 </div>
 
-                <div className="text-sm text-dark-text-secondary flex-shrink-0">
+                <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary flex-shrink-0">
                   {track.duration ? formatTime(track.duration) : '--:--'}
                 </div>
 
                 <button
                   onClick={(e) => handleRemoveTrack(track.id, e)}
-                  className="p-1 rounded-full hover:bg-red-500/20 text-dark-text-secondary hover:text-red-400 transition-colors flex-shrink-0"
-                  title="Eliminar de la lista"
+                  className="p-1 hidden rounded-full hover:bg-red-500/20 text-light-text-secondary dark:text-dark-text-secondary hover:text-red-600 dark:hover:text-red-400 transition-colors flex-shrink-0"
+                  title="Remove from playlist"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path
@@ -130,6 +178,11 @@ export function PlaylistHost() {
           })}
         </AnimatePresence>
       </div>
+      <UploadTrackModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        groupId={groupId}
+      />
     </>
   );
 }

@@ -1,13 +1,8 @@
-/**
- * Página del Host - Control total de la reproducción
- */
-
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@app/hooks';
 import { AudioPlayerHost } from '@features/audio/components/AudioPlayerHost';
 import { LoadSampleMusic } from '@features/audio/components/LoadSampleMusic';
-import { PlaylistHost } from '@features/playlist/components/PlaylistHost';
 import { ConnectionStatus } from '@shared/components/ConnectionStatus/ConnectionStatus';
 import { Button } from '@shared/components/Button/Button';
 import { useWebSocket } from '@shared/hooks/useWebSocket';
@@ -93,9 +88,7 @@ function HostPage() {
 
         <LoadSampleMusic />
 
-        <div className="mb-6">
-          <PlaylistHost />
-        </div>
+        <div className="mb-6">{/* <PlaylistHost /> */}</div>
 
         <AudioPlayerHost />
 

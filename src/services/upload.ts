@@ -9,9 +9,10 @@ export interface UploadResponse {
 }
 
 export const uploadService = {
-  uploadAudio: async (file: File): Promise<UploadResponse> => {
+  uploadAudio: async (file: File, groupId: string): Promise<UploadResponse> => {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('groupId', groupId);
 
     const response = await http.post<UploadResponse>('/audio/upload', formData, {
       headers: {

@@ -1,4 +1,4 @@
-import { AudioLines, HomeIcon, Music4, UsersRound } from 'lucide-react';
+import { AudioLines, HomeIcon, UsersRound } from 'lucide-react';
 import { cn } from '@shared/utils';
 
 import type { LayoutState } from '@/app/slices/layoutSlice';
@@ -22,23 +22,23 @@ export function MobileGroupsTabs({
       iconSize: 16,
     },
     {
-      id: 'listeners' as const,
-      label: 'Listeners',
-      icon: AudioLines,
-      iconSize: 20,
-    },
-    {
       id: 'home' as const,
       label: 'Home',
       icon: HomeIcon,
       iconSize: 16,
     },
     {
-      id: 'playlist' as const,
-      label: 'Playlist',
-      icon: Music4,
+      id: 'listeners' as const,
+      label: 'Listeners',
+      icon: AudioLines,
       iconSize: 20,
     },
+    // {
+    //   id: 'playlist' as const,
+    //   label: 'Playlist',
+    //   icon: Music4,
+    //   iconSize: 20,
+    // },
   ];
 
   return (

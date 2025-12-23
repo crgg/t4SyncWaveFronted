@@ -6,7 +6,6 @@ import HostPage from '@/pages/HostPage';
 import ListenerPage from '@/pages/ListenerPage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
-import UploadPage from '@/pages/UploadPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import AppLayout from '@/shared/layouts/App.layout';
 import { paths } from './paths';
@@ -38,10 +37,6 @@ const routes: RouteObject[] = [
       {
         path: paths.LISTENERS(),
         element: <GroupPage />,
-      },
-      {
-        path: '/upload',
-        element: <UploadPage />,
       },
       {
         path: '/host/:sessionId',

@@ -1,4 +1,4 @@
-import { HomeIcon, LogOutIcon, PanelRightOpen, UploadIcon } from 'lucide-react';
+import { HomeIcon, LogOutIcon, PanelRightOpen } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
@@ -29,11 +29,6 @@ const SidebarLayout = () => {
       label: 'Home',
       icon: <HomeIcon size={18} />,
       href: '/',
-    },
-    {
-      label: 'Upload',
-      icon: <UploadIcon size={18} />,
-      href: '/upload',
     },
   ];
 
