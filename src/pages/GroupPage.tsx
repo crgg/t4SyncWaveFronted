@@ -75,6 +75,8 @@ const GroupPage = () => {
     if (playlist) {
       const tracks = playlist.map(PlaylistAdapter.toCurrentTrack);
       dispatch(setPlaylistFromApi({ tracks }));
+      const isHost = data?.group.created_by === user?.id;
+      if (!isHost) return;
       let timeoutId: ReturnType<typeof setTimeout> | null = null;
       timeoutId = setTimeout(() => {
         if (tracks.length > 0) {
@@ -97,7 +99,7 @@ const GroupPage = () => {
         if (timeoutId) clearTimeout(timeoutId);
       };
     }
-  }, [dispatch, playlist]);
+  }, [dispatch, playlist, data, user]);
 
   useEffect(() => {
     return () => {
