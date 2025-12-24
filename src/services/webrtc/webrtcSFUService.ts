@@ -26,7 +26,8 @@ interface SFUSignalingMessage {
     | 'left'
     | 'joined'
     | 'user-left'
-    | 'user-joined';
+    | 'user-joined'
+    | 'close';
   data?: unknown;
   sessionId?: string;
   event?: string;
@@ -520,16 +521,16 @@ class WebRTCSFUService {
     }
   }
 
-  async leaveSession(sessionIdToLeave: string): Promise<void> {
+  async leaveSession(): Promise<void> {
     try {
       this.sendSignalingMessage({
-        type: 'session-leave',
-        data: { sessionId: sessionIdToLeave },
+        type: 'close',
+        // data: { sessionId: sessionIdToLeave },
       });
 
       this.sendSignalingMessage({
-        type: 'leave-room',
-        room: sessionIdToLeave,
+        type: 'left',
+        // room: sessionIdToLeave,
       });
     } catch (error) {
       console.error('Error al abandonar sesión:', error);

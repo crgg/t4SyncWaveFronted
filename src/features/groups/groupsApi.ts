@@ -34,6 +34,9 @@ class GroupsApi {
   }
   async removeMemberFromGroup(data: IPayloadRemoveMember): Promise<AddMemberToGroupResponse> {
     const response = await http.post<AddMemberToGroupResponse>('/groups/remove-member', data);
+    if (!response?.data?.status) {
+      throw new Error(response?.data?.error || 'Failed to remove member');
+    }
     return response.data;
   }
   async addMemberToGroupByCode(data: FormAddMemberToGroup): Promise<AddMemberToGroupResponse> {

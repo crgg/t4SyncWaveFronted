@@ -91,6 +91,7 @@ export interface MemberStored {
 
 export interface AddMemberToGroupResponse extends ResponseBase {
   member: MemberStored;
+  error?: string;
 }
 
 export interface IPayloadUpdateGroup {

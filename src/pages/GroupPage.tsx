@@ -26,7 +26,12 @@ import { PlaylistHost } from '@/features/playlist/components/PlaylistHost';
 import { setCurrentTrackIndex, setPlaylistFromApi } from '@/features/playlist/playlistSlice';
 import { AudioPlayerHost } from '@/features/audio/components/AudioPlayerHost';
 import { useWebSocket } from '@/shared/hooks/useWebSocket';
-import { createSessionStart, joinSessionStart, setRole } from '@/features/session/sessionSlice';
+import {
+  createSessionStart,
+  joinSessionStart,
+  // leaveSession,
+  setRole,
+} from '@/features/session/sessionSlice';
 import { PlaylistListener } from '@/features/playlist/components/PlaylistListener';
 import { AudioPlayerListener } from '@/features/audio/components/AudioPlayerListener';
 import { ConnectionStatus } from '@/shared/components/ConnectionStatus/ConnectionStatus';
@@ -35,6 +40,7 @@ import PlaylistAdapter from '@/features/playlist/playlistAdapter';
 import { setTrack } from '@/features/audio/audioSlice';
 import { useAudio } from '@/shared/hooks/useAudio';
 import DeleteDialog from '@/shared/components/DeleteDialog/DeleteDialog';
+import { GroupPageSkeleton } from './GroupPage/components/GroupPageSkeleton';
 
 const GroupPage = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -46,7 +52,7 @@ const GroupPage = () => {
   const [copiedCode, setCopiedCode] = useState(false);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const dispatch = useAppDispatch();
-  const { createSession, joinSession } = useWebSocket();
+  const { createSession, joinSession, leaveSession } = useWebSocket();
   const isHostRef = useRef<boolean | null>(null);
   const isConnectingRef = useRef(false);
   const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -62,6 +68,10 @@ const GroupPage = () => {
     staleTime: 1000 * 60 * 2, // 2 minutes
     gcTime: 1000 * 60 * 5, // 5 minutes
   });
+
+  const handleLeaveGroup = () => {
+    leaveSession();
+  };
 
   const playlist = useMemo(() => {
     return data?.group
@@ -190,40 +200,10 @@ const GroupPage = () => {
   const members = group?.members || [];
 
   useEffect(() => {
-    // Cleanup cuando se desmonta el componente o cambia el groupId
     return () => {
-      // console.log('GroupPage: Desmontando, limpiando recursos...');
-      // handleLeave();
+      handleLeaveGroup();
     };
   }, [groupId]);
-
-  // const handleLeave = async () => {
-  //   console.log('GroupPage: Saliendo de la sesión...');
-
-  //   // Limpiar audio
-  //   try {
-  //     const audioService = getAudioService();
-  //     const audioState = audioService.getState();
-
-  //     if (audioState && audioState.trackUrl) {
-  //       try {
-  //         audioService.pause();
-  //       } catch (error) {
-  //         console.warn('Error al pausar audio al salir:', error);
-  //       }
-  //     }
-
-  //     try {
-  //       audioService.cleanup();
-  //     } catch (error) {
-  //       console.warn('Error al limpiar audio al salir:', error);
-  //     }
-  //   } catch (error) {
-  //     console.warn('Error al obtener servicio de audio al salir:', error);
-  //   }
-
-  //   leaveSession();
-  // };
 
   const handleCopyCode = () => {
     if (group?.code) {
@@ -265,18 +245,7 @@ const GroupPage = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="w-full max-w-4xl mx-auto pb-24">
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-            <p className="text-light-text-secondary dark:text-dark-text-secondary">
-              Loading group...
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+    return <GroupPageSkeleton />;
   }
 
   if (error || !group) {
@@ -308,6 +277,9 @@ const GroupPage = () => {
   }
 
   const isOwner = group.created_by === user?.id;
+
+  const USER_DJ = members.find((member) => member.role === 'dj');
+  const USER_MEMBERS = members.filter((member) => member.role === 'member');
 
   return (
     <div className="w-full max-w-4xl mx-auto pb-24">
@@ -411,7 +383,7 @@ const GroupPage = () => {
                 Members
               </p>
               <p className="text-xl font-bold text-light-text dark:text-dark-text">
-                {members.length}
+                {USER_MEMBERS.length}
               </p>
             </div>
           </div>
@@ -422,12 +394,10 @@ const GroupPage = () => {
             <div className="p-2 rounded-lg bg-primary-600/10">
               <Music size={20} className="text-primary-600" />
             </div>
-            <div>
-              <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                Tracks
-              </p>
-              <p className="text-xl font-bold text-light-text dark:text-dark-text">
-                {playlist?.length ?? 0}
+            <div className="overflow-hidden">
+              <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">DJ</p>
+              <p className="text-xl font-bold text-light-text dark:text-dark-text text-nowrap truncate">
+                {USER_DJ?.name}
               </p>
             </div>
           </div>
@@ -463,7 +433,7 @@ const GroupPage = () => {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-light-text dark:text-dark-text flex items-center gap-2">
               <Users size={20} />
-              Members ({members.length})
+              Members ({USER_MEMBERS.length})
             </h2>
             {isOwner && groupId && (
               <Button
@@ -476,7 +446,7 @@ const GroupPage = () => {
               </Button>
             )}
           </div>
-          {members.length === 0 ? (
+          {USER_MEMBERS.length === 0 ? (
             <div className="text-center py-8">
               <Users
                 size={48}
@@ -488,7 +458,7 @@ const GroupPage = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {members.map((member) => (
+              {USER_MEMBERS.map((member) => (
                 <MemberCard
                   key={member.id}
                   member={member}
@@ -523,7 +493,9 @@ const GroupPage = () => {
       </div>
 
       {isHostRef.current === true && <AudioPlayerHost />}
-      {isHostRef.current === false && <AudioPlayerListener />}
+      {isHostRef.current === false && (
+        <AudioPlayerListener name={playlist?.[0]?.title} artist={playlist?.[0]?.artist} />
+      )}
 
       {/* Additional Info */}
       <motion.div

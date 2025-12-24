@@ -10,6 +10,7 @@ import { Modal } from '@shared/components/Modal/Modal';
 import { Input } from '@shared/components/Input/Input';
 import { Button } from '@shared/components/Button/Button';
 import { FormAddMemberToGroup } from '../groups.types';
+import { getErrorMessage } from '@/shared/utils';
 
 type InviteMethod = 'email' | 'code';
 
@@ -84,7 +85,6 @@ export function AddMemberModal({ isOpen, onClose, groupId, onSuccess }: AddMembe
       }
     },
     onSuccess: () => {
-      // Invalidar la query del grupo para refrescar los miembros
       queryClient.invalidateQueries({ queryKey: ['group', groupId] });
       reset();
       setInviteMethod('email');
@@ -236,9 +236,7 @@ export function AddMemberModal({ isOpen, onClose, groupId, onSuccess }: AddMembe
         {mutation.error && (
           <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
             <p className="text-sm text-red-600 dark:text-red-400">
-              {mutation.error instanceof Error
-                ? mutation.error.message
-                : 'Failed to add member. Please try again.'}
+              {getErrorMessage(mutation.error)}
             </p>
           </div>
         )}

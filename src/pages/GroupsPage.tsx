@@ -12,7 +12,7 @@ import type { Group } from '@/features/groups/groups.types';
 
 import { GroupsPageHeader } from './GroupsPage/components/GroupsPageHeader';
 import { SearchAndSortControls } from './GroupsPage/components/SearchAndSortControls';
-import { LoadingState } from './GroupsPage/components/LoadingState';
+import { GroupsPageSkeleton } from './GroupsPage/components/GroupsPageSkeleton';
 import { ErrorState } from './GroupsPage/components/ErrorState';
 import { EmptyGroupsState } from './GroupsPage/components/EmptyGroupsState';
 import { NoResultsState } from './GroupsPage/components/NoResultsState';
@@ -103,7 +103,7 @@ const GroupsPage = () => {
   };
 
   if (isLoadingMyGroups || isLoadingOthersGroups) {
-    return <LoadingState />;
+    return <GroupsPageSkeleton isMyGroups={isMyGroups} />;
   }
 
   if (errorMyGroups || errorOthersGroups) {
@@ -148,6 +148,7 @@ const GroupsPage = () => {
         groupsCount={displayedGroups.length}
         onCreateGroup={() => setIsCreateModalOpen(true)}
       />
+
       <SearchAndSortControls
         searchQuery={searchQuery}
         sortBy={sortBy}

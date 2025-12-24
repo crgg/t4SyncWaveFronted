@@ -3,9 +3,11 @@ import { useAudio } from '@shared/hooks/useAudio';
 import { formatTime } from '@shared/utils';
 import { motion } from 'framer-motion';
 import { STORAGE_KEYS } from '@/shared/constants';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export function AudioPlayerHost() {
   const { audioState, play, pause, seek, setVolume, next, restart, emitSeek } = useAudio();
+  const { theme } = useTheme();
   const [localVolume, setLocalVolume] = useState(audioState.volume || 100);
   const [isDragging, setIsDragging] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
@@ -115,10 +117,10 @@ export function AudioPlayerHost() {
   }, [audioState.currentPosition, audioState.isPlaying, emitSeek]);
 
   return (
-    <div className="bg-dark-card rounded-xl shadow-2xl p-6 space-y-6 mt-6">
+    <div className="bg-light-card dark:bg-dark-card rounded-xl shadow-2xl p-6 space-y-6 mt-6 border border-light-hover dark:border-dark-hover transition-colors duration-200">
       <div className="text-center">
         <motion.h3
-          className="text-xl font-bold text-dark-text mb-1"
+          className="text-xl font-bold text-light-text dark:text-dark-text mb-1 transition-colors duration-200"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
@@ -126,13 +128,15 @@ export function AudioPlayerHost() {
           {audioState.trackTitle || 'No title'}
         </motion.h3>
         {audioState.trackArtist && (
-          <p className="text-sm text-dark-text-secondary">{audioState.trackArtist}</p>
+          <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200">
+            {audioState.trackArtist}
+          </p>
         )}
       </div>
 
       <div className="space-y-2">
-        <div className="relative h-2 bg-dark-hover rounded-full overflow-hidden group">
-          <div className="absolute inset-0 bg-dark-hover rounded-full" />
+        <div className="relative h-2 bg-light-hover dark:bg-dark-hover rounded-full overflow-hidden group transition-colors duration-200">
+          <div className="absolute inset-0 bg-light-hover dark:bg-dark-hover rounded-full transition-colors duration-200" />
           <motion.div
             ref={progressRef}
             className="absolute h-full bg-primary-600 rounded-full pointer-events-none"
@@ -141,7 +145,7 @@ export function AudioPlayerHost() {
             transition={{ duration: isDragging ? 0 : 0.1, ease: 'linear' }}
           />
           <motion.div
-            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-primary-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg border-2 border-dark-bg pointer-events-none z-10"
+            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-primary-600 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg border-2 border-light-bg dark:border-dark-bg pointer-events-none z-10"
             style={{ left: `calc(${progressPercentage}% - 8px)` }}
             initial={{ scale: 0 }}
             whileHover={{ scale: 1.2 }}
@@ -162,7 +166,7 @@ export function AudioPlayerHost() {
             style={{ WebkitAppearance: 'none', appearance: 'none' }}
           />
         </div>
-        <div className="flex justify-between text-xs text-dark-text-secondary">
+        <div className="flex justify-between text-xs text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200">
           <span>{formatTime(audioState.currentPosition)}</span>
           <span>{formatTime(audioState.trackDuration || 0)}</span>
         </div>
@@ -174,10 +178,14 @@ export function AudioPlayerHost() {
           whileTap={{ scale: 0.9 }}
           onClick={restart}
           disabled={!audioState.trackUrl}
-          className="p-2 rounded-full hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="Restart"
         >
-          <svg className="w-5 h-5 text-dark-text-secondary" fill="currentColor" viewBox="0 0 20 20">
+          <svg
+            className="w-5 h-5 text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
             <path
               fillRule="evenodd"
               d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
@@ -191,13 +199,17 @@ export function AudioPlayerHost() {
           whileTap={{ scale: 0.9 }}
           onClick={handleSkipBackward}
           disabled={!audioState.trackUrl}
-          className="p-2 rounded-full hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
+          className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
           title="Rewind 10s"
         >
-          <svg className="w-6 h-6 text-dark-text-secondary" fill="currentColor" viewBox="0 0 20 20">
+          <svg
+            className="w-6 h-6 text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
             <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z" />
           </svg>
-          <span className="text-xs absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-dark-text-secondary whitespace-nowrap">
+          <span className="text-xs absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-light-text-secondary dark:text-dark-text-secondary whitespace-nowrap transition-colors duration-200">
             10s
           </span>
         </motion.button>
@@ -233,13 +245,17 @@ export function AudioPlayerHost() {
           whileTap={{ scale: 0.9 }}
           onClick={handleSkipForward}
           disabled={!audioState.trackUrl}
-          className="p-2 rounded-full hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
+          className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
           title="Forward 10s"
         >
-          <svg className="w-6 h-6 text-dark-text-secondary" fill="currentColor" viewBox="0 0 20 20">
+          <svg
+            className="w-6 h-6 text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
             <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0011 6v2.798l-5.445-3.63z" />
           </svg>
-          <span className="text-xs absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-dark-text-secondary">
+          <span className="text-xs absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200">
             10s
           </span>
         </motion.button>
@@ -249,10 +265,14 @@ export function AudioPlayerHost() {
           whileTap={{ scale: 0.9 }}
           onClick={next}
           disabled={!audioState.trackUrl}
-          className="p-2 rounded-full hover:bg-dark-hover transition-colors disabled:opacity-50"
+          className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50"
           title="Next"
         >
-          <svg className="w-5 h-5 text-dark-text-secondary" fill="currentColor" viewBox="0 0 20 20">
+          <svg
+            className="w-5 h-5 text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
             <path
               fillRule="evenodd"
               d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
@@ -263,7 +283,11 @@ export function AudioPlayerHost() {
       </div>
 
       <div className="flex items-center gap-3">
-        <svg className="w-5 h-5 text-dark-text-secondary" fill="currentColor" viewBox="0 0 20 20">
+        <svg
+          className="w-5 h-5 text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
           {localVolume === 0 ? (
             <path
               fillRule="evenodd"
@@ -290,12 +314,14 @@ export function AudioPlayerHost() {
           max="100"
           value={localVolume}
           onChange={handleVolumeChange}
-          className="flex-1 h-1 bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary-600"
+          className="flex-1 h-1 bg-light-hover dark:bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary-600 transition-colors duration-200"
           style={{
-            background: `linear-gradient(to right, #8c7f49 0%, #8c7f49 ${localVolume}%, #2a2a2a ${localVolume}%, #2a2a2a 100%)`,
+            background: `linear-gradient(to right, #8c7f49 0%, #8c7f49 ${localVolume}%, ${
+              theme === 'dark' ? '#2a2a2a' : '#e9ecef'
+            } ${localVolume}%, ${theme === 'dark' ? '#2a2a2a' : '#e9ecef'} 100%)`,
           }}
         />
-        <span className="text-sm text-dark-text-secondary w-10 text-right">
+        <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary w-10 text-right transition-colors duration-200">
           {Math.round(localVolume)}%
         </span>
       </div>

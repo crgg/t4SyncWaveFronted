@@ -13,6 +13,7 @@ import type { FormCreateGroup } from '../groups.types';
 import { Modal } from '@shared/components/Modal/Modal';
 import { Input } from '@shared/components/Input/Input';
 import { Button } from '@shared/components/Button/Button';
+import { getErrorMessage } from '@/shared/utils';
 
 const schema = yup.object({
   name: yup
@@ -94,9 +95,7 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess }: CreateGroupModa
         {mutation.error && (
           <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
             <p className="text-sm text-red-600 dark:text-red-400">
-              {mutation.error instanceof Error
-                ? mutation.error.message
-                : 'Failed to create group. Please try again.'}
+              {getErrorMessage(mutation.error)}
             </p>
           </div>
         )}

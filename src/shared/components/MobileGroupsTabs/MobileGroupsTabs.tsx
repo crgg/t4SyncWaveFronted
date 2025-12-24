@@ -1,7 +1,9 @@
 import { AudioLines, HomeIcon, UsersRound } from 'lucide-react';
-import { cn } from '@shared/utils';
+import { useLocation } from 'react-router-dom';
 
 import type { LayoutState } from '@/app/slices/layoutSlice';
+import { paths } from '@/routes/paths';
+import { cn } from '@shared/utils';
 
 interface MobileGroupsTabsProps {
   activeTab?: LayoutState['activeTab'];
@@ -9,36 +11,31 @@ interface MobileGroupsTabsProps {
   className?: string;
 }
 
-export function MobileGroupsTabs({
-  activeTab = 'home',
-  onTabChange,
-  className,
-}: MobileGroupsTabsProps) {
+export function MobileGroupsTabs({ onTabChange, className }: MobileGroupsTabsProps) {
+  const { pathname } = useLocation();
+
   const tabs = [
     {
       id: 'my-groups' as const,
       label: 'My Groups',
       icon: UsersRound,
       iconSize: 16,
+      getActivePath: () => pathname.startsWith(paths.GROUPS(null)),
     },
     {
       id: 'home' as const,
       label: 'Home',
       icon: HomeIcon,
       iconSize: 16,
+      getActivePath: () => pathname === paths.HOME,
     },
     {
       id: 'listeners' as const,
       label: 'Listeners',
       icon: AudioLines,
       iconSize: 20,
+      getActivePath: () => pathname.startsWith(paths.LISTENERS(null)),
     },
-    // {
-    //   id: 'playlist' as const,
-    //   label: 'Playlist',
-    //   icon: Music4,
-    //   iconSize: 20,
-    // },
   ];
 
   return (
@@ -54,7 +51,7 @@ export function MobileGroupsTabs({
       <div className="flex items-center justify-around h-16 p-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
+          const isActive = tab.getActivePath();
 
           return (
             <button

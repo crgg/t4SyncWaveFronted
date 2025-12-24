@@ -2,6 +2,7 @@
  * Utilidades compartidas
  */
 
+import { AxiosError } from 'axios';
 import { clsx, type ClassValue } from 'clsx';
 
 /**
@@ -152,3 +153,15 @@ export function getInitials(name?: string): string {
 export function validationIsObject(value: unknown): boolean {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
+
+export const getErrorMessage = (error: unknown): string => {
+  if (!error) return 'Failed to perform action. Please try again.';
+  if (error instanceof AxiosError) {
+    return (
+      error.response?.data?.error || error.response?.data?.message || 'An unknown error occurred'
+    );
+  } else if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+};

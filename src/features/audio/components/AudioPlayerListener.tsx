@@ -6,10 +6,17 @@ import { useAppDispatch } from '@app/hooks';
 import { setAudioState } from '@features/audio/audioSlice';
 import { getAudioService } from '@services/audio/audioService';
 import { STORAGE_KEYS } from '@/shared/constants';
+import { useTheme } from '@/contexts/ThemeContext';
 
-export function AudioPlayerListener() {
+interface Props {
+  name?: string;
+  artist?: string;
+}
+
+export function AudioPlayerListener({ name, artist }: Props) {
   const { audioState, setVolume } = useAudio();
   const dispatch = useAppDispatch();
+  const { theme } = useTheme();
   const [localVolume, setLocalVolume] = useState(audioState.volume || 100);
   const volumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -104,19 +111,22 @@ export function AudioPlayerListener() {
     : 0;
 
   return (
-    <div className="bg-dark-card rounded-xl shadow-2xl p-6 space-y-6 mt-6">
+    <div className="bg-light-card dark:bg-dark-card rounded-xl shadow-2xl p-6 space-y-6 mt-6 border border-light-hover dark:border-dark-hover transition-colors duration-200">
       <div className="text-center">
-        <h3 className="text-xl font-bold text-dark-text mb-1">
-          {audioState.trackTitle || 'No title'}
+        <h3 className="text-xl font-bold text-light-text dark:text-dark-text mb-1 transition-colors duration-200">
+          {name ?? audioState.trackTitle ?? 'No title'}
         </h3>
-        {audioState.trackArtist && (
-          <p className="text-sm text-dark-text-secondary">{audioState.trackArtist}</p>
-        )}
+        {artist ||
+          (audioState.trackArtist && (
+            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200">
+              {artist ?? audioState.trackArtist ?? 'No artist'}
+            </p>
+          ))}
       </div>
 
       <div className="space-y-2">
-        <div className="relative h-2 bg-dark-hover rounded-full overflow-hidden">
-          <div className="absolute inset-0 bg-dark-hover rounded-full" />
+        <div className="relative h-2 bg-light-hover dark:bg-dark-hover rounded-full overflow-hidden transition-colors duration-200">
+          <div className="absolute inset-0 bg-light-hover dark:bg-dark-hover rounded-full transition-colors duration-200" />
           <motion.div
             className="absolute h-full bg-primary-600 rounded-full pointer-events-none"
             initial={{ width: 0 }}
@@ -129,14 +139,14 @@ export function AudioPlayerListener() {
             key={`progress-${audioState.trackId}`}
           />
         </div>
-        <div className="flex justify-between text-xs text-dark-text-secondary">
+        <div className="flex justify-between text-xs text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200">
           <span>{formatTime(audioState.currentPosition)}</span>
           <span>{formatTime(audioState.trackDuration || 0)}</span>
         </div>
       </div>
 
       <div className="flex items-center justify-center">
-        <div className="flex items-center gap-3 px-4 py-2 bg-dark-surface rounded-full">
+        <div className="flex items-center gap-3 px-4 py-2 bg-light-surface dark:bg-dark-surface rounded-full transition-colors duration-200">
           {audioState.isPlaying ? (
             <>
               <motion.div
@@ -144,19 +154,27 @@ export function AudioPlayerListener() {
                 transition={{ duration: 1, repeat: Infinity }}
                 className="w-3 h-3 bg-primary-600 rounded-full"
               />
-              <span className="text-sm text-dark-text-secondary">Playing</span>
+              <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200">
+                Playing
+              </span>
             </>
           ) : (
             <>
-              <div className="w-3 h-3 bg-dark-text-secondary rounded-full" />
-              <span className="text-sm text-dark-text-secondary">Paused</span>
+              <div className="w-3 h-3 bg-light-text-secondary dark:bg-dark-text-secondary rounded-full transition-colors duration-200" />
+              <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200">
+                Paused
+              </span>
             </>
           )}
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-        <svg className="w-5 h-5 text-dark-text-secondary" fill="currentColor" viewBox="0 0 20 20">
+        <svg
+          className="w-5 h-5 text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
           {localVolume === 0 ? (
             <path
               fillRule="evenodd"
@@ -183,17 +201,19 @@ export function AudioPlayerListener() {
           max="100"
           value={localVolume}
           onChange={handleVolumeChange}
-          className="flex-1 h-1 bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary-600"
+          className="flex-1 h-1 bg-light-hover dark:bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary-600 transition-colors duration-200"
           style={{
-            background: `linear-gradient(to right, #8c7f49 0%, #8c7f49 ${localVolume}%, #2a2a2a ${localVolume}%, #2a2a2a 100%)`,
+            background: `linear-gradient(to right, #8c7f49 0%, #8c7f49 ${localVolume}%, ${
+              theme === 'dark' ? '#2a2a2a' : '#e9ecef'
+            } ${localVolume}%, ${theme === 'dark' ? '#2a2a2a' : '#e9ecef'} 100%)`,
           }}
         />
-        <span className="text-sm text-dark-text-secondary w-10 text-right">
+        <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary w-10 text-right transition-colors duration-200">
           {Math.round(localVolume)}%
         </span>
       </div>
 
-      <div className="text-center text-sm text-dark-text-secondary">
+      <div className="text-center text-sm text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200">
         Listening mode - You can only control your volume
       </div>
     </div>

@@ -295,18 +295,18 @@ class WebSocketService {
     }
   }
 
-  async leaveSession(sessionId: string): Promise<void> {
+  async leaveSession(): Promise<void> {
     if (this.useWebRTC) {
       if (this.useSFU && this.webrtcSFUService) {
-        await this.webrtcSFUService.leaveSession(sessionId);
+        await this.webrtcSFUService.leaveSession();
         return;
       }
       if (this.webrtcService) {
-        await this.webrtcService.leaveSession(sessionId);
+        // await this.webrtcService.leaveSession(sessionId);
         return;
       }
     }
-    this.emit(SOCKET_EVENTS.SESSION_LEAVE, { sessionId });
+    // this.emit(SOCKET_EVENTS.SESSION_LEAVE, { sessionId });
   }
 
   playAudio(timestamp: number, position?: number, trackUrl?: string): void {

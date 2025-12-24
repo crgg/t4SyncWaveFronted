@@ -2,12 +2,14 @@ import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 
 import { uploadService } from '@services/upload';
 import { Modal } from '@shared/components/Modal/Modal';
 import { Button } from '@shared/components/Button/Button';
-import { addTrack } from '@features/playlist/playlistSlice';
+import { addTrack, setCurrentTrackIndex } from '@features/playlist/playlistSlice';
+import { useAudio } from '@/shared/hooks/useAudio';
 import { useAppDispatch } from '@app/hooks';
 
 const ACCEPTED_AUDIO_TYPES = {
@@ -30,6 +32,8 @@ export function UploadTrackModal({ isOpen, onClose, groupId }: UploadTrackModalP
   const [uploadedFile, setUploadedFile] = useState<{ name: string; url: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const queryClient = useQueryClient();
+  const { play } = useAudio();
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -50,11 +54,14 @@ export function UploadTrackModal({ isOpen, onClose, groupId }: UploadTrackModalP
     try {
       const response = await uploadService.uploadAudio(selectedFile, groupId);
 
+      queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+
+      dispatch(setCurrentTrackIndex({ index: 0 }));
       dispatch(
         addTrack({
           id: response.id,
           title: response.title,
-          artist: 'Unknown',
+          artist: response.title ?? 'Unknown',
           url: response.url,
           duration: response.duration,
         })
@@ -69,9 +76,11 @@ export function UploadTrackModal({ isOpen, onClose, groupId }: UploadTrackModalP
 
       setTimeout(() => {
         handleClose();
-      }, 1500);
+        play();
+      }, 1000);
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error uploading the file';
+      const errorMessage =
+        err.response?.data?.error || err.response?.data?.message || 'Error uploading the file';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {

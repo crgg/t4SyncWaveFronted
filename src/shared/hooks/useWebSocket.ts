@@ -6,7 +6,6 @@ import {
   createSessionFailure,
   joinSessionSuccess,
   joinSessionFailure,
-  leaveSession as leaveSessionAction,
   updateConnectionUsers,
   addConnectionUser,
   removeConnectionUser,
@@ -59,7 +58,6 @@ export function useWebSocket() {
       wsService = initializeWebSocketService({ url: WS_URL });
     }
     const handleConnectionStatus = (data: { connected: boolean; reason?: string }) => {
-      console.log('Connection status:', data);
       if (data.connected) {
         dispatch(connected());
         isConnectingRef.current = false;
@@ -374,34 +372,32 @@ export function useWebSocket() {
   );
 
   const leaveSession = useCallback(async () => {
-    if (sessionId) {
-      const wsService = getWebSocketService({ url: WS_URL });
-      await wsService.leaveSession(sessionId);
+    const wsService = getWebSocketService({ url: WS_URL });
 
-      try {
-        const audioService = getAudioService();
-        const audioState = audioService.getState();
+    await wsService.leaveSession();
 
-        if (audioState && audioState.trackUrl) {
-          try {
-            audioService.pause();
-          } catch (error) {
-            console.warn('Error al pausar audio al salir:', error);
-          }
-        }
+    try {
+      const audioService = getAudioService();
+      const audioState = audioService.getState();
 
+      if (audioState && audioState.trackUrl) {
         try {
-          audioService.cleanup();
+          audioService.pause();
         } catch (error) {
-          console.warn('Error al limpiar audio al salir:', error);
+          console.warn('Error al pausar audio al salir:', error);
         }
-      } catch (error) {
-        console.warn('Error al obtener servicio de audio al salir:', error);
       }
 
-      dispatch(leaveSessionAction());
-      dispatch(resetAudio());
+      try {
+        audioService.cleanup();
+      } catch (error) {
+        console.warn('Error al limpiar audio al salir:', error);
+      }
+    } catch (error) {
+      console.warn('Error al obtener servicio de audio al salir:', error);
     }
+
+    dispatch(resetAudio());
   }, [sessionId, dispatch]);
 
   return {
