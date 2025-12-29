@@ -34,6 +34,8 @@ export const SOCKET_EVENTS = {
   PARTICIPANT_JOINED: 'joined',
   PARTICIPANT_LEFT: 'left',
   PLAYLIST_SYNC: 'playlist:sync',
+  ONLINE: 'pong',
+  SERVER_PING: 'server-ping',
 } as const;
 
 // Configuración de sincronización

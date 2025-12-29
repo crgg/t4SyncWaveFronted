@@ -285,7 +285,10 @@ class WebRTCSFUService {
       }
 
       case 'server-ping':
-      case 'pong':
+      case 'pong': {
+        this.handleEvent(SOCKET_EVENTS.CONNECTION_STATUS, { connected: true });
+        break;
+      }
       case 'user-left':
       case 'user-joined': {
         break;

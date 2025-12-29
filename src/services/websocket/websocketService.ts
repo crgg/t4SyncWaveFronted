@@ -207,6 +207,14 @@ class WebSocketService {
       this.handleEvent(SOCKET_EVENTS.CONNECTION_STATUS, { connected: false });
     });
 
+    this.socket.on('pong', () => {
+      this.handleEvent(SOCKET_EVENTS.CONNECTION_STATUS, { connected: true });
+    });
+
+    this.socket.on('server-ping', () => {
+      this.handleEvent(SOCKET_EVENTS.CONNECTION_STATUS, { connected: true });
+    });
+
     Object.values(SOCKET_EVENTS).forEach((event) => {
       this.socket?.on(event, (data) => {
         this.handleEvent(event, data);
