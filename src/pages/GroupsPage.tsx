@@ -9,6 +9,7 @@ import { CreateGroupModal } from '@/features/groups/components/CreateGroupModal'
 import { EditGroupModal } from '@/features/groups/components/EditGroupModal';
 import { DeleteGroupModal } from '@/features/groups/components/DeleteGroupModal';
 import type { Group } from '@/features/groups/groups.types';
+import DeleteDialog from '@/shared/components/DeleteDialog/DeleteDialog';
 
 import { GroupsPageHeader } from './GroupsPage/components/GroupsPageHeader';
 import { SearchAndSortControls } from './GroupsPage/components/SearchAndSortControls';
@@ -17,6 +18,7 @@ import { ErrorState } from './GroupsPage/components/ErrorState';
 import { EmptyGroupsState } from './GroupsPage/components/EmptyGroupsState';
 import { NoResultsState } from './GroupsPage/components/NoResultsState';
 import { GroupCard } from './GroupsPage/components/GroupCard';
+import { JoinGroupByCode } from './GroupsPage/components/JoinGroupByCode';
 import type { SortOption } from './GroupsPage/types';
 import { paths } from '@/routes/paths';
 
@@ -27,6 +29,7 @@ const GroupsPage = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [deletingGroup, setDeletingGroup] = useState<Group | null>(null);
+  const [leavingGroup, setLeavingGroup] = useState<Group | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const navigate = useNavigate();
@@ -117,12 +120,15 @@ const GroupsPage = () => {
 
   if (baseGroups.length === 0) {
     return (
-      <EmptyGroupsState
-        isMyGroups={isMyGroups}
-        onCreateGroup={() => setIsCreateModalOpen(true)}
-        isCreateModalOpen={isCreateModalOpen}
-        onCloseCreateModal={() => setIsCreateModalOpen(false)}
-      />
+      <>
+        <div className="w-full">{!isMyGroups && <JoinGroupByCode userId={userId} />}</div>
+        <EmptyGroupsState
+          isMyGroups={isMyGroups}
+          onCreateGroup={() => setIsCreateModalOpen(true)}
+          isCreateModalOpen={isCreateModalOpen}
+          onCloseCreateModal={() => setIsCreateModalOpen(false)}
+        />
+      </>
     );
   }
 
@@ -137,6 +143,7 @@ const GroupsPage = () => {
         onCreateGroup={() => setIsCreateModalOpen(true)}
         isCreateModalOpen={isCreateModalOpen}
         onCloseCreateModal={() => setIsCreateModalOpen(false)}
+        userId={userId}
       />
     );
   }
@@ -148,6 +155,8 @@ const GroupsPage = () => {
         groupsCount={displayedGroups.length}
         onCreateGroup={() => setIsCreateModalOpen(true)}
       />
+
+      {!isMyGroups && <JoinGroupByCode userId={userId} />}
 
       <SearchAndSortControls
         searchQuery={searchQuery}
@@ -170,6 +179,14 @@ const GroupsPage = () => {
             }
             onEdit={() => setEditingGroup(group)}
             onDelete={() => setDeletingGroup(group)}
+            onLeaveGroup={
+              !isMyGroups
+                ? () => {
+                    setLeavingGroup(group);
+                    refetchOthersGroups();
+                  }
+                : undefined
+            }
           />
         ))}
       </div>
@@ -204,6 +221,22 @@ const GroupsPage = () => {
           onSuccess={() => {
             toast.success('Group deleted successfully');
             setDeletingGroup(null);
+          }}
+        />
+      )}
+
+      {leavingGroup && (
+        <DeleteDialog
+          modelNameValue={leavingGroup.name}
+          mutationFn={groupsApi.leaveGroup}
+          onClose={() => setLeavingGroup(null)}
+          queryKeys={[['others-groups', { userId }]]}
+          isOpen={!!leavingGroup}
+          payload={{ groupId: leavingGroup.id }}
+          modelName="group"
+          onSuccess={() => {
+            toast.success('Successfully left the group');
+            setLeavingGroup(null);
           }}
         />
       )}

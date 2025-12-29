@@ -23,6 +23,7 @@ interface GroupCardProps {
   onDblClick: (e: React.MouseEvent<HTMLDivElement>) => void;
   onEdit: () => void;
   onDelete: () => void;
+  onLeaveGroup?: () => void;
 }
 
 export function GroupCard({
@@ -33,6 +34,7 @@ export function GroupCard({
   onDblClick,
   onEdit,
   onDelete,
+  onLeaveGroup,
 }: GroupCardProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -97,38 +99,43 @@ export function GroupCard({
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
-          {group.is_active && !isMyGroups && (
-            <div className="flex-shrink-0">
-              <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30">
-                Active
-              </span>
-            </div>
-          )}
-          {isMyGroups && (
-            <div onClick={(e) => e.stopPropagation()}>
-              <Dropdown>
-                <Dropdown.Trigger className="p-1.5 rounded-lg hover:bg-light-hover dark:hover:bg-dark-hover transition-colors">
-                  <MoreVertical
-                    size={18}
-                    className="text-light-text-secondary dark:text-dark-text-secondary"
-                  />
-                </Dropdown.Trigger>
-                <Dropdown.Menu className="right-0 mt-1">
-                  <Dropdown.Item onClick={onEdit} className="flex items-center gap-2">
-                    <Edit2 size={16} />
-                    <span>Edit Group</span>
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    onClick={onDelete}
-                    className="flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-500/10"
-                  >
-                    <Trash2 size={16} />
-                    <span>Delete Group</span>
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            </div>
-          )}
+          <div onClick={(e) => e.stopPropagation()}>
+            <Dropdown>
+              <Dropdown.Trigger className="p-1.5 rounded-lg hover:bg-light-hover dark:hover:bg-dark-hover transition-colors">
+                <MoreVertical
+                  size={18}
+                  className="text-light-text-secondary dark:text-dark-text-secondary"
+                />
+              </Dropdown.Trigger>
+              <Dropdown.Menu className="right-0 mt-1">
+                {isMyGroups ? (
+                  <>
+                    <Dropdown.Item onClick={onEdit} className="flex items-center gap-2">
+                      <Edit2 size={16} />
+                      <span>Edit Group</span>
+                    </Dropdown.Item>
+                    <Dropdown.Item
+                      onClick={onDelete}
+                      className="flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-500/10"
+                    >
+                      <Trash2 size={16} />
+                      <span>Delete Group</span>
+                    </Dropdown.Item>
+                  </>
+                ) : (
+                  <>
+                    <Dropdown.Item
+                      onClick={onLeaveGroup}
+                      className="flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-500/10"
+                    >
+                      <Trash2 size={16} />
+                      <span>Leave Group</span>
+                    </Dropdown.Item>
+                  </>
+                )}
+              </Dropdown.Menu>
+            </Dropdown>
+          </div>
         </div>
       </div>
 

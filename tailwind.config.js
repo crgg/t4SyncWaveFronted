@@ -41,11 +41,16 @@ export default {
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'slide-progress': 'slide-progress linear forwards',
+        shimmer: 'shimmer 2s infinite',
       },
       keyframes: {
         'slide-progress': {
           '0%': { width: '0%' },
           '100%': { width: 'var(--progress)' },
+        },
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
         },
       },
     },

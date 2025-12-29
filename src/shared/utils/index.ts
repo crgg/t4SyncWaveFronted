@@ -158,7 +158,10 @@ export const getErrorMessage = (error: unknown): string => {
   if (!error) return 'Failed to perform action. Please try again.';
   if (error instanceof AxiosError) {
     return (
-      error.response?.data?.error || error.response?.data?.message || 'An unknown error occurred'
+      error.response?.data?.error ||
+      error.response?.data?.message ||
+      error.response?.data?.msg ||
+      'An unknown error occurred'
     );
   } else if (error instanceof Error) {
     return error.message;

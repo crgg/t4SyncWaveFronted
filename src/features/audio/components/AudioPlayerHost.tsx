@@ -6,7 +6,7 @@ import { STORAGE_KEYS } from '@/shared/constants';
 import { useTheme } from '@/contexts/ThemeContext';
 
 export function AudioPlayerHost() {
-  const { audioState, play, pause, seek, setVolume, next, restart, emitSeek } = useAudio();
+  const { audioState, play, pause, seek, setVolume, next, restart } = useAudio();
   const { theme } = useTheme();
   const [localVolume, setLocalVolume] = useState(audioState.volume || 100);
   const [isDragging, setIsDragging] = useState(false);
@@ -110,11 +110,6 @@ export function AudioPlayerHost() {
   const progressPercentage = audioState.trackDuration
     ? (audioState.currentPosition / audioState.trackDuration) * 100
     : 0;
-
-  useEffect(() => {
-    if (!audioState.isPlaying) return;
-    emitSeek(audioState.currentPosition ?? 0);
-  }, [audioState.currentPosition, audioState.isPlaying, emitSeek]);
 
   return (
     <div className="bg-light-card dark:bg-dark-card rounded-xl shadow-2xl p-6 space-y-6 mt-6 border border-light-hover dark:border-dark-hover transition-colors duration-200">

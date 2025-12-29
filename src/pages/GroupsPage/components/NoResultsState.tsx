@@ -5,6 +5,7 @@ import { Search } from 'lucide-react';
 import { Button } from '@shared/components/Button/Button';
 import { GroupsPageHeader } from './GroupsPageHeader';
 import { SearchAndSortControls } from './SearchAndSortControls';
+import { JoinGroupByCode } from './JoinGroupByCode';
 import { CreateGroupModal } from '@/features/groups/components/CreateGroupModal';
 import type { SortOption } from '../types';
 
@@ -17,6 +18,7 @@ interface NoResultsStateProps {
   onCreateGroup: () => void;
   isCreateModalOpen: boolean;
   onCloseCreateModal: () => void;
+  userId?: string;
 }
 
 export function NoResultsState({
@@ -28,10 +30,12 @@ export function NoResultsState({
   onCreateGroup,
   isCreateModalOpen,
   onCloseCreateModal,
+  userId,
 }: NoResultsStateProps) {
   return (
     <div className="w-full max-w-4xl mx-auto pb-24">
       <GroupsPageHeader isMyGroups={isMyGroups} groupsCount={0} onCreateGroup={onCreateGroup} />
+      {!isMyGroups && <JoinGroupByCode userId={userId} />}
       <SearchAndSortControls
         searchQuery={searchQuery}
         sortBy={sortBy}

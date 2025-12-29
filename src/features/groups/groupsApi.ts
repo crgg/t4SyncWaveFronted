@@ -7,6 +7,7 @@ import type {
   GroupResponse,
   GroupsResponse,
   IPayloadDeleteGroup,
+  IPayloadLeaveGroup,
   IPayloadRemoveMember,
   IPayloadUpdateGroup,
 } from './groups.types';
@@ -49,6 +50,13 @@ class GroupsApi {
   }
   async deleteGroup(data: IPayloadDeleteGroup): Promise<GroupResponse> {
     const response = await http.post<GroupResponse>('/groups/delete', data);
+    return response.data;
+  }
+  async leaveGroup(data: IPayloadLeaveGroup): Promise<AddMemberToGroupResponse> {
+    const response = await http.post<AddMemberToGroupResponse>('/groups/leave-group', data);
+    if (!response?.data?.status) {
+      throw new Error(response?.data?.error || 'Failed to leave group');
+    }
     return response.data;
   }
 }

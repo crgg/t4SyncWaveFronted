@@ -305,7 +305,7 @@ export function useAudio() {
     performSync();
 
     // También verificar periódicamente por cambios
-    const syncInterval = setInterval(performSync, 500);
+    const syncInterval = setInterval(performSync, 100);
 
     return () => clearInterval(syncInterval);
   }, [role, audioState.trackUrl, audioState.timestamp, audioState.isPlaying, dispatch]);
@@ -394,28 +394,6 @@ export function useAudio() {
 
     return () => clearInterval(progressInterval);
   }, [role, audioState.isPlaying, audioState.trackUrl, audioState.timestamp, dispatch]);
-
-  useEffect(() => {
-    if (role !== 'dj' || !audioState.isPlaying || !audioState.trackUrl) return;
-
-    const interval = setInterval(() => {
-      if (audioServiceRef.current && audioState.isPlaying) {
-        const currentState = audioServiceRef.current.getState();
-        if (currentState && currentState.currentPosition !== undefined) {
-          try {
-            const wsService = getWebSocketService({ url: WS_URL });
-            if (wsService.isConnected()) {
-              wsService.seekAudio(currentState.currentPosition, Date.now(), audioState.trackUrl);
-            }
-          } catch (error) {
-            console.error('Error al enviar actualización de posición:', error);
-          }
-        }
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [role, audioState.isPlaying, audioState.trackUrl, audioState.currentPosition]);
 
   useEffect(() => {
     if (role !== 'dj' || tracks.length === 0) return;
@@ -661,8 +639,20 @@ export function useAudio() {
     }
 
     const wsService = getWebSocketService({ url: WS_URL });
-    wsService.seekAudio(0, timestamp);
-  }, [role, dispatch]);
+    if (wsService.isConnected() && audioState.trackUrl) {
+      const isPlaying = audioState.isPlaying ?? false;
+
+      // Enviar seek con trackUrl para que se emita PLAYBACK_STATE
+      wsService.seekAudio(0, timestamp, audioState.trackUrl);
+
+      // Enviar el play-state correcto para mantener el estado de reproducción
+      if (isPlaying) {
+        wsService.playAudio(timestamp, 0, audioState.trackUrl);
+      } else {
+        wsService.pauseAudio(timestamp, 0, audioState.trackUrl);
+      }
+    }
+  }, [role, dispatch, audioState.trackUrl, audioState.isPlaying]);
 
   useEffect(() => {
     return () => {

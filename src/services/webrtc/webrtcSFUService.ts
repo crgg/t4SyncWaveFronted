@@ -493,6 +493,7 @@ class WebRTCSFUService {
   }
 
   emit(_event: string, data?: unknown): void {
+    console.trace('emit');
     if (this.dataChannel && this.dataChannel.readyState === 'open') {
       try {
         this.dataChannel.send(

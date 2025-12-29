@@ -14,8 +14,22 @@ export function Skeleton({
   height,
   ...props
 }: SkeletonProps & React.HTMLAttributes<HTMLDivElement>) {
-  const baseStyles =
-    'animate-pulse bg-light-hover dark:bg-dark-hover transition-colors duration-200';
+  const baseStyles = cn(
+    'relative overflow-hidden',
+    // Colores base con mejor contraste para dark mode
+    'bg-light-hover dark:bg-dark-hover',
+    'transition-colors duration-200',
+    // Animación shimmer mejorada - más visible en dark mode
+    'after:absolute after:inset-0',
+    'after:animate-shimmer',
+    'after:bg-gradient-to-r',
+    'after:from-transparent',
+    'after:via-white/20 dark:after:via-white/10',
+    'after:to-transparent',
+    'after:pointer-events-none',
+    // Pulse animation suave como base
+    'animate-pulse'
+  );
 
   const variantStyles = {
     text: 'rounded',

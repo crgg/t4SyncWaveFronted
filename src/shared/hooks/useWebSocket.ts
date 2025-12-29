@@ -129,16 +129,12 @@ export function useWebSocket() {
 
       dispatch(setAudioState(audioStateToDispatch));
 
-      // Para listeners, la sincronización se maneja en useAudio.ts
-      // No llamar a sync() aquí para evitar conflictos con el efecto de sincronización
       const currentRole = store.getState().session.role;
       if (currentRole === 'member' && trackUrl) {
         try {
           const audioService = getAudioService();
           const audioServiceState = audioService.getState();
 
-          // Solo actualizar el estado interno del audioService, pero NO llamar a sync()
-          // El efecto de sincronización en useAudio.ts se encargará de sincronizar
           if (audioServiceState) {
             (audioServiceState as any).isPlaying = audioStateToDispatch.isPlaying;
             (audioServiceState as any).trackUrl = trackUrl;

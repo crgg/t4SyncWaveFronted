@@ -105,6 +105,11 @@ export interface IPayloadDeleteGroup {
 
 export interface IPayloadRemoveMember {
   groupId: string;
+  memberId: string;
+}
+
+export interface IPayloadLeaveGroup {
+  groupId: string;
 }
 
 export interface IRoomUser {

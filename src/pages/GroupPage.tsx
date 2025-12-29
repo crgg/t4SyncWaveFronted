@@ -13,6 +13,7 @@ import {
   Crown,
   UserPlus,
   UserMinus,
+  LogOut,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -51,12 +52,14 @@ const GroupPage = () => {
   const user = useAppSelector((state) => state.auth.user);
   const [copiedCode, setCopiedCode] = useState(false);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const [isLeaveGroupDialogOpen, setIsLeaveGroupDialogOpen] = useState(false);
   const dispatch = useAppDispatch();
   const { createSession, joinSession, leaveSession } = useWebSocket();
   const isHostRef = useRef<boolean | null>(null);
   const isConnectingRef = useRef(false);
   const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const processedGroupIdRef = useRef<string | null>(null);
+  const createdByRef = useRef<string | null>(null);
   const { play } = useAudio();
 
   const isConnected = useAppSelector((state) => state.connection.isConnected);
@@ -73,6 +76,10 @@ const GroupPage = () => {
     leaveSession();
   };
 
+  const handleLeaveGroupClick = () => {
+    setIsLeaveGroupDialogOpen(true);
+  };
+
   const playlist = useMemo(() => {
     return data?.group
       ? (Array.isArray(data.group.current_track)
@@ -82,11 +89,17 @@ const GroupPage = () => {
       : null;
   }, [data]);
 
+  const createdBy = useMemo(() => {
+    if (createdByRef.current === data?.group?.created_by) return;
+    createdByRef.current = data?.group?.created_by || null;
+    return data?.group?.created_by;
+  }, [data]);
+
   useEffect(() => {
     if (playlist) {
       const tracks = playlist.map(PlaylistAdapter.toCurrentTrack);
       dispatch(setPlaylistFromApi({ tracks }));
-      const isHost = data?.group.created_by === user?.id;
+      const isHost = createdBy === user?.id;
       if (!isHost) return;
       let timeoutId: ReturnType<typeof setTimeout> | null = null;
       timeoutId = setTimeout(() => {
@@ -110,7 +123,7 @@ const GroupPage = () => {
         if (timeoutId) clearTimeout(timeoutId);
       };
     }
-  }, [dispatch, playlist, data, user]);
+  }, [dispatch, playlist, createdBy, user]);
 
   useEffect(() => {
     return () => {
@@ -188,7 +201,15 @@ const GroupPage = () => {
         connectionTimeoutRef.current = null;
       }
     };
-  }, [data, user, isConnected, dispatch, createSession, joinSession]);
+  }, [
+    data?.group,
+    data?.group.created_by,
+    user,
+    isConnected,
+    dispatch,
+    createSession,
+    joinSession,
+  ]);
 
   useEffect(() => {
     processedGroupIdRef.current = null;
@@ -244,6 +265,17 @@ const GroupPage = () => {
     setIsDeleteMember(true);
   };
 
+  const isOwner = group?.created_by === user?.id;
+
+  useEffect(() => {
+    if (!data) return;
+    const members = data.group?.members || ([] as Member[]);
+    const exists = members.some((member) => member.user_id === user?.id);
+    if (!exists) {
+      navigate(paths.LISTENERS(null));
+    }
+  }, [data]);
+
   if (isLoading) {
     return <GroupPageSkeleton />;
   }
@@ -275,8 +307,6 @@ const GroupPage = () => {
       </div>
     );
   }
-
-  const isOwner = group.created_by === user?.id;
 
   const USER_DJ = members.find((member) => member.role === 'dj');
   const USER_MEMBERS = members.filter((member) => member.role === 'member');
@@ -325,6 +355,16 @@ const GroupPage = () => {
                 </div>
               </div>
             </div>
+            {!isOwner && (
+              <Button
+                onClick={handleLeaveGroupClick}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-500/10 border-red-600/30 dark:border-red-400/30"
+              >
+                <LogOut size={16} />
+              </Button>
+            )}
           </div>
 
           {group.code && (
@@ -568,10 +608,27 @@ const GroupPage = () => {
         onClose={() => setIsDeleteMember(false)}
         queryKeys={[['group', groupId!]]}
         isOpen={isDeleteMember}
-        payload={{ groupId }}
+        payload={{
+          // groupId: groupId!,
+          id: selectedMember?.id || '',
+        }}
         modelName="member"
         onSuccess={() => {
           toast.success('Member deleted successfully');
+          refetch();
+        }}
+      />
+      <DeleteDialog
+        modelNameValue={group.name}
+        mutationFn={groupsApi.leaveGroup}
+        onClose={() => setIsLeaveGroupDialogOpen(false)}
+        queryKeys={[['group', groupId!], ['groups'], ['others-groups']]}
+        isOpen={isLeaveGroupDialogOpen}
+        payload={{ groupId: groupId! }}
+        modelName="group"
+        onSuccess={() => {
+          handleLeaveGroup();
+          navigate(paths.LISTENERS(null));
         }}
       />
     </div>

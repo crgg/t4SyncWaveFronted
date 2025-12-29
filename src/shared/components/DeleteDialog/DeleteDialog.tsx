@@ -3,6 +3,7 @@ import { AlertTriangle, Trash2 } from 'lucide-react';
 
 import { Modal } from '@shared/components/Modal/Modal';
 import { Button } from '@shared/components/Button/Button';
+import { getErrorMessage } from '@/shared/utils';
 
 interface DeleteDialogProps {
   isOpen: boolean;
@@ -11,7 +12,7 @@ interface DeleteDialogProps {
   modelNameValue: string;
   onSuccess?: () => void;
   mutationFn: (data: any) => Promise<any>;
-  queryKeys: Array<Array<string>>;
+  queryKeys: Array<Array<any>>;
   payload: any;
 }
 
@@ -71,9 +72,8 @@ function DeleteDialogComponent({
         {mutation.error && (
           <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
             <p className="text-sm text-red-600 dark:text-red-400">
-              {mutation.error instanceof Error
-                ? mutation.error.message
-                : `Failed to delete ${modelName}. Please try again.`}
+              {getErrorMessage(mutation.error) ??
+                `Failed to delete ${modelName}. Please try again.`}
             </p>
           </div>
         )}
