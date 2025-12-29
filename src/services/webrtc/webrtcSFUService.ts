@@ -222,14 +222,18 @@ class WebRTCSFUService {
           type: string;
           room: string;
           userName: string;
+          userId?: string;
           position: number;
           isPlaying: boolean;
-          timestamp: number;
+          timestamp: number; // Timestamp en segundos (Unix timestamp)
           trackUrl: string;
+          duration?: number | null; // Duración en segundos, puede ser null
+          trackTitle?: string | null;
+          trackArtist?: string | null;
         };
 
         if (!playbackState.trackUrl) {
-          console.warn('Received playback-state without truckUrl:', playbackState);
+          console.warn('Received playback-state without trackUrl:', playbackState);
           return;
         }
 
@@ -243,6 +247,23 @@ class WebRTCSFUService {
           console.error('Error to get audio state:', error);
         }
 
+        const clientReceiveTime = Date.now();
+        const timestamp = clientReceiveTime;
+        const trackDuration =
+          playbackState.duration !== null && playbackState.duration !== undefined
+            ? playbackState.duration
+            : currentAudioState.trackDuration;
+
+        const trackTitle =
+          playbackState.trackTitle !== null && playbackState.trackTitle !== undefined
+            ? playbackState.trackTitle
+            : currentAudioState.trackTitle;
+
+        const trackArtist =
+          playbackState.trackArtist !== null && playbackState.trackArtist !== undefined
+            ? playbackState.trackArtist
+            : currentAudioState.trackArtist;
+
         const audioState: AudioState = {
           isPlaying: playbackState.isPlaying ?? false,
           currentPosition:
@@ -250,12 +271,12 @@ class WebRTCSFUService {
               ? (currentAudioState.currentPosition ?? 0)
               : playbackState.position,
           volume: currentAudioState.volume ?? 100,
-          trackId: currentAudioState.trackId || '',
+          trackId: currentAudioState.trackId || playbackState.trackUrl || '',
           trackUrl: playbackState.trackUrl || currentAudioState.trackUrl || '',
-          trackTitle: currentAudioState.trackTitle,
-          trackArtist: currentAudioState.trackArtist,
-          trackDuration: currentAudioState.trackDuration,
-          timestamp: playbackState.timestamp ?? Date.now(),
+          trackTitle: trackTitle,
+          trackArtist: trackArtist,
+          trackDuration: trackDuration,
+          timestamp: timestamp,
           truckUrl: playbackState.trackUrl,
         };
 

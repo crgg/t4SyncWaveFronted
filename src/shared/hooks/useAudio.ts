@@ -227,37 +227,61 @@ export function useAudio() {
       return;
     }
 
-    const syncInterval = setInterval(() => {
+    // Función para sincronizar cuando hay un cambio del servidor
+    const performSync = () => {
       if (!audioServiceRef.current) return;
 
       const currentState = store.getState().audio;
-
       if (!currentState.trackUrl) return;
 
-      const positionDiff = Math.abs(
-        lastSyncRef.current.position - (currentState.currentPosition || 0)
+      // Solo sincronizar cuando hay un cambio real del servidor (basado en timestamp)
+      const timestampDiff = Math.abs(
+        (lastSyncRef.current.timestamp || 0) - (currentState.timestamp || 0)
       );
-      const hasSignificantChange =
-        positionDiff > 0.05 ||
-        lastSyncRef.current.isPlaying !== currentState.isPlaying ||
-        lastSyncRef.current.trackUrl !== currentState.trackUrl ||
-        Math.abs((lastSyncRef.current.timestamp || 0) - (currentState.timestamp || 0)) > 500;
+      const isPlayingChanged = lastSyncRef.current.isPlaying !== currentState.isPlaying;
+      const trackUrlChanged = lastSyncRef.current.trackUrl !== currentState.trackUrl;
+      const hasNewServerEvent = timestampDiff > 100 || trackUrlChanged;
+
+      // Solo sincronizar si hay un nuevo evento del servidor O si cambió isPlaying (play/pause)
+      const hasSignificantChange = hasNewServerEvent || isPlayingChanged;
 
       if (!hasSignificantChange && lastSyncRef.current.trackUrl === currentState.trackUrl) {
         return;
       }
 
-      const serverPosition = currentState.currentPosition || 0;
+      let serverPosition: number;
+      let serverTimestamp: number;
+
+      if (hasNewServerEvent) {
+        // Nuevo evento del servidor: usar la posición y timestamp del estado actual
+        serverPosition = currentState.currentPosition || 0;
+        serverTimestamp = currentState.timestamp || Date.now();
+
+        // Actualizar lastSyncRef inmediatamente con los valores del servidor
+        lastSyncRef.current = {
+          position: serverPosition,
+          timestamp: serverTimestamp,
+          isPlaying: currentState.isPlaying || false,
+          trackUrl: currentState.trackUrl,
+        };
+      } else if (isPlayingChanged) {
+        // Solo cambió isPlaying (play/pause): usar la posición actual del audio
+        const audioServiceState = audioServiceRef.current?.getState();
+        serverPosition = audioServiceState?.currentPosition ?? lastSyncRef.current.position;
+        serverTimestamp = lastSyncRef.current.timestamp;
+
+        // Actualizar solo isPlaying en lastSyncRef
+        lastSyncRef.current = {
+          ...lastSyncRef.current,
+          isPlaying: currentState.isPlaying || false,
+        };
+      } else {
+        return; // No hay cambios significativos
+      }
+
       if (isNaN(serverPosition) || serverPosition < 0) {
         return;
       }
-
-      lastSyncRef.current = {
-        position: serverPosition,
-        timestamp: currentState.timestamp || Date.now(),
-        isPlaying: currentState.isPlaying || false,
-        trackUrl: currentState.trackUrl,
-      };
 
       try {
         const audioServiceState = audioServiceRef.current.getState();
@@ -265,19 +289,111 @@ export function useAudio() {
           (audioServiceState as any).isPlaying = currentState.isPlaying;
         }
 
+        // Usar la posición y timestamp del servidor
         audioServiceRef.current.sync(
           serverPosition,
-          currentState.timestamp || Date.now(),
+          serverTimestamp,
           currentState.isPlaying || false,
           currentState.trackUrl
         );
       } catch (error) {
         console.error('Error en sincronización:', error);
       }
-    }, 200);
+    };
+
+    // Sincronizar inmediatamente cuando cambia timestamp o isPlaying
+    performSync();
+
+    // También verificar periódicamente por cambios
+    const syncInterval = setInterval(performSync, 500);
 
     return () => clearInterval(syncInterval);
-  }, [role, audioState.trackUrl, dispatch]);
+  }, [role, audioState.trackUrl, audioState.timestamp, audioState.isPlaying, dispatch]);
+
+  // Actualización automática del progress para listeners cuando está reproduciendo
+  useEffect(() => {
+    if (role !== 'member' || !audioState.isPlaying || !audioState.trackUrl) return;
+
+    // Inicializar lastSyncRef con el estado actual cuando se activa el efecto
+    const currentState = store.getState().audio;
+    const timestampDiff = Math.abs(
+      (lastSyncRef.current.timestamp || 0) - (currentState.timestamp || 0)
+    );
+
+    // Si hay un nuevo evento del servidor o es la primera vez, actualizar lastSyncRef
+    if (
+      timestampDiff > 100 ||
+      lastSyncRef.current.trackUrl !== currentState.trackUrl ||
+      lastSyncRef.current.isPlaying !== currentState.isPlaying
+    ) {
+      lastSyncRef.current = {
+        position: currentState.currentPosition || 0,
+        timestamp: currentState.timestamp || Date.now(),
+        isPlaying: currentState.isPlaying || false,
+        trackUrl: currentState.trackUrl,
+      };
+    }
+
+    const progressInterval = setInterval(() => {
+      const currentState = store.getState().audio;
+
+      // Si se pausó o no hay track, detener la actualización
+      if (!currentState.isPlaying || !currentState.trackUrl) {
+        return;
+      }
+
+      // Verificar si se recibió un nuevo evento del servidor (timestamp diferente)
+      const currentTimestamp = currentState.timestamp || Date.now();
+      const timestampDiff = Math.abs((lastSyncRef.current.timestamp || 0) - currentTimestamp);
+
+      // Si hay un nuevo evento del servidor, actualizar lastSyncRef con la posición del evento
+      if (timestampDiff > 100 || lastSyncRef.current.trackUrl !== currentState.trackUrl) {
+        // Cuando hay un nuevo evento, usar la posición actual como posición base del servidor
+        lastSyncRef.current = {
+          position: currentState.currentPosition || 0,
+          timestamp: currentTimestamp,
+          isPlaying: currentState.isPlaying || false,
+          trackUrl: currentState.trackUrl,
+        };
+        // No actualizar progress aquí, solo actualizar la referencia base
+        return;
+      }
+
+      // Solo calcular progress si estamos reproduciendo y no hay nuevo evento del servidor
+      if (!lastSyncRef.current.isPlaying) {
+        return;
+      }
+
+      // Calcular la posición actual basándose en el timestamp y la posición inicial del último evento
+      const serverTimestamp = lastSyncRef.current.timestamp || currentTimestamp;
+      const serverPosition = lastSyncRef.current.position;
+      const timeSinceUpdate = (Date.now() - serverTimestamp) / 1000; // en segundos
+      const calculatedPosition = serverPosition + timeSinceUpdate;
+
+      // Asegurarse de que no exceda la duración del track
+      const maxPosition = currentState.trackDuration
+        ? Math.min(calculatedPosition, currentState.trackDuration)
+        : calculatedPosition;
+
+      // Solo actualizar si hay una diferencia significativa (más de 0.1 segundos)
+      // y asegurarse de que la posición calculada sea mayor o igual a la actual
+      const positionDiff = Math.abs(maxPosition - (currentState.currentPosition || 0));
+      if (
+        positionDiff > 0.1 &&
+        maxPosition >= 0 &&
+        maxPosition >= (currentState.currentPosition || 0)
+      ) {
+        dispatch(
+          setAudioState({
+            ...currentState,
+            currentPosition: Math.max(0, maxPosition),
+          })
+        );
+      }
+    }, 100); // Actualizar cada 100ms para un progress suave
+
+    return () => clearInterval(progressInterval);
+  }, [role, audioState.isPlaying, audioState.trackUrl, audioState.timestamp, dispatch]);
 
   useEffect(() => {
     if (role !== 'dj' || !audioState.isPlaying || !audioState.trackUrl) return;

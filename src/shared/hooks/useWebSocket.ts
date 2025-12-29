@@ -129,19 +129,16 @@ export function useWebSocket() {
 
       dispatch(setAudioState(audioStateToDispatch));
 
+      // Para listeners, la sincronización se maneja en useAudio.ts
+      // No llamar a sync() aquí para evitar conflictos con el efecto de sincronización
       const currentRole = store.getState().session.role;
       if (currentRole === 'member' && trackUrl) {
         try {
           const audioService = getAudioService();
           const audioServiceState = audioService.getState();
 
-          audioService.sync(
-            audioStateToDispatch.currentPosition,
-            audioStateToDispatch.timestamp,
-            audioStateToDispatch.isPlaying,
-            trackUrl
-          );
-
+          // Solo actualizar el estado interno del audioService, pero NO llamar a sync()
+          // El efecto de sincronización en useAudio.ts se encargará de sincronizar
           if (audioServiceState) {
             (audioServiceState as any).isPlaying = audioStateToDispatch.isPlaying;
             (audioServiceState as any).trackUrl = trackUrl;
@@ -165,10 +162,14 @@ export function useWebSocket() {
     const handlePlaybackState = (data: {
       room: string;
       userName: string;
+      userId?: string;
       position: number;
       isPlaying: boolean;
       trackUrl: string;
       timestamp?: number;
+      duration?: number | null;
+      trackTitle?: string | null;
+      trackArtist?: string | null;
     }) => {
       updateAudioStateRef();
       const currentAudioState = audioStateRef.current;
@@ -182,7 +183,26 @@ export function useWebSocket() {
         return;
       }
 
-      const serverTimestamp = data.timestamp || Date.now();
+      const clientReceiveTime = Date.now();
+      const timestamp = clientReceiveTime;
+
+      // Mapear duration a trackDuration, manejar null
+      const trackDuration =
+        data.duration !== null && data.duration !== undefined
+          ? data.duration
+          : currentAudioState?.trackDuration;
+
+      // Mapear trackTitle y trackArtist, manejar null
+      const trackTitle =
+        data.trackTitle !== null && data.trackTitle !== undefined
+          ? data.trackTitle
+          : currentAudioState?.trackTitle;
+
+      const trackArtist =
+        data.trackArtist !== null && data.trackArtist !== undefined
+          ? data.trackArtist
+          : currentAudioState?.trackArtist;
+
       const audioStateToDispatch: AudioState = {
         isPlaying: data.isPlaying,
         currentPosition:
@@ -190,12 +210,13 @@ export function useWebSocket() {
             ? (currentAudioState?.currentPosition ?? 0)
             : data.position,
         volume: currentAudioState?.volume ?? 100,
-        trackId: currentAudioState?.trackId || '',
+        trackId: currentAudioState?.trackId || data.trackUrl || '',
         trackUrl: data.trackUrl || currentAudioState?.trackUrl || '',
-        trackTitle: currentAudioState?.trackTitle,
-        trackArtist: currentAudioState?.trackArtist,
-        trackDuration: currentAudioState?.trackDuration,
-        timestamp: serverTimestamp,
+        trackTitle: trackTitle,
+        trackArtist: trackArtist,
+        trackDuration: trackDuration,
+        timestamp: timestamp,
+        truckUrl: data.trackUrl,
       };
 
       dispatch(setAudioState(audioStateToDispatch));
@@ -205,13 +226,6 @@ export function useWebSocket() {
         try {
           const audioService = getAudioService();
           const audioServiceState = audioService.getState();
-
-          audioService.sync(
-            audioStateToDispatch.currentPosition,
-            serverTimestamp,
-            audioStateToDispatch.isPlaying,
-            audioStateToDispatch.trackUrl
-          );
 
           if (audioServiceState) {
             (audioServiceState as any).isPlaying = audioStateToDispatch.isPlaying;
