@@ -5,6 +5,7 @@ import {
   pause,
   seek,
   setVolume as setVolumeAction,
+  toggleMute as toggleMuteAction,
   setTrack,
   setAudioState,
   setError,
@@ -13,7 +14,7 @@ import {
 import { setCurrentTrackIndex, updateTrackDuration } from '@features/playlist/playlistSlice';
 import { getAudioService } from '@services/audio/audioService';
 import { getWebSocketService } from '@services/websocket/websocketService';
-import { WS_URL } from '@shared/constants';
+import { WS_URL, STORAGE_KEYS } from '@shared/constants';
 import type { AudioState } from '@shared/types';
 import { isValidAudioUrl } from '@shared/utils';
 import { store } from '@app/store';
@@ -30,6 +31,38 @@ export function useAudio() {
     isPlaying: false,
     trackUrl: '',
   });
+
+  // El estado inicial ya se carga desde localStorage en el slice
+  // Este efecto asegura que el audioService tenga el volumen correcto al iniciar
+  // Se ejecuta después de que el componente se monta y el estado está disponible
+  useEffect(() => {
+    // Esperar un momento para asegurar que el estado de Redux esté completamente cargado
+    const timeoutId = setTimeout(() => {
+      if (audioServiceRef.current && audioState.volume !== undefined) {
+        try {
+          const volumeToSet = audioState.isMuted ? 0 : audioState.volume;
+          audioServiceRef.current.setVolume(volumeToSet);
+        } catch (error) {
+          console.error('Error al establecer volumen inicial:', error);
+        }
+      }
+    }, 50); // Pequeño delay para asegurar que el estado esté cargado
+
+    return () => clearTimeout(timeoutId);
+  }, []); // Solo ejecutar una vez al montar
+
+  // Efecto para sincronizar el volumen cuando cambia (incluyendo mute)
+  useEffect(() => {
+    if (audioServiceRef.current && audioState.volume !== undefined) {
+      try {
+        // Asegurar que si está muted o volumen es 0, el audio no suene
+        const volumeToSet = audioState.isMuted ? 0 : audioState.volume;
+        audioServiceRef.current.setVolume(volumeToSet);
+      } catch (error) {
+        console.error('Error al sincronizar volumen:', error);
+      }
+    }
+  }, [audioState.volume, audioState.isMuted]);
 
   useEffect(() => {
     if (!audioState.trackUrl || audioState.trackUrl.trim() === '') {
@@ -62,7 +95,8 @@ export function useAudio() {
     if (audioServiceRef.current) {
       const currentUrl = audioServiceRef.current.getState()?.trackUrl;
       if (currentUrl === audioState.trackUrl || currentServiceUrl === audioState.trackUrl) {
-        const currentVolume = audioState.volume || 100;
+        // Asegurar que si está muted o volumen es 0, el audio no suene
+        const currentVolume = audioState.isMuted ? 0 : (audioState.volume ?? 100);
         try {
           audioServiceRef.current.setVolume(currentVolume);
         } catch (error) {
@@ -85,7 +119,8 @@ export function useAudio() {
           (audioServiceState as any).trackDuration = audioState.trackDuration;
         }
       }
-      const currentVolume = audioState.volume || 100;
+      // Asegurar que si está muted o volumen es 0, el audio no suene
+      const currentVolume = audioState.isMuted ? 0 : (audioState.volume ?? 100);
       try {
         audioService.setVolume(currentVolume);
       } catch (error) {
@@ -102,7 +137,7 @@ export function useAudio() {
         (audioService as any).currentState = {
           isPlaying: audioState.isPlaying || false,
           currentPosition: audioState.currentPosition || 0,
-          volume: audioState.volume || 100,
+          volume: audioState.isMuted ? 0 : audioState.volume || 100,
           trackId: audioState.trackId || '',
           trackUrl: audioState.trackUrl,
           trackTitle: audioState.trackTitle,
@@ -119,8 +154,6 @@ export function useAudio() {
         }
       }
     }
-
-    const currentVolume = audioState.volume || 100;
 
     dispatch(setLoading({ isLoading: true }));
     dispatch(setError({ error: '' }));
@@ -203,7 +236,10 @@ export function useAudio() {
     setTimeout(() => {
       if (audioServiceRef.current) {
         try {
-          audioServiceRef.current.setVolume(currentVolume);
+          // Asegurar que si está muted o volumen es 0, el audio no suene
+          // Usar el volumen del estado actual de Redux, no el currentVolume calculado
+          const volumeToSet = audioState.isMuted ? 0 : (audioState.volume ?? 100);
+          audioServiceRef.current.setVolume(volumeToSet);
         } catch (error) {
           console.error('Error al establecer volumen inicial:', error);
         }
@@ -535,16 +571,40 @@ export function useAudio() {
 
       dispatch(setVolumeAction({ volume: clampedVolume }));
 
+      // Guardar volumen en localStorage (incluso si es 0)
+      localStorage.setItem(STORAGE_KEYS.VOLUME, clampedVolume.toString());
+
       if (audioServiceRef.current) {
         try {
-          audioServiceRef.current.setVolume(clampedVolume);
+          // Si está muted, mantener el volumen en 0
+          const volumeToSet = audioState.isMuted ? 0 : clampedVolume;
+          audioServiceRef.current.setVolume(volumeToSet);
         } catch (error) {
           console.error('Error al cambiar volumen:', error);
         }
       }
     },
-    [dispatch, audioState.volume]
+    [dispatch, audioState.volume, audioState.isMuted]
   );
+
+  const handleToggleMute = useCallback(() => {
+    dispatch(toggleMuteAction());
+
+    if (audioServiceRef.current) {
+      try {
+        const currentState = store.getState().audio;
+        // Asegurar que si está muted, el volumen sea 0
+        const volumeToSet = currentState.isMuted ? 0 : currentState.volume;
+        audioServiceRef.current.setVolume(volumeToSet);
+
+        // Guardar estado de muted en localStorage
+        localStorage.setItem(STORAGE_KEYS.IS_MUTED, currentState.isMuted.toString());
+        localStorage.setItem(STORAGE_KEYS.PREVIOUS_VOLUME, currentState.previousVolume.toString());
+      } catch (error) {
+        console.error('Error al cambiar mute:', error);
+      }
+    }
+  }, [dispatch]);
 
   const handleNext = useCallback(() => {
     if (role !== 'dj') return;
@@ -671,6 +731,7 @@ export function useAudio() {
     pause: handlePause,
     seek: handleSeek,
     setVolume: handleVolumeChange,
+    toggleMute: handleToggleMute,
     next: handleNext,
     previous: handlePrevious,
     restart: handleRestart,

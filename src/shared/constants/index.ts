@@ -70,4 +70,6 @@ export const STORAGE_KEYS = Object.freeze({
   USER: `${STORAGE_PREFIX}:user`,
   THEME: `${STORAGE_PREFIX}:theme`,
   VOLUME: `${STORAGE_PREFIX}:volume`,
+  IS_MUTED: `${STORAGE_PREFIX}:isMuted`,
+  PREVIOUS_VOLUME: `${STORAGE_PREFIX}:previousVolume`,
 } as const);

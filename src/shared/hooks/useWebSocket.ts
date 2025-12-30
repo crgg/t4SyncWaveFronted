@@ -121,6 +121,7 @@ export function useWebSocket() {
         ...data,
         trackUrl: trackUrl,
         trackId: trackUrl,
+        // Preservar siempre el volumen local - NO usar el volumen del backend
         volume: currentAudioState?.volume ?? 100,
         trackDuration: data.trackDuration || currentAudioState?.trackDuration,
         currentPosition:
@@ -128,7 +129,7 @@ export function useWebSocket() {
             ? (currentAudioState?.currentPosition ?? 0)
             : data.currentPosition,
         timestamp: data.timestamp || Date.now(),
-      };
+      } as AudioState;
 
       dispatch(setAudioState(audioStateToDispatch));
 
@@ -208,6 +209,7 @@ export function useWebSocket() {
           isNaN(data.position) || data.position < 0
             ? (currentAudioState?.currentPosition ?? 0)
             : data.position,
+        // Preservar siempre el volumen local - NO usar el volumen del backend
         volume: currentAudioState?.volume ?? 100,
         trackId: currentAudioState?.trackId || data.trackUrl || '',
         trackUrl: data.trackUrl || currentAudioState?.trackUrl || '',
@@ -216,7 +218,7 @@ export function useWebSocket() {
         trackDuration: trackDuration,
         timestamp: timestamp,
         truckUrl: data.trackUrl,
-      };
+      } as AudioState;
 
       dispatch(setAudioState(audioStateToDispatch));
 
