@@ -595,6 +595,7 @@ class WebRTCSFUService {
   }
 
   playAudio(timestamp: number, position?: number, trackUrl?: string): void {
+    console.trace({ event: 'playAudio', timestamp, position, trackUrl });
     this.emit(SOCKET_EVENTS.AUDIO_PLAY, {
       // room: this.sessionId || '',
       // userName: 'FredyMax',

@@ -644,6 +644,45 @@ export function useAudio() {
     }
   }, [role, dispatch, tracks, currentTrackIndex]);
 
+  const handleSelect = useCallback(
+    (trackId: string) => {
+      if (role !== 'dj') return;
+
+      if (tracks.length === 0) return;
+
+      const track = tracks.find((t) => t.id === trackId);
+      if (!track) return;
+
+      const nextIndex = currentTrackIndex !== null ? (currentTrackIndex + 1) % tracks.length : 0;
+      dispatch(setCurrentTrackIndex({ index: nextIndex }));
+
+      dispatch(
+        setTrack({
+          trackId: track.id,
+          trackUrl: track.url,
+          trackTitle: track.title,
+          trackArtist: track.artist,
+        })
+      );
+      const timestamp = Date.now();
+      const wsService = getWebSocketService({ url: WS_URL });
+      wsService.emit('audio:track-change', {
+        trackId: track.id,
+        trackUrl: track.url,
+        trackTitle: track.title,
+        trackArtist: track.artist,
+        timestamp,
+      });
+
+      setTimeout(() => {
+        if (audioServiceRef.current) {
+          audioServiceRef.current.play();
+        }
+      }, 100);
+    },
+    [role, dispatch, tracks, currentTrackIndex]
+  );
+
   const handlePrevious = useCallback(() => {
     if (role !== 'dj') return;
 
@@ -735,6 +774,7 @@ export function useAudio() {
     next: handleNext,
     previous: handlePrevious,
     restart: handleRestart,
+    handleSelect,
     emitSeek,
   };
 }

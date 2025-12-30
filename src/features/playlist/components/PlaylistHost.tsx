@@ -2,9 +2,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, Plus } from 'lucide-react';
 import { useState } from 'react';
 
-import { setCurrentTrackIndex, removeTrack } from '@features/playlist/playlistSlice';
+import { removeTrack } from '@features/playlist/playlistSlice';
 import { useAppDispatch, useAppSelector } from '@app/hooks';
-import { setTrack } from '@features/audio/audioSlice';
 import { useAudio } from '@/shared/hooks/useAudio';
 import { formatTime } from '@shared/utils';
 import { Button } from '@shared/components/Button/Button';
@@ -16,30 +15,26 @@ interface PlaylistHostProps {
 
 export function PlaylistHost({ groupId }: PlaylistHostProps) {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const { handleSelect } = useAudio();
+
   const dispatch = useAppDispatch();
   const { tracks, currentTrackIndex } = useAppSelector((state) => state.playlist);
   const { trackId: currentTrackId } = useAppSelector((state) => state.audio);
-  const { play } = useAudio();
 
-  const handleTrackSelect = (trackId: string, index: number) => {
-    const track = tracks.find((t) => t.id === trackId);
-    if (!track || currentTrackIndex === index) return;
-
-    dispatch(setCurrentTrackIndex({ index }));
-    dispatch(
-      setTrack({
-        trackId: track.id,
-        trackUrl: track.url,
-        trackTitle: track.title,
-        trackArtist: track.artist,
-      })
-    );
-    setTimeout(play, 1000);
+  const handleTrackSelect = (trackId: string) => {
+    handleSelect(trackId);
   };
 
   const handleRemoveTrack = (trackId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     dispatch(removeTrack({ trackId }));
+  };
+
+  const onClickTrack = (e: React.MouseEvent, trackId: string) => {
+    e.stopPropagation();
+    if (e.detail === 1) {
+      handleTrackSelect(trackId);
+    }
   };
 
   if (tracks.length === 0) {
@@ -109,7 +104,7 @@ export function PlaylistHost({ groupId }: PlaylistHostProps) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.2 }}
-                onClick={() => handleTrackSelect(track.id, index)}
+                onClick={(e) => onClickTrack(e, track.id)}
                 className={`
                   flex items-center gap-4 p-3 rounded-lg transition-colors cursor-pointer 
                   hover:bg-light-hover dark:hover:bg-dark-hover
@@ -151,6 +146,9 @@ export function PlaylistHost({ groupId }: PlaylistHostProps) {
                   </div>
                   <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary truncate">
                     {track.artist}
+                  </div>
+                  <div className="text-xs text-light-text-secondary dark:text-dark-text-secondary truncate">
+                    {track.url}
                   </div>
                 </div>
 

@@ -46,7 +46,7 @@ import { setTrack } from '@/features/audio/audioSlice';
 import { useAudio } from '@/shared/hooks/useAudio';
 import DeleteDialog from '@/shared/components/DeleteDialog/DeleteDialog';
 import { GroupPageSkeleton } from './GroupPage/components/GroupPageSkeleton';
-import { cn } from '@/shared/utils';
+import { cn, orderBy } from '@/shared/utils';
 import { AvatarPreview } from '@/shared/components/AvatarPreview/AvatarPreview';
 
 const GroupPage = () => {
@@ -109,7 +109,7 @@ const GroupPage = () => {
 
   useEffect(() => {
     if (playlist) {
-      const tracks = playlist.map(PlaylistAdapter.toCurrentTrack);
+      const tracks = orderBy(playlist.map(PlaylistAdapter.toCurrentTrack), 'addedAt', 'desc');
       dispatch(setPlaylistFromApi({ tracks }));
       const isHost = createdBy === user?.id;
       if (!isHost) return;

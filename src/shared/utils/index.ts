@@ -168,3 +168,11 @@ export const getErrorMessage = (error: unknown): string => {
   }
   return String(error);
 };
+
+export const orderBy = <T>(array: T[], key: keyof T, direction: 'asc' | 'desc' = 'asc'): T[] => {
+  return array.sort((a, b) => {
+    if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
+    if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+    return direction === 'asc' ? 0 : 0;
+  }) as T[];
+};

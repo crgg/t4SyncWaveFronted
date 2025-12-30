@@ -44,6 +44,7 @@ export function useWebSocket() {
   }, []);
 
   const updateAudioStateRef = () => {
+    // console.log('updateAudioStateRef', store.getState().audio);
     audioStateRef.current = store.getState().audio;
   };
 
@@ -90,20 +91,20 @@ export function useWebSocket() {
 
     const handleAudioState = (data: AudioState) => {
       if (!data) return;
-      const trackUrl = data.trackUrl || data.truckUrl || '';
+      const newTrackUrl = data.trackUrl || data.truckUrl || '';
       updateAudioStateRef();
       const currentAudioState = audioStateRef.current;
 
-      if (trackUrl && !isValidAudioUrl(trackUrl)) {
+      if (newTrackUrl && !isValidAudioUrl(newTrackUrl)) {
         console.warn(
           'El servidor envió una URL inválida:',
-          trackUrl,
+          newTrackUrl,
           'Debe ser un archivo de audio válido (ej: .mp3, .wav, etc.)'
         );
         return;
       }
 
-      const isNewTrack = trackUrl && trackUrl !== currentAudioState?.trackUrl;
+      const isNewTrack = newTrackUrl && newTrackUrl !== currentAudioState?.trackUrl;
       const positionDiff = Math.abs(
         (data.currentPosition || 0) - (currentAudioState?.currentPosition || 0)
       );
@@ -113,14 +114,14 @@ export function useWebSocket() {
         data.isPlaying !== currentAudioState?.isPlaying ||
         (data.trackDuration && data.trackDuration !== currentAudioState?.trackDuration);
 
-      if (!hasSignificantChange && trackUrl && currentAudioState?.trackUrl) {
+      if (!hasSignificantChange && newTrackUrl && currentAudioState?.trackUrl) {
         return;
       }
 
       const audioStateToDispatch: AudioState = {
         ...data,
-        trackUrl: trackUrl,
-        trackId: trackUrl,
+        trackUrl: newTrackUrl,
+        trackId: newTrackUrl,
         // Preservar siempre el volumen local - NO usar el volumen del backend
         volume: currentAudioState?.volume ?? 100,
         trackDuration: data.trackDuration || currentAudioState?.trackDuration,
@@ -131,20 +132,33 @@ export function useWebSocket() {
         timestamp: data.timestamp || Date.now(),
       } as AudioState;
 
+      console.log('audioStateToDispatch', audioStateToDispatch);
+
       dispatch(setAudioState(audioStateToDispatch));
 
       const currentRole = store.getState().session.role;
-      if (currentRole === 'member' && trackUrl) {
+      if (currentRole === 'member' && newTrackUrl) {
         try {
           const audioService = getAudioService();
           const audioServiceState = audioService.getState();
 
-          if (audioServiceState) {
-            (audioServiceState as any).isPlaying = audioStateToDispatch.isPlaying;
-            (audioServiceState as any).trackUrl = trackUrl;
-            (audioServiceState as any).currentPosition = audioStateToDispatch.currentPosition;
-            if (audioStateToDispatch.trackDuration) {
-              (audioServiceState as any).trackDuration = audioStateToDispatch.trackDuration;
+          if (newTrackUrl !== audioServiceState?.trackUrl) {
+            console.log({
+              event: 'sync',
+              currentPosition: data.currentPosition,
+              timestamp: data.timestamp,
+              isPlaying: data.isPlaying,
+              newTrackUrl: newTrackUrl,
+            });
+            audioService.sync(data.currentPosition, data.timestamp, data.isPlaying, newTrackUrl);
+          } else {
+            if (audioServiceState) {
+              (audioServiceState as any).isPlaying = audioStateToDispatch.isPlaying;
+              (audioServiceState as any).trackUrl = newTrackUrl;
+              (audioServiceState as any).currentPosition = audioStateToDispatch.currentPosition;
+              if (audioStateToDispatch.trackDuration) {
+                (audioServiceState as any).trackDuration = audioStateToDispatch.trackDuration;
+              }
             }
           }
         } catch (error) {
@@ -173,6 +187,7 @@ export function useWebSocket() {
     }) => {
       updateAudioStateRef();
       const currentAudioState = audioStateRef.current;
+      console.log('PlaybackState', data);
 
       if (data.trackUrl && !isValidAudioUrl(data.trackUrl)) {
         console.warn(
