@@ -132,8 +132,6 @@ export function useWebSocket() {
         timestamp: data.timestamp || Date.now(),
       } as AudioState;
 
-      console.log('audioStateToDispatch', audioStateToDispatch);
-
       dispatch(setAudioState(audioStateToDispatch));
 
       const currentRole = store.getState().session.role;
@@ -143,13 +141,6 @@ export function useWebSocket() {
           const audioServiceState = audioService.getState();
 
           if (newTrackUrl !== audioServiceState?.trackUrl) {
-            console.log({
-              event: 'sync',
-              currentPosition: data.currentPosition,
-              timestamp: data.timestamp,
-              isPlaying: data.isPlaying,
-              newTrackUrl: newTrackUrl,
-            });
             audioService.sync(data.currentPosition, data.timestamp, data.isPlaying, newTrackUrl);
           } else {
             if (audioServiceState) {
