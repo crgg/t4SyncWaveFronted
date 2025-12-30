@@ -5,4 +5,5 @@ export const paths = {
   // Auth
   LOGIN: '/login',
   REGISTER: '/register',
+  PROFILE: '/profile',
 } as const;

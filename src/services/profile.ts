@@ -1,0 +1,51 @@
+import { http } from '@app/http';
+
+export interface ProfileResponse {
+  status: boolean;
+  error?: string;
+  msg?: string;
+  user: IUserData;
+}
+
+export interface UpdateProfileData {
+  name: string;
+  nickname?: string;
+}
+
+export interface UpdateProfileResponse {
+  status: boolean;
+  message: string;
+  user: IUserData;
+}
+
+export interface UploadAvatarResponse {
+  status: boolean;
+  message: string;
+  avatar_url: string;
+  user: IUserData;
+}
+
+export const profileService = {
+  getProfile: async (): Promise<ProfileResponse> => {
+    const response = await http.get<ProfileResponse>('/users/profile');
+    return response.data;
+  },
+
+  updateProfile: async (data: UpdateProfileData): Promise<UpdateProfileResponse> => {
+    const response = await http.put<UpdateProfileResponse>('/users/profile', data);
+    return response.data;
+  },
+
+  uploadAvatar: async (file: File): Promise<UploadAvatarResponse> => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const response = await http.post<UploadAvatarResponse>('/users/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data;
+  },
+};

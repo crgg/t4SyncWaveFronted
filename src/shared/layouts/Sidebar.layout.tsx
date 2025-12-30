@@ -1,4 +1,4 @@
-import { HomeIcon, LogOutIcon, PanelRightOpen } from 'lucide-react';
+import { HomeIcon, LogOutIcon, PanelRightOpen, UserIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
@@ -6,6 +6,7 @@ import { getInitials } from '../utils';
 import { layoutActions } from '@/app/slices/layoutSlice';
 import { STORAGE_KEYS } from '../constants';
 import { Link, useNavigate } from 'react-router-dom';
+import { paths } from '@/routes/paths';
 
 const SidebarLayout = () => {
   const user = useAppSelector((state) => state.auth.user);
@@ -30,6 +31,11 @@ const SidebarLayout = () => {
       icon: <HomeIcon size={18} />,
       href: '/',
     },
+    {
+      label: 'Profile',
+      icon: <UserIcon size={18} />,
+      href: paths.PROFILE,
+    },
   ];
 
   return (
@@ -52,19 +58,29 @@ const SidebarLayout = () => {
               <PanelRightOpen size={18} />
             </button>
           </div>
-          <div className="py-2 flex gap-2">
-            <div className="rounded-full dark:bg-[#B0FFEF] bg-[#5bfada] font-bold w-8 h-8 flex items-center justify-center text-zinc-800 text-xs">
-              {getInitials(user?.name)}
+          <Link to={paths.PROFILE} onClick={onCloseSidebar}>
+            <div className="py-2 flex gap-2 cursor-pointer hover:bg-light-hover dark:hover:bg-dark-hover rounded-lg px-2 -mx-2 transition-colors">
+              <div className="rounded-full dark:bg-[#B0FFEF] bg-[#5bfada] font-bold w-8 h-8 flex items-center justify-center text-zinc-800 text-xs overflow-hidden flex-shrink-0">
+                {user?.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  getInitials(user?.name)
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-bold text-xs text-ellipsis overflow-hidden whitespace-nowrap max-w-[230px]">
+                  {user?.name}
+                </p>
+                <p className="text-xs text-gray-500 text-ellipsis overflow-hidden whitespace-nowrap max-w-[230px]">
+                  {user?.email}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-bold text-xs text-ellipsis overflow-hidden whitespace-nowrap max-w-[230px]">
-                {user?.name}
-              </p>
-              <p className="text-xs text-gray-500 text-ellipsis overflow-hidden whitespace-nowrap max-w-[230px]">
-                {user?.email}
-              </p>
-            </div>
-          </div>
+          </Link>
         </div>
         <AnimatePresence mode="wait">
           <div className="flex flex-col gap-2 h-full">
@@ -91,7 +107,7 @@ const SidebarLayout = () => {
             <LogOutIcon size={18} />
             <span className="text-xs">Logout</span>
           </button>
-          <div className="text-[10px] text-gray-500 text-center">Version V1.0.1</div>
+          <div className="text-[10px] text-gray-500 text-center">Version V1.0.0</div>
         </div>
       </motion.aside>
       <AnimatePresence>

@@ -22,11 +22,17 @@ const authSlice = createSlice({
   reducers: {
     setUser: (state, action: PayloadAction<IUserData>) => {
       state.user = action.payload;
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(action.payload));
     },
     login: (state, action: PayloadAction<AuthResponse>) => {
       const { user, token } = action.payload;
       state.user = user;
       state.token = token;
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    },
+    updateUser: (state, action: PayloadAction<IUserData>) => {
+      state.user = action.payload;
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(action.payload));
     },
   },
 });

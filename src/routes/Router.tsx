@@ -12,6 +12,7 @@ import { paths } from './paths';
 
 const GroupsPage = lazy(() => import('@/pages/GroupsPage'));
 const GroupPage = lazy(() => import('@/pages/GroupPage'));
+const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 
 const routes: RouteObject[] = [
   {
@@ -45,6 +46,10 @@ const routes: RouteObject[] = [
       {
         path: '/listener/:sessionId',
         element: <ListenerPage />,
+      },
+      {
+        path: paths.PROFILE,
+        element: <ProfilePage />,
       },
     ],
   },

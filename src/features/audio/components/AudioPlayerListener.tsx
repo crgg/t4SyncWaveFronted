@@ -17,9 +17,7 @@ export function AudioPlayerListener({ name, artist }: Props) {
   const { audioState, setVolume, toggleMute } = useAudio();
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
-  const [localVolume, setLocalVolume] = useState(
-    audioState.isMuted ? 0 : audioState.volume || 100
-  );
+  const [localVolume, setLocalVolume] = useState(audioState.isMuted ? 0 : audioState.volume || 100);
   const volumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
