@@ -544,7 +544,7 @@ const GroupPage = () => {
           </div>
 
           {group.code && (
-            <div className="mt-4 pt-4 border-t border-light-hover dark:border-dark-hover hidden">
+            <div className="mt-4 pt-4 border-t border-light-hover dark:border-dark-hover">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <Copy
@@ -927,7 +927,7 @@ const MemberCard = ({ member, isOwner, onRemove, isConnected }: MemberCardProps)
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="font-medium text-light-text dark:text-dark-text truncate">
-              {member.name || member.guest_name || 'Guest'}
+              {member.display_name || member.name || member.guest_name || 'Guest'}
             </p>
             {member.role === 'owner' && (
               <Crown size={14} className="text-primary-600 flex-shrink-0" fill="currentColor" />

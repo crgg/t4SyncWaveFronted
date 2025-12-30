@@ -50,6 +50,7 @@ export interface Member {
   name: string;
   email: string;
   avatar_url?: any;
+  display_name?: string;
 }
 
 export interface GroupResponse extends ResponseBase {

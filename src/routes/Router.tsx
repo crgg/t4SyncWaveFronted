@@ -1,7 +1,6 @@
 import { lazy } from 'react';
-import { RouteObject, useRoutes } from 'react-router-dom';
+import { Navigate, RouteObject, useRoutes } from 'react-router-dom';
 
-import HomePage from '@/pages/HomePage';
 import HostPage from '@/pages/HostPage';
 import ListenerPage from '@/pages/ListenerPage';
 import LoginPage from '@/pages/LoginPage';
@@ -21,7 +20,7 @@ const routes: RouteObject[] = [
     children: [
       {
         index: true,
-        element: <HomePage />,
+        element: <Navigate to={paths.GROUPS(null)} />,
       },
       {
         path: paths.GROUPS(null),

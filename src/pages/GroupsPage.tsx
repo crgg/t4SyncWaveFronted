@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Search } from 'lucide-react';
 
 import { groupsApi } from '@/features/groups/groupsApi';
 import { useAppSelector } from '@/app/hooks';
@@ -16,7 +18,6 @@ import { SearchAndSortControls } from './GroupsPage/components/SearchAndSortCont
 import { GroupsPageSkeleton } from './GroupsPage/components/GroupsPageSkeleton';
 import { ErrorState } from './GroupsPage/components/ErrorState';
 import { EmptyGroupsState } from './GroupsPage/components/EmptyGroupsState';
-import { NoResultsState } from './GroupsPage/components/NoResultsState';
 import { GroupCard } from './GroupsPage/components/GroupCard';
 import { JoinGroupByCode } from './GroupsPage/components/JoinGroupByCode';
 import type { SortOption } from './GroupsPage/types';
@@ -132,24 +133,8 @@ const GroupsPage = () => {
     );
   }
 
-  if (displayedGroups.length === 0 && (searchQuery || sortBy !== 'newest')) {
-    return (
-      <NoResultsState
-        isMyGroups={isMyGroups}
-        searchQuery={searchQuery}
-        sortBy={sortBy}
-        onSearchChange={setSearchQuery}
-        onSortChange={setSortBy}
-        onCreateGroup={() => setIsCreateModalOpen(true)}
-        isCreateModalOpen={isCreateModalOpen}
-        onCloseCreateModal={() => setIsCreateModalOpen(false)}
-        userId={userId}
-      />
-    );
-  }
-
   return (
-    <div className="w-full max-w-4xl mx-auto pb-24">
+    <div className="w-full max-w-4xl mx-auto pb-24 space-y-5">
       <GroupsPageHeader
         isMyGroups={isMyGroups}
         groupsCount={displayedGroups.length}
@@ -166,30 +151,57 @@ const GroupsPage = () => {
         resultsCount={displayedGroups.length}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {displayedGroups.map((group) => (
-          <GroupCard
-            key={group.id}
-            group={group}
-            copiedCode={copiedCode}
-            onCopyCode={handleCopyCode}
-            isMyGroups={isMyGroups}
-            onDblClick={() =>
-              navigate(isMyGroups ? paths.GROUPS(`/${group.id}`) : paths.LISTENERS(`/${group.id}`))
-            }
-            onEdit={() => setEditingGroup(group)}
-            onDelete={() => setDeletingGroup(group)}
-            onLeaveGroup={
-              !isMyGroups
-                ? () => {
-                    setLeavingGroup(group);
-                    refetchOthersGroups();
-                  }
-                : undefined
-            }
-          />
-        ))}
-      </div>
+      {displayedGroups.length === 0 && (searchQuery || sortBy !== 'newest') ? (
+        <div className="flex items-center justify-center min-h-[40vh]">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center space-y-4"
+          >
+            <div className="text-6xl">
+              <Search
+                size={64}
+                className="mx-auto text-light-text-secondary dark:text-dark-text-secondary"
+              />
+            </div>
+            <h3 className="text-xl font-semibold text-light-text dark:text-dark-text">
+              No groups found
+            </h3>
+            <p className="text-light-text-secondary dark:text-dark-text-secondary max-w-md">
+              {searchQuery
+                ? `No groups match your search "${searchQuery}". Try adjusting your search terms.`
+                : 'Try adjusting your filters to see more groups.'}
+            </p>
+          </motion.div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 border rounded-lg bg-white dark:bg-dark-surface dark:border-dark-hover">
+          {displayedGroups.map((group) => (
+            <GroupCard
+              key={group.id}
+              group={group}
+              copiedCode={copiedCode}
+              onCopyCode={handleCopyCode}
+              isMyGroups={isMyGroups}
+              onDblClick={() =>
+                navigate(
+                  isMyGroups ? paths.GROUPS(`/${group.id}`) : paths.LISTENERS(`/${group.id}`)
+                )
+              }
+              onEdit={() => setEditingGroup(group)}
+              onDelete={() => setDeletingGroup(group)}
+              onLeaveGroup={
+                !isMyGroups
+                  ? () => {
+                      setLeavingGroup(group);
+                      refetchOthersGroups();
+                    }
+                  : undefined
+              }
+            />
+          ))}
+        </div>
+      )}
 
       <CreateGroupModal
         isOpen={isCreateModalOpen}

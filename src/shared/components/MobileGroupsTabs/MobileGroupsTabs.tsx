@@ -1,4 +1,4 @@
-import { AudioLines, HomeIcon, UsersRound } from 'lucide-react';
+import { AudioLines, User, UsersRound } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 import type { LayoutState } from '@/app/slices/layoutSlice';
@@ -23,18 +23,18 @@ export function MobileGroupsTabs({ onTabChange, className }: MobileGroupsTabsPro
       getActivePath: () => pathname.startsWith(paths.GROUPS(null)),
     },
     {
-      id: 'home' as const,
-      label: 'Home',
-      icon: HomeIcon,
-      iconSize: 16,
-      getActivePath: () => pathname === paths.HOME,
-    },
-    {
       id: 'listeners' as const,
       label: 'Listeners',
       icon: AudioLines,
       iconSize: 20,
       getActivePath: () => pathname.startsWith(paths.LISTENERS(null)),
+    },
+    {
+      id: 'profile' as const,
+      label: 'Profile',
+      icon: User,
+      iconSize: 20,
+      getActivePath: () => pathname === paths.PROFILE,
     },
   ];
 
@@ -42,8 +42,8 @@ export function MobileGroupsTabs({ onTabChange, className }: MobileGroupsTabsPro
     <nav
       className={cn(
         'fixed bottom-0 left-0 right-0 z-[49] max-w-screen-sm mx-auto',
-        'bg-light-bg dark:bg-dark-bg',
-        'border-t border-light-hover dark:border-dark-hover',
+        'bg-white dark:bg-dark-bg',
+        'border-t-2 rounded-t-2xl dark:border-zinc-700',
         'pb-safe',
         className
       )}
@@ -61,7 +61,7 @@ export function MobileGroupsTabs({ onTabChange, className }: MobileGroupsTabsPro
                 'relative flex flex-col items-center justify-center gap-1',
                 'flex-1 h-full',
                 'transition-colors duration-200',
-                'text-light-text-secondary dark:text-dark-text-secondary',
+                'text-zinc-400 dark:text-zinc-400',
                 isActive && 'text-light-text dark:text-dark-text'
               )}
             >

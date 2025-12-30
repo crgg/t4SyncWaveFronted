@@ -44,15 +44,15 @@ const SidebarLayout = () => {
         initial={{ x: '-100%' }}
         animate={{ x: isSidebarOpen ? 0 : '-100%' }}
         transition={{ duration: 0.3 }}
-        className="max-w-[270px] w-full px-4 pb-3 gap-4 fixed left-0 z-[52] max-h-screen h-full bg-white dark:bg-zinc-900 border-r border-zinc-700 dark:border-zinc-700 grid grid-rows-[auto_1fr_auto]"
+        className="max-w-[280px] w-full px-4 pb-4 gap-4 fixed left-0 z-[52] max-h-screen h-full bg-light-bg/95 dark:bg-dark-bg/95 backdrop-blur-sm border-r border-light-hover/30 dark:border-dark-hover/30 grid grid-rows-[auto_1fr_auto]"
       >
         <div>
-          <div className="flex items-center justify-between py-2">
-            <h1 className="text-lg font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
+          <div className="flex items-center justify-between py-4 border-b border-light-hover/50 dark:border-dark-hover/50">
+            <h1 className="text-lg font-semibold text-primary dark:text-primary-light">
               T4SyncWave
             </h1>
             <button
-              className="active:scale-95 transition-all duration-300"
+              className="p-1.5 rounded-lg hover:bg-light-hover dark:hover:bg-dark-hover transition-colors text-light-text-secondary dark:text-dark-text-secondary"
               onClick={onCloseSidebar}
             >
               <PanelRightOpen size={18} />
@@ -60,7 +60,7 @@ const SidebarLayout = () => {
           </div>
           <Link to={paths.PROFILE} onClick={onCloseSidebar}>
             <div className="py-2 flex gap-2 cursor-pointer hover:bg-light-hover dark:hover:bg-dark-hover rounded-lg px-2 -mx-2 transition-colors">
-              <div className="rounded-full dark:bg-[#B0FFEF] bg-[#5bfada] font-bold w-8 h-8 flex items-center justify-center text-zinc-800 text-xs overflow-hidden flex-shrink-0">
+              <div className="rounded-full dark:bg-primary-light bg-primary font-bold w-8 h-8 flex items-center justify-center text-secondary text-xs overflow-hidden flex-shrink-0">
                 {user?.avatar_url ? (
                   <img
                     src={user.avatar_url}
@@ -68,14 +68,16 @@ const SidebarLayout = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  getInitials(user?.name)
+                  <span className="text-primary dark:text-primary-light font-medium text-xs">
+                    {getInitials(user?.name)}
+                  </span>
                 )}
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-bold text-xs text-ellipsis overflow-hidden whitespace-nowrap max-w-[230px]">
+              <div className="min-w-0 flex-1 max-w-[230px] overflow-hidden">
+                <p className="font-bold text-xs text-ellipsis overflow-hidden whitespace-nowrap max-w-[230px] line-clamp-1 truncate pr-3">
                   {user?.name}
                 </p>
-                <p className="text-xs text-gray-500 text-ellipsis overflow-hidden whitespace-nowrap max-w-[230px]">
+                <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary text-ellipsis overflow-hidden whitespace-nowrap">
                   {user?.email}
                 </p>
               </div>
@@ -83,31 +85,36 @@ const SidebarLayout = () => {
           </Link>
         </div>
         <AnimatePresence mode="wait">
-          <div className="flex flex-col gap-2 h-full">
+          <div className="flex flex-col gap-1 py-2">
             {menuItems.map((item, index) => (
               <motion.div
-                transition={{ duration: 0.3, delay: index * 0.4 }}
+                transition={{ duration: 0.2, delay: index * 0.1 }}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
                 key={item.label}
               >
                 <Link to={item.href} onClick={onCloseSidebar}>
-                  <div key={item.label} className="flex items-center gap-2 py-1">
+                  <div className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-light-hover/50 dark:hover:bg-dark-hover/50 transition-colors text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary-light">
                     {item.icon}
-                    <span className="text-xs">{item.label}</span>
+                    <span className="text-sm font-medium">{item.label}</span>
                   </div>
                 </Link>
               </motion.div>
             ))}
           </div>
         </AnimatePresence>
-        <div className="flex flex-col gap-2 h-full">
-          <button className="flex items-center gap-2 py-3" onClick={handleLogout}>
+        <div className="flex flex-col gap-1 pt-2 border-t border-light-hover/50 dark:border-dark-hover/50">
+          <button
+            className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-light-hover/50 dark:hover:bg-dark-hover/50 transition-colors text-light-text-secondary dark:text-dark-text-secondary hover:text-red-600 dark:hover:text-red-400"
+            onClick={handleLogout}
+          >
             <LogOutIcon size={18} />
-            <span className="text-xs">Logout</span>
+            <span className="text-sm font-medium">Logout</span>
           </button>
-          <div className="text-[10px] text-gray-500 text-center">Version V1.0.0</div>
+          <div className="text-[10px] text-light-text-secondary dark:text-dark-text-secondary text-center mt-2">
+            Version V1.0.0
+          </div>
         </div>
       </motion.aside>
       <AnimatePresence>

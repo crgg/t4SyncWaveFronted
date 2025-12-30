@@ -315,7 +315,7 @@ export function AudioPlayer() {
           onChange={(e) => handleVolumeChange(e)}
           className="flex-1 h-1 bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary-600"
           style={{
-            background: `linear-gradient(to right, #8c7f49 0%, #8c7f49 ${localVolume}%, #2a2a2a ${localVolume}%, #2a2a2a 100%)`,
+            background: `linear-gradient(to right, #C5A059 0%, #C5A059 ${localVolume}%, #2a2516 ${localVolume}%, #2a2516 100%)`,
           }}
         />
         <span className="text-sm text-dark-text-secondary w-10 text-right">

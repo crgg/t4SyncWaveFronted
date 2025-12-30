@@ -23,7 +23,7 @@ const AppLayout = () => {
     } else if (tab === 'listeners') {
       navigate(paths.LISTENERS(null));
     } else {
-      navigate(paths.HOME);
+      navigate(paths.PROFILE);
     }
   };
 
@@ -32,7 +32,7 @@ const AppLayout = () => {
       <SidebarLayout />
       <div className="min-h-screen bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text transition-colors duration-200">
         <Header />
-        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-primary-50 to-primary-100 dark:from-dark-bg dark:to-dark-surface p-2 flex flex-col justify-between items-center">
+        <div className="min-h-[calc(100vh-4rem)] bg-light-bg dark:bg-dark-bg p-2 flex flex-col justify-between items-center">
           <Outlet />
         </div>
       </div>

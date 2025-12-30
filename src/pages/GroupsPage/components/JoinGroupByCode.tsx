@@ -70,18 +70,20 @@ export function JoinGroupByCode({ userId }: JoinGroupByCodeProps) {
   };
 
   return (
-    <div className="mb-6 p-4 rounded-xl bg-light-card dark:bg-dark-card border border-light-hover dark:border-dark-hover">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <div className="flex items-center gap-2 mb-2">
-          <KeyRound size={20} className="text-primary-600 dark:text-primary-400" />
-          <h3 className="text-lg font-semibold text-light-text dark:text-dark-text">
-            Join Group by Code
-          </h3>
+    <div>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <div>
+          <div className="flex items-center gap-2">
+            <KeyRound size={18} className="text-primary dark:text-primary-light" />
+            <h3 className="text-base font-semibold text-light-text dark:text-dark-text">
+              Join Group by Code
+            </h3>
+          </div>
+          <p className="text-xs sm:text-sm text-zinc-400 dark:text-zinc-300 mb-3">
+            Enter a group code to join and start listening together.
+          </p>
         </div>
-        <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-4">
-          Enter a group code to join and start listening together.
-        </p>
-        <div className="flex gap-3">
+        <div className="flex">
           <div className="flex-1">
             <Input
               {...register('code')}
@@ -90,18 +92,21 @@ export function JoinGroupByCode({ userId }: JoinGroupByCodeProps) {
               error={errors.code?.message}
               disabled={joinGroupMutation.isPending}
               autoComplete="off"
-              maxLength={10}
-              className="uppercase"
+              maxLength={6}
+              className="uppercase rounded-r-none placeholder:capitalize"
+              buttonEnd={
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isLoading={joinGroupMutation.isPending}
+                  disabled={joinGroupMutation.isPending}
+                  className="rounded-l-none min-w-24"
+                >
+                  <span className="text-xs font-semibold">Join</span>
+                </Button>
+              }
             />
           </div>
-          <Button
-            type="submit"
-            variant="primary"
-            isLoading={joinGroupMutation.isPending}
-            disabled={joinGroupMutation.isPending}
-          >
-            Join
-          </Button>
         </div>
         {joinGroupMutation.error && (
           <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">

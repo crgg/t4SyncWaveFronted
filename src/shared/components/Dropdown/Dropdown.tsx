@@ -49,7 +49,7 @@ export const Dropdown = ({ children }: DropdownProps) => {
 
   return (
     <DropdownContext.Provider value={{ isOpen, toggle, close }}>
-      <div className="relative inline-block text-left" ref={dropdownRef}>
+      <div className="relative inline-flex text-left justify-end" ref={dropdownRef}>
         {children}
       </div>
     </DropdownContext.Provider>
@@ -83,7 +83,7 @@ const Menu = ({ children, className = '' }: SubComponentProps) => {
 
   return (
     <div
-      className={`absolute right-0 z-50 mt-2 w-52 origin-top-right rounded-xl shadow-2xl bg-white dark:bg-zinc-800 dark:text-zinc-200 bg-card border border-zinc-500 border-hover ring-1 ring-black/5 overflow-hidden ${className}`}
+      className={`absolute right-0 z-50 mt-1 w-52 origin-top-right rounded-lg shadow-lg bg-light-bg dark:bg-dark-bg border border-light-hover/30 dark:border-dark-hover/30 overflow-hidden backdrop-blur-sm  ${className}`}
     >
       <div className="flex flex-col py-1">{children}</div>
     </div>
@@ -101,8 +101,8 @@ const Item = ({ children, onClick, className = '' }: SubComponentProps) => {
   return (
     <button
       onClick={handleItemClick}
-      className={`w-full text-left px-4 py-2.5 text-xs sm:text-sm transition-colors
-      text-zinc-700 dark:text-zinc-200 hover:bg-hover hover:text-primary ${className}`}
+      className={`w-full text-left px-4 py-2.5 text-sm transition-colors
+      text-light-text dark:text-dark-text hover:bg-light-hover/50 dark:hover:bg-dark-hover/50 hover:text-primary dark:hover:text-primary-light ${className}`}
     >
       {children}
     </button>

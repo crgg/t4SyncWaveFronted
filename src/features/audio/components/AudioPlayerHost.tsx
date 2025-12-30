@@ -344,9 +344,9 @@ export function AudioPlayerHost() {
           onChange={handleVolumeChange}
           className="flex-1 h-1 bg-light-hover dark:bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary-600 transition-colors duration-200"
           style={{
-            background: `linear-gradient(to right, #8c7f49 0%, #8c7f49 ${localVolume}%, ${
-              theme === 'dark' ? '#2a2a2a' : '#e9ecef'
-            } ${localVolume}%, ${theme === 'dark' ? '#2a2a2a' : '#e9ecef'} 100%)`,
+            background: `linear-gradient(to right, #C5A059 0%, #C5A059 ${localVolume}%, ${
+              theme === 'dark' ? '#2a2516' : '#E2C285'
+            } ${localVolume}%, ${theme === 'dark' ? '#2a2516' : '#E2C285'} 100%)`,
           }}
         />
         <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary w-10 text-right transition-colors duration-200">

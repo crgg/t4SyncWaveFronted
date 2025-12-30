@@ -19,35 +19,34 @@ export function Header() {
   };
 
   const handleAvatarClick = (e: React.MouseEvent) => {
-    if (user?.avatar_url) {
-      e.stopPropagation();
-      setIsAvatarPreviewOpen(true);
-    } else {
-      handleToggleSidebar();
-    }
+    e.stopPropagation();
+    handleToggleSidebar();
   };
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-light-card dark:bg-dark-card border-b border-light-hover dark:border-dark-hover shadow-sm">
+      <header className="sticky top-0 z-50 bg-light-bg/80 dark:bg-dark-bg/80 backdrop-blur-sm border-b border-light-hover/30 dark:border-dark-hover/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-14">
             <Link
               to="/"
-              className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent"
+              className="text-xl sm:text-2xl font-semibold text-primary dark:text-primary-light transition-colors hover:text-primary-dark dark:hover:text-primary"
             >
               T4SyncWave
             </Link>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <ThemeToggle />
 
               <button
                 onClick={handleAvatarClick}
                 className={cn(
-                  'rounded-full dark:bg-[#B0FFEF] bg-[#5bfada] font-bold w-8 h-8 flex items-center justify-center text-zinc-800 text-xs relative overflow-hidden',
-                  user?.avatar_url &&
-                    'cursor-pointer hover:ring-2 hover:ring-primary-500/50 transition-all'
+                  'rounded-full w-8 h-8 flex items-center justify-center text-xs relative overflow-hidden',
+                  'bg-primary/10 dark:bg-primary-light/20',
+                  'border border-primary/20 dark:border-primary-light/30',
+                  'hover:border-primary/40 dark:hover:border-primary-light/50',
+                  'transition-all duration-200',
+                  user?.avatar_url && 'cursor-pointer'
                 )}
               >
                 {user?.avatar_url ? (
@@ -57,7 +56,9 @@ export function Header() {
                     className="w-full h-full rounded-full object-cover"
                   />
                 ) : (
-                  getInitials(user?.name)
+                  <span className="text-primary dark:text-primary-light font-medium">
+                    {getInitials(user?.name)}
+                  </span>
                 )}
               </button>
             </div>

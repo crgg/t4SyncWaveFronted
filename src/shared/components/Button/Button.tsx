@@ -5,8 +5,16 @@
 import { ButtonHTMLAttributes, forwardRef } from 'react';
 import { cn } from '@shared/utils';
 
+type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'outline'
+  | 'ghost'
+  | 'ghost-danger'
+  | 'outline-primary';
+
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'ghost-danger';
+  variant?: ButtonVariant;
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
 }
@@ -20,14 +28,17 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       'inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
 
     const variants = {
-      primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-lg',
+      primary:
+        'bg-primary text-white hover:bg-primary-dark dark:hover:bg-primary focus:ring-primary/30 shadow-sm',
       secondary:
-        'bg-light-surface dark:bg-dark-surface text-light-text dark:text-dark-text hover:bg-light-hover dark:hover:bg-dark-hover focus:ring-light-hover dark:focus:ring-dark-hover',
+        'bg-light-surface dark:bg-dark-surface text-light-text dark:text-dark-text hover:bg-light-hover dark:hover:bg-dark-hover border border-light-hover dark:border-dark-hover focus:ring-primary/20',
       outline:
-        'border-2 border-primary-600 text-primary-600 hover:bg-light-hover dark:hover:bg-dark-hover focus:ring-primary-500',
+        'border border-primary text-primary dark:text-primary-light hover:bg-primary/10 dark:hover:bg-primary-light/10 focus:ring-primary/30',
       ghost:
-        'text-light-text-secondary dark:text-dark-text-secondary hover:bg-light-hover dark:hover:bg-dark-hover focus:ring-light-hover dark:focus:ring-dark-hover',
-      'ghost-danger': 'text-red-600 dark:text-red-400 hover:bg-red-500/10 focus:ring-red-500',
+        'text-light-text-secondary dark:text-dark-text-secondary hover:bg-light-hover dark:hover:bg-dark-hover hover:text-primary dark:hover:text-primary-light focus:ring-primary/20',
+      'ghost-danger': 'text-red-600 dark:text-red-400 hover:bg-red-500/10 focus:ring-red-500/30',
+      'outline-primary':
+        'border border-primary text-primary dark:text-primary-light hover:bg-primary/10 dark:hover:bg-primary-light/10 focus:ring-primary/30',
     };
 
     const sizes = {
