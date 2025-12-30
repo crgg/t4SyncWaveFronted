@@ -748,11 +748,10 @@ const GroupPage = () => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-light-text dark:text-dark-text flex items-center gap-2">
                 <Music size={20} />
-                Current Tracks
+                Tracks
               </h2>
             </div>
           )}
-
           {isHostRef.current === true && groupId && <PlaylistHost groupId={groupId} />}
           {isHostRef.current === false && <PlaylistListener />}
         </motion.div>

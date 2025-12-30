@@ -85,19 +85,17 @@ export function PlaylistHost({ groupId }: PlaylistHostProps) {
 
   return (
     <>
-      {tracks.length === 0 && (
-        <div className="mb-4 flex justify-end">
-          <Button
-            onClick={() => setIsUploadModalOpen(true)}
-            variant="primary"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <Plus size={16} />
-            Upload Track
-          </Button>
-        </div>
-      )}
+      <div className="mb-4 flex justify-end">
+        <Button
+          onClick={() => setIsUploadModalOpen(true)}
+          variant="primary"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          <Plus size={16} />
+          Upload Track
+        </Button>
+      </div>
       <div className="space-y-1 max-h-[600px] overflow-y-auto p-1">
         <AnimatePresence>
           {tracks.map((track, index) => {
