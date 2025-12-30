@@ -14,6 +14,10 @@ import {
   UserPlus,
   UserMinus,
   LogOut,
+  Headphones,
+  Volume2,
+  VolumeX,
+  Waves,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -43,6 +47,7 @@ import { useAudio } from '@/shared/hooks/useAudio';
 import DeleteDialog from '@/shared/components/DeleteDialog/DeleteDialog';
 import { GroupPageSkeleton } from './GroupPage/components/GroupPageSkeleton';
 import { cn } from '@/shared/utils';
+import { AvatarPreview } from '@/shared/components/AvatarPreview/AvatarPreview';
 
 const GroupPage = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -229,9 +234,8 @@ const GroupPage = () => {
   const members = group?.members || [];
   const isOwner = group?.created_by === user?.id;
 
-  // separar mienbros online/offline
-  const onlineMembers = members.filter((member) => !isOwner && connectionUsers[member.user_id]);
-  const offlineMembers = members.filter((member) => !isOwner && !connectionUsers[member.user_id]);
+  const onlineMembers = members.filter((member) => connectionUsers[member.user_id]);
+  const offlineMembers = members.filter((member) => !connectionUsers[member.user_id]);
 
   useEffect(() => {
     return () => {
@@ -320,7 +324,11 @@ const GroupPage = () => {
   }
 
   const USER_DJ = members.find((member) => member.role === 'dj');
-  const USER_MEMBERS = members.filter((member) => member.role === 'member');
+  const USER_MEMBERS = [...members];
+
+  // Determinar si el DJ está activo y conectado
+  const isDJActive = USER_DJ && connectionUsers[USER_DJ.user_id];
+  const isDJPlaying = isDJActive && group.is_playing;
 
   return (
     <div className="w-full max-w-4xl mx-auto pb-24">
@@ -333,6 +341,159 @@ const GroupPage = () => {
           <span>Back to Groups</span>
         </Link>
       </div>
+
+      {/* DJ Status Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className={cn(
+          'mb-6 rounded-xl shadow-xl border-2 p-5 relative overflow-hidden',
+          isDJActive
+            ? isDJPlaying
+              ? 'bg-gradient-to-r from-green-500/30 via-emerald-500/30 to-green-500/30 dark:from-green-600/40 dark:via-emerald-600/40 dark:to-green-600/40 border-green-500 dark:border-green-400'
+              : 'bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-green-500/20 dark:from-green-600/30 dark:via-emerald-600/30 dark:to-green-600/30 border-green-500/50 dark:border-green-400/50'
+            : 'bg-gradient-to-r from-gray-500/20 via-slate-500/20 to-gray-500/20 dark:from-gray-600/30 dark:via-slate-600/30 dark:to-gray-600/30 border-gray-500/50 dark:border-gray-400/50'
+        )}
+      >
+        {/* Animated background effect when DJ is playing */}
+        {isDJPlaying && (
+          <motion.div
+            className="absolute inset-0 opacity-20"
+            animate={{
+              background: [
+                'radial-gradient(circle at 20% 50%, rgba(34, 197, 94, 0.3) 0%, transparent 50%)',
+                'radial-gradient(circle at 80% 50%, rgba(16, 185, 129, 0.3) 0%, transparent 50%)',
+                'radial-gradient(circle at 20% 50%, rgba(34, 197, 94, 0.3) 0%, transparent 50%)',
+              ],
+            }}
+            transition={{ duration: 3, repeat: Infinity }}
+          />
+        )}
+
+        <div className="flex items-center gap-4 relative z-10">
+          <motion.div
+            animate={
+              isDJActive
+                ? {
+                    scale: [1, 1.15, 1],
+                    rotate: [0, 5, -5, 0],
+                  }
+                : {}
+            }
+            transition={{
+              duration: 2,
+              repeat: isDJActive ? Infinity : 0,
+              ease: 'easeInOut',
+            }}
+            className={cn(
+              'flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center relative',
+              isDJActive
+                ? 'bg-gradient-to-br from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700 shadow-lg shadow-green-500/50'
+                : 'bg-gradient-to-br from-gray-500 to-slate-600 dark:from-gray-600 dark:to-slate-700 shadow-lg shadow-gray-500/50'
+            )}
+          >
+            {isDJActive ? (
+              <Headphones className="text-white" size={32} />
+            ) : (
+              <VolumeX className="text-white" size={32} />
+            )}
+            {isDJActive && (
+              <motion.div
+                className="absolute inset-0 rounded-full border-2 border-green-400 dark:border-green-300"
+                animate={{ scale: [1, 1.5, 1], opacity: [0.8, 0, 0.8] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+            )}
+          </motion.div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h3
+                className={cn(
+                  'text-2xl font-bold',
+                  isDJActive
+                    ? 'text-green-700 dark:text-green-300'
+                    : 'text-gray-700 dark:text-gray-300'
+                )}
+              >
+                {isDJActive ? '🎵 Active DJ' : '🔇 DJ Not Available'}
+              </h3>
+              {isDJActive && (
+                <motion.div
+                  animate={{ opacity: [1, 0.3, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  className="flex gap-1"
+                >
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                </motion.div>
+              )}
+            </div>
+            <p
+              className={cn(
+                'text-base font-semibold',
+                isDJActive
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-gray-600 dark:text-gray-400'
+              )}
+            >
+              {isDJActive ? (
+                <span className="flex items-center gap-2">
+                  {isDJPlaying ? (
+                    <>
+                      <motion.div
+                        animate={{ rotate: [0, 360] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                      >
+                        <Waves className="text-green-600 dark:text-green-400" size={20} />
+                      </motion.div>
+                      <span>¡Music is live! Listen now 🎧</span>
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 className="text-green-600 dark:text-green-400" size={20} />
+                      <span>DJ connected and ready to play music</span>
+                    </>
+                  )}
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <VolumeX size={20} />
+                  <span>
+                    {USER_DJ
+                      ? `${USER_DJ.name || 'DJ'} is not connected in this moment`
+                      : 'No DJ assigned in this group'}
+                  </span>
+                </span>
+              )}
+            </p>
+            {isDJActive && USER_DJ && (
+              <p className="text-sm text-green-600/80 dark:text-green-400/80 mt-1">
+                DJ: {USER_DJ.name || 'Anonymous'}
+              </p>
+            )}
+          </div>
+
+          {isDJActive && (
+            <motion.div
+              animate={
+                isDJPlaying
+                  ? { scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }
+                  : { scale: [1, 1.05, 1] }
+              }
+              transition={{ duration: 2, repeat: Infinity }}
+              className="hidden sm:flex items-center gap-2 px-5 py-3 rounded-xl bg-green-500/30 dark:bg-green-600/40 border-2 border-green-500/50 dark:border-green-400/50 shadow-lg"
+            >
+              <Radio className="text-green-700 dark:text-green-300" size={24} />
+              <span className="text-base font-bold text-green-700 dark:text-green-300">
+                {isDJPlaying ? 'LIVE' : 'READY'}
+              </span>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
 
       <div className="mb-6">
         <div className="bg-light-card dark:bg-dark-card rounded-xl shadow-xl border border-light-hover dark:border-dark-hover p-6">
@@ -469,7 +630,7 @@ const GroupPage = () => {
             <div className="overflow-hidden">
               <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">DJ</p>
               <p className="text-xl font-bold text-light-text dark:text-dark-text text-nowrap truncate">
-                {USER_DJ?.name}
+                {USER_DJ?.name || 'Anonymous'}
               </p>
             </div>
           </div>
@@ -533,7 +694,7 @@ const GroupPage = () => {
               <div
                 className={cn(
                   'mb-2 max-h-[250px] overflow-y-auto [overscroll-behavior:contain]',
-                  isOwner ? 'sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2' : 'space-y-2'
+                  isOwner ? 'sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2' : ''
                 )}
               >
                 <div className="col-span-2 sticky top-0 bg-light-card dark:bg-dark-card z-10">
@@ -554,7 +715,7 @@ const GroupPage = () => {
               <div
                 className={cn(
                   'mb-2 max-h-[250px] overflow-y-auto [overscroll-behavior:contain]',
-                  isOwner ? 'sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2' : 'space-y-2'
+                  isOwner ? 'sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2' : ''
                 )}
               >
                 <div className="col-span-2 sticky top-0 bg-light-card dark:bg-dark-card z-10">
@@ -708,6 +869,8 @@ interface MemberCardProps {
 }
 
 const MemberCard = ({ member, isOwner, onRemove, isConnected }: MemberCardProps) => {
+  const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false);
+
   const getInitials = (name?: string) => {
     if (!name) return '?';
     const parts = name.trim().split(' ');
@@ -727,52 +890,83 @@ const MemberCard = ({ member, isOwner, onRemove, isConnected }: MemberCardProps)
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  const handleAvatarClick = () => {
+    if (member.avatar_url) {
+      setIsAvatarPreviewOpen(true);
+    }
+  };
+
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg bg-light-surface dark:bg-dark-surface border border-light-hover dark:border-dark-hover hover:border-primary-600/30 transition-colors">
-      <div className="relative flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white text-sm font-bold">
-        {member.avatar_url ? (
-          <img
-            src={member.avatar_url}
-            alt={member.name}
-            className="w-full h-full rounded-full object-cover"
-          />
-        ) : (
-          getInitials(member.name || member.guest_name)
+    <>
+      <div
+        className={cn(
+          'flex items-center gap-3 p-3 rounded-lg bg-light-surface dark:bg-dark-surface border border-light-hover dark:border-dark-hover hover:border-primary-600/30 transition-colors',
+          !isConnected ? 'opacity-50' : ''
         )}
-        {isConnected && (
-          <div className="w-3.5 h-3.5 rounded-full bg-green-500 absolute -bottom-0.5 -right-0.5 border-2 border-white dark:border-dark-hover"></div>
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="font-medium text-light-text dark:text-dark-text truncate">
-            {member.name || member.guest_name || 'Guest'}
-          </p>
-          {member.role === 'owner' && (
-            <Crown size={14} className="text-primary-600 flex-shrink-0" fill="currentColor" />
+      >
+        <div
+          className={cn(
+            'relative flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white text-sm font-bold',
+            member.avatar_url &&
+              'cursor-pointer hover:ring-2 hover:ring-primary-500/50 transition-all'
+          )}
+          onClick={handleAvatarClick}
+        >
+          {member.avatar_url ? (
+            <img
+              src={member.avatar_url}
+              alt={member.name}
+              className="w-full h-full rounded-full object-cover"
+            />
+          ) : (
+            getInitials(member.name || member.guest_name)
+          )}
+          {isConnected && (
+            <div className="w-3.5 h-3.5 rounded-full bg-green-500 absolute -bottom-0.5 -right-0.5 border-2 border-white dark:border-dark-hover"></div>
           )}
         </div>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs text-light-text-secondary dark:text-dark-text-secondary capitalize">
-            {member.role}
-          </span>
-          <span className="text-xs text-light-text-secondary dark:text-dark-text-secondary">•</span>
-          <span className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
-            Joined {formatDate(member.joined_at)}
-          </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-light-text dark:text-dark-text truncate">
+              {member.name || member.guest_name || 'Guest'}
+            </p>
+            {member.role === 'owner' && (
+              <Crown size={14} className="text-primary-600 flex-shrink-0" fill="currentColor" />
+            )}
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-light-text-secondary dark:text-dark-text-secondary capitalize">
+              {member.role}
+            </span>
+            <span className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
+              •
+            </span>
+            <span className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
+              Joined {formatDate(member.joined_at)}
+            </span>
+          </div>
         </div>
+        {isOwner && member.role !== 'dj' && (
+          <Button
+            onClick={() => onRemove(member)}
+            variant="ghost-danger"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <UserMinus size={16} />
+          </Button>
+        )}
       </div>
-      {isOwner && member.role !== 'dj' && (
-        <Button
-          onClick={() => onRemove(member)}
-          variant="ghost-danger"
-          size="sm"
-          className="flex items-center gap-2"
-        >
-          <UserMinus size={16} />
-        </Button>
+
+      {member.avatar_url && (
+        <AvatarPreview
+          isOpen={isAvatarPreviewOpen}
+          onClose={() => setIsAvatarPreviewOpen(false)}
+          imageUrl={member.avatar_url}
+          name={member.name || member.guest_name}
+        />
       )}
-    </div>
+    </>
   );
 };
 
