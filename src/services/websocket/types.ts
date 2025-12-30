@@ -17,6 +17,27 @@ export interface SocketEventHandlers {
   [SOCKET_EVENTS.CONNECTION_STATUS]: (data: { connected: boolean }) => void;
   [SOCKET_EVENTS.PARTICIPANT_JOINED]: (data: IRoomUser) => void;
   [SOCKET_EVENTS.PARTICIPANT_LEFT]: (data: IRoomUser) => void;
+  [SOCKET_EVENTS.MEMBER_JOINED]: (data: {
+    type: string;
+    room: string;
+    member: {
+      userId: string;
+      name: string;
+      email: string;
+      avatar_url?: string | null;
+      role: string;
+    };
+  }) => void;
+  [SOCKET_EVENTS.MEMBER_LEFT]: (data: {
+    type: string;
+    room: string;
+    member: {
+      userId: string;
+      name: string;
+      reason?: string;
+    };
+  }) => void;
+  [SOCKET_EVENTS.KICKED]: (data: { reason: string }) => void;
   [SOCKET_EVENTS.PLAYLIST_SYNC]: (data: {
     tracks: Track[];
     currentTrackIndex: number | null;

@@ -92,6 +92,15 @@ const sessionSlice = createSlice({
       const { odooUserId } = action.payload;
       delete state.connectionUsers[odooUserId];
     },
+    handleKicked: (state, action: PayloadAction<{ reason: string }>) => {
+      // Limpiar el estado cuando el usuario es removido
+      state.sessionId = null;
+      state.hostId = null;
+      state.role = null;
+      state.participantCount = 0;
+      state.error = action.payload.reason || 'Has sido removido del grupo';
+      state.connectionUsers = {};
+    },
   },
 });
 
@@ -109,6 +118,7 @@ export const {
   updateConnectionUsers,
   addConnectionUser,
   removeConnectionUser,
+  handleKicked,
 } = sessionSlice.actions;
 
 export default sessionSlice.reducer;

@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@app/hooks';
+import { useQueryClient } from '@tanstack/react-query';
 import { connecting, connected, disconnected } from '@features/connection/connectionSlice';
 import {
   createSessionSuccess,
@@ -9,6 +10,7 @@ import {
   updateConnectionUsers,
   addConnectionUser,
   removeConnectionUser,
+  handleKicked,
 } from '@features/session/sessionSlice';
 import { setAudioState, reset as resetAudio } from '@features/audio/audioSlice';
 import { syncPlaylist } from '@features/playlist/playlistSlice';
@@ -25,6 +27,7 @@ import { IRoomUser, IRoomUsers } from '@/features/groups/groups.types';
 
 export function useWebSocket() {
   const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
   const { isConnected, latency } = useAppSelector((state) => state.connection);
   const { sessionId, role } = useAppSelector((state) => state.session);
   const user = useAppSelector((state) => state.auth?.user);
@@ -241,6 +244,64 @@ export function useWebSocket() {
     const handleConnectionUserJoined = (data: IRoomUser) => dispatch(addConnectionUser(data));
     const handleConnectionUserLeft = (data: IRoomUser) => dispatch(removeConnectionUser(data));
 
+    const handleMemberJoined = (data: {
+      type: string;
+      room: string;
+      member: {
+        userId: string;
+        name: string;
+        email: string;
+        avatar_url?: string | null;
+        role: string;
+      };
+    }) => {
+      // Cuando un miembro se une, NO enviar automáticamente playback-state
+      // Invalidar la query del grupo para que se actualice la lista de miembros
+      const groupId = data.room;
+      if (groupId) {
+        queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+      }
+      console.log('Member joined:', data.member);
+    };
+
+    const handleMemberLeft = (data: {
+      type: string;
+      room: string;
+      member: {
+        userId: string;
+        name: string;
+        reason?: string;
+      };
+    }) => {
+      // Cuando un miembro sale, actualizar la UI
+      console.log('Member left:', data.member);
+      // Remover el usuario de la lista de conexiones si existe
+      const currentUsers = store.getState().session.connectionUsers;
+      const userToRemove = Object.values(currentUsers).find(
+        (user) => user.odooUserId === data.member.userId
+      );
+      if (userToRemove) {
+        dispatch(removeConnectionUser(userToRemove));
+      }
+      // Invalidar la query del grupo para actualizar la lista de miembros
+      const groupId = data.room;
+      if (groupId) {
+        queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+      }
+    };
+
+    const handleKickedEvent = (data: { reason: string }) => {
+      // Cuando el usuario es removido, limpiar el estado y mostrar el error
+      dispatch(handleKicked({ reason: data.reason }));
+      // Redirigir al usuario a la página de listeners
+      // Usamos window.location para asegurar la navegación incluso si estamos en una ruta protegida
+      const listenersPath = '/listeners';
+      if (window.location.pathname !== listenersPath) {
+        window.location.href = listenersPath;
+      }
+      console.warn('Usuario removido del grupo:', data.reason);
+    };
+
     wsService.on(SOCKET_EVENTS.SESSION_CREATED, handleSessionCreated);
     wsService.on(SOCKET_EVENTS.SESSION_JOINED, handleSessionJoined);
     wsService.on(SOCKET_EVENTS.SESSION_ERROR, handleSessionError);
@@ -250,6 +311,9 @@ export function useWebSocket() {
     wsService.on(SOCKET_EVENTS.ROOM_USERS, handleRoomUsers);
     wsService.on(SOCKET_EVENTS.PARTICIPANT_JOINED, handleConnectionUserJoined);
     wsService.on(SOCKET_EVENTS.PARTICIPANT_LEFT, handleConnectionUserLeft);
+    wsService.on(SOCKET_EVENTS.MEMBER_JOINED, handleMemberJoined);
+    wsService.on(SOCKET_EVENTS.MEMBER_LEFT, handleMemberLeft);
+    wsService.on(SOCKET_EVENTS.KICKED, handleKickedEvent);
 
     if (wsService.isConnected()) {
       return () => {
@@ -261,6 +325,11 @@ export function useWebSocket() {
         wsService.off(SOCKET_EVENTS.PLAYLIST_SYNC, handlePlaylistSync);
         wsService.off(SOCKET_EVENTS.PLAYBACK_STATE, handlePlaybackState);
         wsService.off(SOCKET_EVENTS.ROOM_USERS, handleRoomUsers);
+        wsService.off(SOCKET_EVENTS.PARTICIPANT_JOINED, handleConnectionUserJoined);
+        wsService.off(SOCKET_EVENTS.PARTICIPANT_LEFT, handleConnectionUserLeft);
+        wsService.off(SOCKET_EVENTS.MEMBER_JOINED, handleMemberJoined);
+        wsService.off(SOCKET_EVENTS.MEMBER_LEFT, handleMemberLeft);
+        wsService.off(SOCKET_EVENTS.KICKED, handleKickedEvent);
       };
     }
 
@@ -273,6 +342,9 @@ export function useWebSocket() {
         wsService.off(SOCKET_EVENTS.AUDIO_STATE, handleAudioState);
         wsService.off(SOCKET_EVENTS.PLAYLIST_SYNC, handlePlaylistSync);
         wsService.off(SOCKET_EVENTS.PLAYBACK_STATE, handlePlaybackState);
+        wsService.off(SOCKET_EVENTS.MEMBER_JOINED, handleMemberJoined);
+        wsService.off(SOCKET_EVENTS.MEMBER_LEFT, handleMemberLeft);
+        wsService.off(SOCKET_EVENTS.KICKED, handleKickedEvent);
       };
     }
 
@@ -305,6 +377,9 @@ export function useWebSocket() {
       wsService.off(SOCKET_EVENTS.SESSION_ERROR, handleSessionError);
       wsService.off(SOCKET_EVENTS.AUDIO_STATE, handleAudioState);
       wsService.off(SOCKET_EVENTS.PLAYLIST_SYNC, handlePlaylistSync);
+      wsService.off(SOCKET_EVENTS.MEMBER_JOINED, handleMemberJoined);
+      wsService.off(SOCKET_EVENTS.MEMBER_LEFT, handleMemberLeft);
+      wsService.off(SOCKET_EVENTS.KICKED, handleKickedEvent);
     };
   }, [dispatch, role]);
 

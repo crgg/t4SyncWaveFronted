@@ -14,7 +14,7 @@ export const uploadService = {
     formData.append('file', file);
     formData.append('groupId', groupId);
 
-    const response = await http.post<UploadResponse>('/audio/upload', formData, {
+    const response = await http.post<UploadResponse>('/audio_test/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

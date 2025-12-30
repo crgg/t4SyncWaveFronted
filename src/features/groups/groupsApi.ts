@@ -27,6 +27,9 @@ class GroupsApi {
   }
   async getGroupById(groupId: string): Promise<GroupResponse> {
     const response = await http.get<GroupResponse>(`/groups/get/${groupId}`);
+    if (!response.data?.status) {
+      throw new Error(response.data?.error || 'Failed to get group');
+    }
     return response.data;
   }
   async addMemberToGroup(data: FormAddMemberToGroup): Promise<AddMemberToGroupResponse> {

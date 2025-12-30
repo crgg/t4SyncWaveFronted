@@ -70,6 +70,11 @@ const GroupPage = () => {
     enabled: !!groupId,
     staleTime: 1000 * 60 * 2, // 2 minutes
     gcTime: 1000 * 60 * 5, // 5 minutes
+    throwOnError: () => {
+      navigate(paths.LISTENERS(null));
+      return false;
+    },
+    retry: false,
   });
 
   const handleLeaveGroup = () => {
@@ -90,7 +95,8 @@ const GroupPage = () => {
   }, [data]);
 
   const createdBy = useMemo(() => {
-    if (createdByRef.current === data?.group?.created_by) return;
+    if (!data?.group) return;
+    if (createdByRef.current === data.group?.created_by) return data.group?.created_by;
     createdByRef.current = data?.group?.created_by || null;
     return data?.group?.created_by;
   }, [data]);
@@ -116,6 +122,7 @@ const GroupPage = () => {
               trackArtist: track.artist,
             })
           );
+          if (!createdByRef.current || !createdBy || createdByRef.current === createdBy) return;
           setTimeout(play, 1000);
         }
       }, 400);
@@ -332,10 +339,11 @@ const GroupPage = () => {
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2">
                   <h1 className="text-2xl sm:text-3xl font-bold text-light-text dark:text-dark-text truncate">
                     {group.name}
                   </h1>
+
                   {isOwner && (
                     <Crown
                       size={20}
@@ -344,6 +352,9 @@ const GroupPage = () => {
                     />
                   )}
                 </div>
+                <small className="text-sm text-light-text-secondary dark:text-dark-text-secondary block mb-2">
+                  {group.code}
+                </small>
                 <div className="flex items-center gap-4 flex-wrap">
                   <ConnectionStatus />
                   {group.is_playing && (

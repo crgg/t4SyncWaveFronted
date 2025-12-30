@@ -24,10 +24,13 @@ interface SFUSignalingMessage {
     | 'ping'
     | 'pong'
     | 'left'
-    | 'joined'
     | 'user-left'
     | 'user-joined'
-    | 'close';
+    | 'close'
+    | 'joined'
+    | 'kicked'
+    | 'member-left'
+    | 'member-joined';
   data?: unknown;
   sessionId?: string;
   event?: string;
@@ -308,6 +311,18 @@ class WebRTCSFUService {
         this.handleEvent(SOCKET_EVENTS.PARTICIPANT_LEFT, message);
         break;
       }
+      case 'member-joined': {
+        this.handleEvent(SOCKET_EVENTS.MEMBER_JOINED, message);
+        break;
+      }
+      case 'member-left': {
+        this.handleEvent(SOCKET_EVENTS.MEMBER_LEFT, message);
+        break;
+      }
+      case 'kicked': {
+        this.handleEvent(SOCKET_EVENTS.KICKED, message);
+        break;
+      }
 
       default:
         console.warn('Tipo de mensaje de señalización desconocido:', message.type);
@@ -493,7 +508,6 @@ class WebRTCSFUService {
   }
 
   emit(_event: string, data?: unknown): void {
-    console.trace('emit');
     if (this.dataChannel && this.dataChannel.readyState === 'open') {
       try {
         this.dataChannel.send(

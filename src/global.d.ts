@@ -3,6 +3,7 @@ export {};
 declare global {
   interface ResponseBase {
     status: boolean;
+    error?: string;
   }
   interface IResponseBase<T> {
     status: boolean;
