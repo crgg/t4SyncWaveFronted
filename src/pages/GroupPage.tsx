@@ -42,6 +42,7 @@ import { setTrack } from '@/features/audio/audioSlice';
 import { useAudio } from '@/shared/hooks/useAudio';
 import DeleteDialog from '@/shared/components/DeleteDialog/DeleteDialog';
 import { GroupPageSkeleton } from './GroupPage/components/GroupPageSkeleton';
+import { cn } from '@/shared/utils';
 
 const GroupPage = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -226,6 +227,11 @@ const GroupPage = () => {
 
   const group = data?.status && data?.group ? data.group : null;
   const members = group?.members || [];
+  const isOwner = group?.created_by === user?.id;
+
+  // separar mienbros online/offline
+  const onlineMembers = members.filter((member) => !isOwner && connectionUsers[member.user_id]);
+  const offlineMembers = members.filter((member) => !isOwner && !connectionUsers[member.user_id]);
 
   useEffect(() => {
     return () => {
@@ -271,8 +277,6 @@ const GroupPage = () => {
     setSelectedMember(member);
     setIsDeleteMember(true);
   };
-
-  const isOwner = group?.created_by === user?.id;
 
   useEffect(() => {
     if (!data) return;
@@ -433,9 +437,26 @@ const GroupPage = () => {
               <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
                 Members
               </p>
-              <p className="text-xl font-bold text-light-text dark:text-dark-text">
-                {USER_MEMBERS.length}
-              </p>
+              <div className="text-xl font-bold text-light-text dark:text-dark-text inline-flex items-center gap-2">
+                <div className="flex justify-center items-center gap-2">
+                  <div className="flex justify-center items-center gap-2">
+                    {onlineMembers.length}
+                  </div>
+                  <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    Online
+                  </div>
+                </div>
+                <div className="flex justify-center items-center gap-2">
+                  <div className="flex justify-center items-center gap-2">
+                    {offlineMembers.length}
+                  </div>
+                  <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                    Offline
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -508,16 +529,49 @@ const GroupPage = () => {
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {USER_MEMBERS.map((member) => (
-                <MemberCard
-                  key={member.id}
-                  member={member}
-                  isOwner={isOwner}
-                  onRemove={handleRemoveMember}
-                  isConnected={!!connectionUsers[member.user_id]}
-                />
-              ))}
+            <div>
+              <div
+                className={cn(
+                  'mb-2 max-h-[250px] overflow-y-auto [overscroll-behavior:contain]',
+                  isOwner ? 'sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2' : 'space-y-2'
+                )}
+              >
+                <div className="col-span-2 sticky top-0 bg-light-card dark:bg-dark-card z-10">
+                  <h3 className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary">
+                    Members Online
+                  </h3>
+                </div>
+                {onlineMembers.map((member) => (
+                  <MemberCard
+                    key={member.id}
+                    member={member}
+                    isOwner={isOwner}
+                    onRemove={handleRemoveMember}
+                    isConnected={!!connectionUsers[member.user_id]}
+                  />
+                ))}
+              </div>
+              <div
+                className={cn(
+                  'mb-2 max-h-[250px] overflow-y-auto [overscroll-behavior:contain]',
+                  isOwner ? 'sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2' : 'space-y-2'
+                )}
+              >
+                <div className="col-span-2 sticky top-0 bg-light-card dark:bg-dark-card z-10">
+                  <h3 className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary">
+                    Members Offline
+                  </h3>
+                </div>
+                {offlineMembers.map((member) => (
+                  <MemberCard
+                    key={member.id}
+                    member={member}
+                    isOwner={isOwner}
+                    onRemove={handleRemoveMember}
+                    isConnected={!!connectionUsers[member.user_id]}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </motion.div>
