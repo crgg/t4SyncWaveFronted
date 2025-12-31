@@ -299,452 +299,458 @@ const GroupPage = () => {
   const isDJPlaying = isDJActive && group.is_playing;
 
   return (
-    <div className="w-full max-w-4xl mx-auto pb-24">
-      <div className="mb-4 mt-2">
-        <Link
-          to={isOwner ? paths.GROUPS(null) : paths.LISTENERS(null)}
-          className="inline-flex items-center gap-2 text-light-text-secondary dark:text-dark-text-secondary hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-        >
-          <ArrowLeft size={18} />
-          <span>Go Back</span>
-        </Link>
-      </div>
-
-      {/* DJ Status Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className={cn(
-          'mb-6 rounded-xl shadow-xl border-2 p-5 relative overflow-hidden hidden',
-          isDJActive
-            ? isDJPlaying
-              ? 'bg-gradient-to-r from-green-500/30 via-emerald-500/30 to-green-500/30 dark:from-green-600/40 dark:via-emerald-600/40 dark:to-green-600/40 border-green-500 dark:border-green-400'
-              : 'bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-green-500/20 dark:from-green-600/30 dark:via-emerald-600/30 dark:to-green-600/30 border-green-500/50 dark:border-green-400/50'
-            : 'bg-gradient-to-r from-gray-500/20 via-slate-500/20 to-gray-500/20 dark:from-gray-600/30 dark:via-slate-600/30 dark:to-gray-600/30 border-gray-500/50 dark:border-gray-400/50'
-        )}
-      >
-        {isDJPlaying && (
-          <motion.div
-            className="absolute inset-0 opacity-20"
-            animate={{
-              background: [
-                'radial-gradient(circle at 20% 50%, rgba(34, 197, 94, 0.3) 0%, transparent 50%)',
-                'radial-gradient(circle at 80% 50%, rgba(16, 185, 129, 0.3) 0%, transparent 50%)',
-                'radial-gradient(circle at 20% 50%, rgba(34, 197, 94, 0.3) 0%, transparent 50%)',
-              ],
-            }}
-            transition={{ duration: 3, repeat: Infinity }}
-          />
-        )}
-
-        <div className="flex items-center gap-4 relative z-10">
-          <motion.div
-            animate={
-              isDJActive
-                ? {
-                    scale: [1, 1.15, 1],
-                    rotate: [0, 5, -5, 0],
-                  }
-                : {}
-            }
-            transition={{
-              duration: 2,
-              repeat: isDJActive ? Infinity : 0,
-              ease: 'easeInOut',
-            }}
-            className={cn(
-              'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center relative',
-              isDJActive
-                ? 'bg-gradient-to-br from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700 shadow-lg shadow-green-500/50'
-                : 'bg-gradient-to-br from-gray-500 to-slate-600 dark:from-gray-600 dark:to-slate-700 shadow-lg shadow-gray-500/50'
-            )}
+    <>
+      <div className="w-full max-w-4xl mx-auto pb-24">
+        <div className="mb-4 mt-2">
+          <Link
+            to={isOwner ? paths.GROUPS(null) : paths.LISTENERS(null)}
+            className="inline-flex items-center gap-2 text-light-text-secondary dark:text-dark-text-secondary hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
           >
-            {isDJActive ? (
-              <Headphones className="text-white" size={20} />
-            ) : (
-              <VolumeX className="text-white" size={20} />
-            )}
-            {isDJActive && (
-              <motion.div
-                className="absolute inset-0 rounded-full border-2 border-green-400 dark:border-green-300"
-                animate={{ scale: [1, 1.5, 1], opacity: [0.8, 0, 0.8] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-            )}
-          </motion.div>
+            <ArrowLeft size={18} />
+            <span>Go Back</span>
+          </Link>
+        </div>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3
-                className={cn(
-                  'text-lg font-bold',
-                  isDJActive
-                    ? 'text-green-700 dark:text-green-300'
-                    : 'text-gray-700 dark:text-gray-300'
-                )}
-              >
-                {isDJActive ? 'Active DJ' : 'DJ Not Available'}
-              </h3>
-              {isDJActive && (
-                <motion.div
-                  animate={{ opacity: [1, 0.3, 1] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                  className="flex gap-1"
-                >
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                </motion.div>
-              )}
-            </div>
-            <p
-              className={cn(
-                'text-base font-semibold',
-                isDJActive
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-gray-600 dark:text-gray-400'
-              )}
-            >
-              {isDJActive && (
-                <span className="flex items-center gap-2 text-xs italic">
-                  {isDJPlaying ? (
-                    <>
-                      <motion.div
-                        animate={{ rotate: [0, 360] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                      >
-                        <Waves className="text-green-600 dark:text-green-400" size={20} />
-                      </motion.div>
-                      <span>¡Music is live! Listen now 🎧</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-xs italic">
-                        <strong>{USER_DJ.display_name || 'DJ'}</strong> connected and ready to play
-                        music
-                      </span>
-                    </>
-                  )}
-                </span>
-              )}
-            </p>
-          </div>
+        {/* DJ Status Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className={cn(
+            'mb-6 rounded-xl shadow-xl border-2 p-5 relative overflow-hidden hidden',
+            isDJActive
+              ? isDJPlaying
+                ? 'bg-gradient-to-r from-green-500/30 via-emerald-500/30 to-green-500/30 dark:from-green-600/40 dark:via-emerald-600/40 dark:to-green-600/40 border-green-500 dark:border-green-400'
+                : 'bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-green-500/20 dark:from-green-600/30 dark:via-emerald-600/30 dark:to-green-600/30 border-green-500/50 dark:border-green-400/50'
+              : 'bg-gradient-to-r from-gray-500/20 via-slate-500/20 to-gray-500/20 dark:from-gray-600/30 dark:via-slate-600/30 dark:to-gray-600/30 border-gray-500/50 dark:border-gray-400/50'
+          )}
+        >
+          {isDJPlaying && (
+            <motion.div
+              className="absolute inset-0 opacity-20"
+              animate={{
+                background: [
+                  'radial-gradient(circle at 20% 50%, rgba(34, 197, 94, 0.3) 0%, transparent 50%)',
+                  'radial-gradient(circle at 80% 50%, rgba(16, 185, 129, 0.3) 0%, transparent 50%)',
+                  'radial-gradient(circle at 20% 50%, rgba(34, 197, 94, 0.3) 0%, transparent 50%)',
+                ],
+              }}
+              transition={{ duration: 3, repeat: Infinity }}
+            />
+          )}
 
-          {isDJActive && (
+          <div className="flex items-center gap-4 relative z-10">
             <motion.div
               animate={
-                isDJPlaying
-                  ? { scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }
-                  : { scale: [1, 1.05, 1] }
+                isDJActive
+                  ? {
+                      scale: [1, 1.15, 1],
+                      rotate: [0, 5, -5, 0],
+                    }
+                  : {}
               }
-              transition={{ duration: 2, repeat: Infinity }}
-              className="hidden sm:flex items-center gap-2 px-5 py-3 rounded-xl bg-green-500/30 dark:bg-green-600/40 border-2 border-green-500/50 dark:border-green-400/50 shadow-lg"
+              transition={{
+                duration: 2,
+                repeat: isDJActive ? Infinity : 0,
+                ease: 'easeInOut',
+              }}
+              className={cn(
+                'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center relative',
+                isDJActive
+                  ? 'bg-gradient-to-br from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700 shadow-lg shadow-green-500/50'
+                  : 'bg-gradient-to-br from-gray-500 to-slate-600 dark:from-gray-600 dark:to-slate-700 shadow-lg shadow-gray-500/50'
+              )}
             >
-              <Radio className="text-green-700 dark:text-green-300" size={24} />
-              <span className="text-base font-bold text-green-700 dark:text-green-300">
-                {isDJPlaying ? 'LIVE' : 'READY'}
-              </span>
+              {isDJActive ? (
+                <Headphones className="text-white" size={20} />
+              ) : (
+                <VolumeX className="text-white" size={20} />
+              )}
+              {isDJActive && (
+                <motion.div
+                  className="absolute inset-0 rounded-full border-2 border-green-400 dark:border-green-300"
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.8, 0, 0.8] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              )}
             </motion.div>
-          )}
-        </div>
-      </motion.div>
 
-      <div className="mb-6 hidden">
-        <div className="bg-light-card dark:bg-dark-card rounded-xl shadow-xl border border-light-hover dark:border-dark-hover p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4 flex-1 min-w-0">
-              <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white font-bold text-2xl shadow-lg">
-                {group.name.charAt(0).toUpperCase()}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-light-text dark:text-dark-text truncate">
-                    {group.name}
-                  </h1>
-
-                  {isOwner && (
-                    <Crown
-                      size={20}
-                      className="text-primary-600 flex-shrink-0"
-                      fill="currentColor"
-                    />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h3
+                  className={cn(
+                    'text-lg font-bold',
+                    isDJActive
+                      ? 'text-green-700 dark:text-green-300'
+                      : 'text-gray-700 dark:text-gray-300'
                   )}
-                </div>
-                <small className="text-sm text-light-text-secondary dark:text-dark-text-secondary block mb-2">
-                  {group.code}
-                </small>
-                <div className="flex items-center gap-4 flex-wrap">
-                  <ConnectionStatus />
-                  {group.is_playing && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-primary-600/20 text-primary-600 dark:text-primary-400 border border-primary-600/30">
-                      <Radio size={12} />
-                      Now Playing
-                    </span>
-                  )}
-                </div>
+                >
+                  {isDJActive ? 'Active DJ' : 'DJ Not Available'}
+                </h3>
+                {isDJActive && (
+                  <motion.div
+                    animate={{ opacity: [1, 0.3, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="flex gap-1"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                  </motion.div>
+                )}
               </div>
-            </div>
-            {!isOwner && (
-              <Button
-                onClick={handleLeaveGroupClick}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-500/10 border-red-600/30 dark:border-red-400/30"
+              <p
+                className={cn(
+                  'text-base font-semibold',
+                  isDJActive
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-gray-600 dark:text-gray-400'
+                )}
               >
-                <LogOut size={16} />
-              </Button>
+                {isDJActive && (
+                  <span className="flex items-center gap-2 text-xs italic">
+                    {isDJPlaying ? (
+                      <>
+                        <motion.div
+                          animate={{ rotate: [0, 360] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                        >
+                          <Waves className="text-green-600 dark:text-green-400" size={20} />
+                        </motion.div>
+                        <span>¡Music is live! Listen now 🎧</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-xs italic">
+                          <strong>{USER_DJ.display_name || 'DJ'}</strong> connected and ready to
+                          play music
+                        </span>
+                      </>
+                    )}
+                  </span>
+                )}
+              </p>
+            </div>
+
+            {isDJActive && (
+              <motion.div
+                animate={
+                  isDJPlaying
+                    ? { scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }
+                    : { scale: [1, 1.05, 1] }
+                }
+                transition={{ duration: 2, repeat: Infinity }}
+                className="hidden sm:flex items-center gap-2 px-5 py-3 rounded-xl bg-green-500/30 dark:bg-green-600/40 border-2 border-green-500/50 dark:border-green-400/50 shadow-lg"
+              >
+                <Radio className="text-green-700 dark:text-green-300" size={24} />
+                <span className="text-base font-bold text-green-700 dark:text-green-300">
+                  {isDJPlaying ? 'LIVE' : 'READY'}
+                </span>
+              </motion.div>
             )}
           </div>
+        </motion.div>
 
-          {group.code && (
-            <div className="mt-4 pt-4 border-t border-light-hover dark:border-dark-hover">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <Copy
-                    size={16}
-                    className="text-light-text-secondary dark:text-dark-text-secondary flex-shrink-0"
-                  />
-                  <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                    Group Code:
-                  </span>
-                  <code className="font-mono font-semibold text-base text-light-text dark:text-dark-text truncate">
+        <div className="mb-6 hidden">
+          <div className="bg-light-card dark:bg-dark-card rounded-xl shadow-xl border border-light-hover dark:border-dark-hover p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+                  {group.name.charAt(0).toUpperCase()}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-light-text dark:text-dark-text truncate">
+                      {group.name}
+                    </h1>
+
+                    {isOwner && (
+                      <Crown
+                        size={20}
+                        className="text-primary-600 flex-shrink-0"
+                        fill="currentColor"
+                      />
+                    )}
+                  </div>
+                  <small className="text-sm text-light-text-secondary dark:text-dark-text-secondary block mb-2">
                     {group.code}
-                  </code>
+                  </small>
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <ConnectionStatus />
+                    {group.is_playing && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-primary-600/20 text-primary-600 dark:text-primary-400 border border-primary-600/30">
+                        <Radio size={12} />
+                        Now Playing
+                      </span>
+                    )}
+                  </div>
                 </div>
+              </div>
+              {!isOwner && (
                 <Button
-                  onClick={handleCopyCode}
-                  variant={copiedCode ? 'primary' : 'outline'}
+                  onClick={handleLeaveGroupClick}
+                  variant="outline"
                   size="sm"
-                  className="flex-shrink-0"
+                  className="flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-500/10 border-red-600/30 dark:border-red-400/30"
                 >
-                  {copiedCode ? (
-                    <>
-                      <CheckCircle2 size={16} className="mr-1" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={16} className="mr-1" />
-                      Copy Code
-                    </>
-                  )}
+                  <LogOut size={16} />
                 </Button>
-              </div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Stats Grid */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="grid-cols-1 sm:grid-cols-3 gap-4 mb-6 hidden"
-      >
-        <div className="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary-600/10">
-              <Users size={20} className="text-primary-600" />
-            </div>
-            <div>
-              <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                Members
-              </p>
-              <div className="text-xl font-bold text-light-text dark:text-dark-text inline-flex items-center gap-2">
-                <div className="flex justify-center items-center gap-2">
-                  <div className="flex justify-center items-center gap-2">
-                    {onlineMembers.length}
-                  </div>
-                  <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    Online
-                  </div>
-                </div>
-                <div className="flex justify-center items-center gap-2">
-                  <div className="flex justify-center items-center gap-2">
-                    {offlineMembers.length}
-                  </div>
-                  <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                    Offline
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary-600/10">
-              <Music size={20} className="text-primary-600" />
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">DJ</p>
-              <p className="text-xl font-bold text-light-text dark:text-dark-text text-nowrap truncate">
-                {USER_DJ?.name || 'Anonymous'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary-600/10">
-              <Calendar size={20} className="text-primary-600" />
-            </div>
-            <div>
-              <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                Created
-              </p>
-              <p className="text-sm font-semibold text-light-text dark:text-dark-text">
-                {new Date(group.created_at).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </p>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {playlist?.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-light-card dark:bg-dark-card rounded-xl border border-light-hover dark:border-dark-hover p-6 mb-4"
-        >
-          {playlist?.length !== 0 && (
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-light-text dark:text-dark-text flex items-center gap-2">
-                <Music size={20} />
-                Tracks
-              </h2>
-            </div>
-          )}
-          {isHostRef.current === true && groupId && <PlaylistHost groupId={groupId} />}
-          {isHostRef.current === false && <PlaylistListener />}
-        </motion.div>
-      ) : (
-        <>
-          {isHostRef.current === true && <AudioPlayerHost />}
-          {isHostRef.current === false && (
-            <AudioPlayerListener name={playlist?.[0]?.title} artist={playlist?.[0]?.artist} />
-          )}
-        </>
-      )}
-
-      {/* Tracks Section */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2">
-          <Users size={20} />
-          Members ({USER_MEMBERS.length})
-        </h2>
-        {isOwner && groupId && (
-          <Button
-            onClick={() => setIsAddMemberModalOpen(true)}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <UserPlus size={16} />
-          </Button>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className=""
-        >
-          {USER_MEMBERS.length === 0 ? (
-            <div className="text-center py-8">
-              <Users
-                size={48}
-                className="mx-auto text-light-text-secondary dark:text-dark-text-secondary mb-2 opacity-50"
-              />
-              <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                No members yet
-              </p>
-            </div>
-          ) : (
-            <div>
-              <div
-                className={cn(
-                  'mb-2 ',
-                  isOwner ? 'sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2' : ''
-                )}
-              >
-                <div className="col-span-2 sticky top-0 z-10">
-                  <h3 className="text-xs text-zinc-400 mb-1">Online - {onlineMembers.length}</h3>
-                </div>
-                <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover max-h-[250px] overflow-y-auto [overscroll-behavior:contain]">
-                  {onlineMembers.map((member) => (
-                    <MemberCard
-                      key={member.id}
-                      member={member}
-                      isOwner={isOwner}
-                      onRemove={handleRemoveMember}
-                      isConnected={!!connectionUsers[member.user_id]}
+            {group.code && (
+              <div className="mt-4 pt-4 border-t border-light-hover dark:border-dark-hover">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Copy
+                      size={16}
+                      className="text-light-text-secondary dark:text-dark-text-secondary flex-shrink-0"
                     />
-                  ))}
+                    <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                      Group Code:
+                    </span>
+                    <code className="font-mono font-semibold text-base text-light-text dark:text-dark-text truncate">
+                      {group.code}
+                    </code>
+                  </div>
+                  <Button
+                    onClick={handleCopyCode}
+                    variant={copiedCode ? 'primary' : 'outline'}
+                    size="sm"
+                    className="flex-shrink-0"
+                  >
+                    {copiedCode ? (
+                      <>
+                        <CheckCircle2 size={16} className="mr-1" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={16} className="mr-1" />
+                        Copy Code
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
-              <div
-                className={cn(
-                  'mb-2',
-                  isOwner ? 'sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2' : ''
-                )}
-              >
-                <div className="col-span-2 sticky top-0 z-10">
-                  <h3 className="text-xs text-zinc-400 mb-1">Offline - {offlineMembers.length}</h3>
-                  {offlineMembers.length !== 0 && (
-                    <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover  max-h-[250px] overflow-y-auto [overscroll-behavior:contain]">
-                      {offlineMembers.map((member) => (
-                        <MemberCard
-                          key={member.id}
-                          member={member}
-                          isOwner={isOwner}
-                          onRemove={handleRemoveMember}
-                          isConnected={!!connectionUsers[member.user_id]}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </motion.div>
-      </div>
-
-      <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2 mt-4">
-        Group Information
-      </h2>
-      {/* Additional Info */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="bg-light-card dark:bg-dark-card rounded-xl border border-light-hover dark:border-dark-hover p-4"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center gap-2 justify-between">
-            <p className="text-sm text-zinc-400 mb-1">Code</p>
-            <div className="flex items-center gap-2">
-              <code className="font-mono text-sm text-zinc-400">{group.code}</code>
-            </div>
+            )}
           </div>
         </div>
-      </motion.div>
 
-      {/* Add Member Modal */}
+        {/* Stats Grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid-cols-1 sm:grid-cols-3 gap-4 mb-6 hidden"
+        >
+          <div className="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary-600/10">
+                <Users size={20} className="text-primary-600" />
+              </div>
+              <div>
+                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                  Members
+                </p>
+                <div className="text-xl font-bold text-light-text dark:text-dark-text inline-flex items-center gap-2">
+                  <div className="flex justify-center items-center gap-2">
+                    <div className="flex justify-center items-center gap-2">
+                      {onlineMembers.length}
+                    </div>
+                    <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      Online
+                    </div>
+                  </div>
+                  <div className="flex justify-center items-center gap-2">
+                    <div className="flex justify-center items-center gap-2">
+                      {offlineMembers.length}
+                    </div>
+                    <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                      Offline
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary-600/10">
+                <Music size={20} className="text-primary-600" />
+              </div>
+              <div className="overflow-hidden">
+                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                  DJ
+                </p>
+                <p className="text-xl font-bold text-light-text dark:text-dark-text text-nowrap truncate">
+                  {USER_DJ?.name || 'Anonymous'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary-600/10">
+                <Calendar size={20} className="text-primary-600" />
+              </div>
+              <div>
+                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                  Created
+                </p>
+                <p className="text-sm font-semibold text-light-text dark:text-dark-text">
+                  {new Date(group.created_at).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {playlist?.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-light-card dark:bg-dark-card rounded-xl border border-light-hover dark:border-dark-hover p-6 mb-4"
+          >
+            {playlist?.length !== 0 && (
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-light-text dark:text-dark-text flex items-center gap-2">
+                  <Music size={20} />
+                  Tracks
+                </h2>
+              </div>
+            )}
+            {isHostRef.current === true && groupId && <PlaylistHost groupId={groupId} />}
+            {isHostRef.current === false && <PlaylistListener />}
+          </motion.div>
+        ) : (
+          <>
+            {isHostRef.current === true && <AudioPlayerHost />}
+            {isHostRef.current === false && (
+              <AudioPlayerListener name={playlist?.[0]?.title} artist={playlist?.[0]?.artist} />
+            )}
+          </>
+        )}
+
+        {/* Tracks Section */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2">
+            <Users size={20} />
+            Members ({USER_MEMBERS.length})
+          </h2>
+          {isOwner && groupId && (
+            <Button
+              onClick={() => setIsAddMemberModalOpen(true)}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <UserPlus size={16} />
+            </Button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className=""
+          >
+            {USER_MEMBERS.length === 0 ? (
+              <div className="text-center py-8">
+                <Users
+                  size={48}
+                  className="mx-auto text-light-text-secondary dark:text-dark-text-secondary mb-2 opacity-50"
+                />
+                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                  No members yet
+                </p>
+              </div>
+            ) : (
+              <div>
+                <div
+                  className={cn(
+                    'mb-2 ',
+                    isOwner ? 'sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2' : ''
+                  )}
+                >
+                  <div className="col-span-2 sticky top-0 z-10">
+                    <h3 className="text-xs text-zinc-400 mb-1">Online - {onlineMembers.length}</h3>
+                  </div>
+                  <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover max-h-[250px] overflow-y-auto [overscroll-behavior:contain]">
+                    {onlineMembers.map((member) => (
+                      <MemberCard
+                        key={member.id}
+                        member={member}
+                        isOwner={isOwner}
+                        onRemove={handleRemoveMember}
+                        isConnected={!!connectionUsers[member.user_id]}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div
+                  className={cn(
+                    'mb-2',
+                    isOwner ? 'sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2' : ''
+                  )}
+                >
+                  <div className="col-span-2 sticky top-0 z-10">
+                    <h3 className="text-xs text-zinc-400 mb-1">
+                      Offline - {offlineMembers.length}
+                    </h3>
+                    {offlineMembers.length !== 0 && (
+                      <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover  max-h-[250px] overflow-y-auto [overscroll-behavior:contain]">
+                        {offlineMembers.map((member) => (
+                          <MemberCard
+                            key={member.id}
+                            member={member}
+                            isOwner={isOwner}
+                            onRemove={handleRemoveMember}
+                            isConnected={!!connectionUsers[member.user_id]}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </div>
+
+        <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2 mt-4">
+          Group Information
+        </h2>
+        {/* Additional Info */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-light-card dark:bg-dark-card rounded-xl border border-light-hover dark:border-dark-hover p-4"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center gap-2 justify-between">
+              <p className="text-sm text-zinc-400 mb-1">Code</p>
+              <div className="flex items-center gap-2">
+                <code className="font-mono text-sm text-zinc-400">{group.code}</code>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Add Member Modal */}
+      </div>
       {groupId && (
         <AddMemberModal
           isOpen={isAddMemberModalOpen}
@@ -784,7 +790,7 @@ const GroupPage = () => {
           navigate(paths.LISTENERS(null));
         }}
       />
-    </div>
+    </>
   );
 };
 

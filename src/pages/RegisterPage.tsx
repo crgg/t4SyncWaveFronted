@@ -79,9 +79,7 @@ function RegisterPage() {
             <h1 className="text-3xl font-bold text-light-text dark:text-dark-text mb-2">
               Create Account
             </h1>
-            <p className="text-light-text-secondary dark:text-dark-text-secondary">
-              Join T4SyncWave and sync your music
-            </p>
+            <p className="text-zinc-400">Join T4SyncWave and sync your music</p>
           </div>
 
           {error && (
@@ -133,9 +131,9 @@ function RegisterPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+            <p className="text-sm text-zinc-400">
               Already have an account?{' '}
-              <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
+              <Link to="/login" className="text-primary hover:text-primary-dark font-bold">
                 Login
               </Link>
             </p>

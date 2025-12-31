@@ -69,9 +69,7 @@ function LoginPage() {
         <div className="bg-light-card dark:bg-dark-card rounded-2xl shadow-2xl p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-light-text dark:text-dark-text mb-2">Login</h1>
-            <p className="text-light-text-secondary dark:text-dark-text-secondary">
-              Welcome back to T4SyncWave
-            </p>
+            <p className="text-zinc-400">Welcome back to T4SyncWave</p>
           </div>
 
           {error && (
@@ -105,9 +103,9 @@ function LoginPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+            <p className="text-sm text-zinc-400">
               Don't have an account?{' '}
-              <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
+              <Link to="/register" className="text-primary hover:text-primary-dark font-bold">
                 Register
               </Link>
             </p>

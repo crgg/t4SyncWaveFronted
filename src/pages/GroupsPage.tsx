@@ -134,75 +134,76 @@ const GroupsPage = () => {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto pb-24 space-y-5">
-      <GroupsPageHeader
-        isMyGroups={isMyGroups}
-        groupsCount={displayedGroups.length}
-        onCreateGroup={() => setIsCreateModalOpen(true)}
-      />
+    <>
+      <div className="w-full max-w-4xl mx-auto pb-24 space-y-5">
+        <GroupsPageHeader
+          isMyGroups={isMyGroups}
+          groupsCount={displayedGroups.length}
+          onCreateGroup={() => setIsCreateModalOpen(true)}
+        />
 
-      {!isMyGroups && <JoinGroupByCode userId={userId} />}
+        {!isMyGroups && <JoinGroupByCode userId={userId} />}
 
-      <SearchAndSortControls
-        searchQuery={searchQuery}
-        sortBy={sortBy}
-        onSearchChange={setSearchQuery}
-        onSortChange={setSortBy}
-        resultsCount={displayedGroups.length}
-      />
+        <SearchAndSortControls
+          searchQuery={searchQuery}
+          sortBy={sortBy}
+          onSearchChange={setSearchQuery}
+          onSortChange={setSortBy}
+          resultsCount={displayedGroups.length}
+        />
 
-      {displayedGroups.length === 0 && (searchQuery || sortBy !== 'newest') ? (
-        <div className="flex items-center justify-center min-h-[40vh]">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center space-y-4"
-          >
-            <div className="text-6xl">
-              <Search
-                size={64}
-                className="mx-auto text-light-text-secondary dark:text-dark-text-secondary"
+        {displayedGroups.length === 0 && (searchQuery || sortBy !== 'newest') ? (
+          <div className="flex items-center justify-center min-h-[40vh]">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center space-y-4"
+            >
+              <div className="text-6xl">
+                <Search
+                  size={64}
+                  className="mx-auto text-light-text-secondary dark:text-dark-text-secondary"
+                />
+              </div>
+              <h3 className="text-xl font-semibold text-light-text dark:text-dark-text">
+                No groups found
+              </h3>
+              <p className="text-light-text-secondary dark:text-dark-text-secondary max-w-md">
+                {searchQuery
+                  ? `No groups match your search "${searchQuery}". Try adjusting your search terms.`
+                  : 'Try adjusting your filters to see more groups.'}
+              </p>
+            </motion.div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 border rounded-lg bg-light-card dark:bg-dark-card dark:border-dark-hover">
+            {displayedGroups.map((group) => (
+              <GroupCard
+                key={group.id}
+                group={group}
+                copiedCode={copiedCode}
+                onCopyCode={handleCopyCode}
+                isMyGroups={isMyGroups}
+                onDblClick={() =>
+                  navigate(
+                    isMyGroups ? paths.GROUPS(`/${group.id}`) : paths.LISTENERS(`/${group.id}`)
+                  )
+                }
+                onEdit={() => setEditingGroup(group)}
+                onDelete={() => setDeletingGroup(group)}
+                onLeaveGroup={
+                  !isMyGroups
+                    ? () => {
+                        setLeavingGroup(group);
+                        refetchOthersGroups();
+                      }
+                    : undefined
+                }
               />
-            </div>
-            <h3 className="text-xl font-semibold text-light-text dark:text-dark-text">
-              No groups found
-            </h3>
-            <p className="text-light-text-secondary dark:text-dark-text-secondary max-w-md">
-              {searchQuery
-                ? `No groups match your search "${searchQuery}". Try adjusting your search terms.`
-                : 'Try adjusting your filters to see more groups.'}
-            </p>
-          </motion.div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 border rounded-lg bg-light-card dark:bg-dark-card dark:border-dark-hover">
-          {displayedGroups.map((group) => (
-            <GroupCard
-              key={group.id}
-              group={group}
-              copiedCode={copiedCode}
-              onCopyCode={handleCopyCode}
-              isMyGroups={isMyGroups}
-              onDblClick={() =>
-                navigate(
-                  isMyGroups ? paths.GROUPS(`/${group.id}`) : paths.LISTENERS(`/${group.id}`)
-                )
-              }
-              onEdit={() => setEditingGroup(group)}
-              onDelete={() => setDeletingGroup(group)}
-              onLeaveGroup={
-                !isMyGroups
-                  ? () => {
-                      setLeavingGroup(group);
-                      refetchOthersGroups();
-                    }
-                  : undefined
-              }
-            />
-          ))}
-        </div>
-      )}
-
+            ))}
+          </div>
+        )}
+      </div>
       <CreateGroupModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -252,7 +253,7 @@ const GroupsPage = () => {
           }}
         />
       )}
-    </div>
+    </>
   );
 };
 
