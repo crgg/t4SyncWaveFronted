@@ -127,7 +127,7 @@ export function AudioPlayerHost() {
     : 0;
 
   return (
-    <div className="bg-light-card dark:bg-dark-card rounded-xl shadow-2xl p-6 space-y-6 mt-6 border border-light-hover dark:border-dark-hover transition-colors duration-200">
+    <div className="bg-light-card dark:bg-dark-card rounded-xl p-6 space-y-6 border border-light-hover dark:border-dark-hover transition-colors duration-200 mb-4">
       <div className="text-center">
         <motion.h3
           className="text-xl font-bold text-light-text dark:text-dark-text mb-1 transition-colors duration-200"

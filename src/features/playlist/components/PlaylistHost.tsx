@@ -40,8 +40,8 @@ export function PlaylistHost({ groupId }: PlaylistHostProps) {
   if (tracks.length === 0) {
     return (
       <>
-        <div className="text-center py-12">
-          <div className="mb-6">
+        <div className="text-center py-6">
+          <div className="">
             <svg
               className="w-20 h-20 mx-auto mb-4 opacity-50 text-light-text-secondary dark:text-dark-text-secondary"
               fill="currentColor"
@@ -63,7 +63,7 @@ export function PlaylistHost({ groupId }: PlaylistHostProps) {
           <Button
             onClick={() => setIsUploadModalOpen(true)}
             variant="primary"
-            className="flex items-center gap-2 mx-auto"
+            className="flex items-center gap-2 mx-auto text-xs"
           >
             <Upload size={18} />
             Upload Track
@@ -80,7 +80,7 @@ export function PlaylistHost({ groupId }: PlaylistHostProps) {
 
   return (
     <>
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 justify-end hidden">
         <Button
           onClick={() => setIsUploadModalOpen(true)}
           variant="primary"
@@ -91,7 +91,7 @@ export function PlaylistHost({ groupId }: PlaylistHostProps) {
           Upload Track
         </Button>
       </div>
-      <div className="space-y-1 max-h-[600px] overflow-y-auto p-1">
+      <div className="space-y-1 max-h-[600px] overflow-y-auto p-1 hidden">
         <AnimatePresence>
           {tracks.map((track, index) => {
             const isCurrentTrack = track.id === currentTrackId;

@@ -19,7 +19,7 @@ const initialState = (): LayoutState => {
   } else if (isMyGroups.pathname === paths.PROFILE) {
     activeTab = 'profile';
   } else {
-    activeTab = 'home';
+    activeTab = 'my-groups';
   }
 
   return {

@@ -5,7 +5,6 @@ import {
   Users,
   Music,
   Copy,
-  Clock,
   ArrowLeft,
   Calendar,
   CheckCircle2,
@@ -15,7 +14,6 @@ import {
   UserMinus,
   LogOut,
   Headphones,
-  Volume2,
   VolumeX,
   Waves,
 } from 'lucide-react';
@@ -31,12 +29,7 @@ import { PlaylistHost } from '@/features/playlist/components/PlaylistHost';
 import { setCurrentTrackIndex, setPlaylistFromApi } from '@/features/playlist/playlistSlice';
 import { AudioPlayerHost } from '@/features/audio/components/AudioPlayerHost';
 import { useWebSocket } from '@/shared/hooks/useWebSocket';
-import {
-  createSessionStart,
-  joinSessionStart,
-  // leaveSession,
-  setRole,
-} from '@/features/session/sessionSlice';
+import { createSessionStart, joinSessionStart, setRole } from '@/features/session/sessionSlice';
 import { PlaylistListener } from '@/features/playlist/components/PlaylistListener';
 import { AudioPlayerListener } from '@/features/audio/components/AudioPlayerListener';
 import { ConnectionStatus } from '@/shared/components/ConnectionStatus/ConnectionStatus';
@@ -252,31 +245,6 @@ const GroupPage = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const formatTime = (ms: number) => {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const getInitials = (name?: string) => {
-    if (!name) return '?';
-    const parts = name.trim().split(' ');
-    if (parts.length === 1) return parts[0][0].toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
-
   const handleRemoveMember = (member: Member) => {
     setSelectedMember(member);
     setIsDeleteMember(true);
@@ -338,7 +306,7 @@ const GroupPage = () => {
           className="inline-flex items-center gap-2 text-light-text-secondary dark:text-dark-text-secondary hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
         >
           <ArrowLeft size={18} />
-          <span>Back to Groups</span>
+          <span>Go Back</span>
         </Link>
       </div>
 
@@ -348,7 +316,7 @@ const GroupPage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         className={cn(
-          'mb-6 rounded-xl shadow-xl border-2 p-5 relative overflow-hidden',
+          'mb-6 rounded-xl shadow-xl border-2 p-5 relative overflow-hidden hidden',
           isDJActive
             ? isDJPlaying
               ? 'bg-gradient-to-r from-green-500/30 via-emerald-500/30 to-green-500/30 dark:from-green-600/40 dark:via-emerald-600/40 dark:to-green-600/40 border-green-500 dark:border-green-400'
@@ -356,7 +324,6 @@ const GroupPage = () => {
             : 'bg-gradient-to-r from-gray-500/20 via-slate-500/20 to-gray-500/20 dark:from-gray-600/30 dark:via-slate-600/30 dark:to-gray-600/30 border-gray-500/50 dark:border-gray-400/50'
         )}
       >
-        {/* Animated background effect when DJ is playing */}
         {isDJPlaying && (
           <motion.div
             className="absolute inset-0 opacity-20"
@@ -387,16 +354,16 @@ const GroupPage = () => {
               ease: 'easeInOut',
             }}
             className={cn(
-              'flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center relative',
+              'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center relative',
               isDJActive
                 ? 'bg-gradient-to-br from-green-500 to-emerald-600 dark:from-green-600 dark:to-emerald-700 shadow-lg shadow-green-500/50'
                 : 'bg-gradient-to-br from-gray-500 to-slate-600 dark:from-gray-600 dark:to-slate-700 shadow-lg shadow-gray-500/50'
             )}
           >
             {isDJActive ? (
-              <Headphones className="text-white" size={32} />
+              <Headphones className="text-white" size={20} />
             ) : (
-              <VolumeX className="text-white" size={32} />
+              <VolumeX className="text-white" size={20} />
             )}
             {isDJActive && (
               <motion.div
@@ -411,13 +378,13 @@ const GroupPage = () => {
             <div className="flex items-center gap-2 mb-1">
               <h3
                 className={cn(
-                  'text-2xl font-bold',
+                  'text-lg font-bold',
                   isDJActive
                     ? 'text-green-700 dark:text-green-300'
                     : 'text-gray-700 dark:text-gray-300'
                 )}
               >
-                {isDJActive ? '🎵 Active DJ' : '🔇 DJ Not Available'}
+                {isDJActive ? 'Active DJ' : 'DJ Not Available'}
               </h3>
               {isDJActive && (
                 <motion.div
@@ -439,8 +406,8 @@ const GroupPage = () => {
                   : 'text-gray-600 dark:text-gray-400'
               )}
             >
-              {isDJActive ? (
-                <span className="flex items-center gap-2">
+              {isDJActive && (
+                <span className="flex items-center gap-2 text-xs italic">
                   {isDJPlaying ? (
                     <>
                       <motion.div
@@ -453,27 +420,15 @@ const GroupPage = () => {
                     </>
                   ) : (
                     <>
-                      <Volume2 className="text-green-600 dark:text-green-400" size={20} />
-                      <span>DJ connected and ready to play music</span>
+                      <span className="text-xs italic">
+                        <strong>{USER_DJ.display_name || 'DJ'}</strong> connected and ready to play
+                        music
+                      </span>
                     </>
                   )}
                 </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <VolumeX size={20} />
-                  <span>
-                    {USER_DJ
-                      ? `${USER_DJ.name || 'DJ'} is not connected in this moment`
-                      : 'No DJ assigned in this group'}
-                  </span>
-                </span>
               )}
             </p>
-            {isDJActive && USER_DJ && (
-              <p className="text-sm text-green-600/80 dark:text-green-400/80 mt-1">
-                DJ: {USER_DJ.name || 'Anonymous'}
-              </p>
-            )}
           </div>
 
           {isDJActive && (
@@ -495,7 +450,7 @@ const GroupPage = () => {
         </div>
       </motion.div>
 
-      <div className="mb-6">
+      <div className="mb-6 hidden">
         <div className="bg-light-card dark:bg-dark-card rounded-xl shadow-xl border border-light-hover dark:border-dark-hover p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -587,7 +542,7 @@ const GroupPage = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"
+        className="grid-cols-1 sm:grid-cols-3 gap-4 mb-6 hidden"
       >
         <div className="bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover">
           <div className="flex items-center gap-3">
@@ -656,29 +611,58 @@ const GroupPage = () => {
         </div>
       </motion.div>
 
+      {playlist?.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-light-card dark:bg-dark-card rounded-xl border border-light-hover dark:border-dark-hover p-6 mb-4"
+        >
+          {playlist?.length !== 0 && (
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-light-text dark:text-dark-text flex items-center gap-2">
+                <Music size={20} />
+                Tracks
+              </h2>
+            </div>
+          )}
+          {isHostRef.current === true && groupId && <PlaylistHost groupId={groupId} />}
+          {isHostRef.current === false && <PlaylistListener />}
+        </motion.div>
+      ) : (
+        <>
+          {isHostRef.current === true && <AudioPlayerHost />}
+          {isHostRef.current === false && (
+            <AudioPlayerListener name={playlist?.[0]?.title} artist={playlist?.[0]?.artist} />
+          )}
+        </>
+      )}
+
+      {/* Tracks Section */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2">
+          <Users size={20} />
+          Members ({USER_MEMBERS.length})
+        </h2>
+        {isOwner && groupId && (
+          <Button
+            onClick={() => setIsAddMemberModalOpen(true)}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <UserPlus size={16} />
+          </Button>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-light-card dark:bg-dark-card rounded-xl shadow-xl border border-light-hover dark:border-dark-hover p-6"
+          className=""
         >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-light-text dark:text-dark-text flex items-center gap-2">
-              <Users size={20} />
-              Members ({USER_MEMBERS.length})
-            </h2>
-            {isOwner && groupId && (
-              <Button
-                onClick={() => setIsAddMemberModalOpen(true)}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <UserPlus size={16} />
-              </Button>
-            )}
-          </div>
           {USER_MEMBERS.length === 0 ? (
             <div className="text-center py-8">
               <Users
@@ -693,126 +677,70 @@ const GroupPage = () => {
             <div>
               <div
                 className={cn(
-                  'mb-2 max-h-[250px] overflow-y-auto [overscroll-behavior:contain]',
+                  'mb-2 ',
                   isOwner ? 'sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2' : ''
                 )}
               >
-                <div className="col-span-2 sticky top-0 bg-light-card dark:bg-dark-card z-10">
-                  <h3 className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary">
-                    Members Online
-                  </h3>
+                <div className="col-span-2 sticky top-0 z-10">
+                  <h3 className="text-xs text-zinc-400 mb-1">Online - {onlineMembers.length}</h3>
                 </div>
-                {onlineMembers.map((member) => (
-                  <MemberCard
-                    key={member.id}
-                    member={member}
-                    isOwner={isOwner}
-                    onRemove={handleRemoveMember}
-                    isConnected={!!connectionUsers[member.user_id]}
-                  />
-                ))}
+                <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover max-h-[250px] overflow-y-auto [overscroll-behavior:contain]">
+                  {onlineMembers.map((member) => (
+                    <MemberCard
+                      key={member.id}
+                      member={member}
+                      isOwner={isOwner}
+                      onRemove={handleRemoveMember}
+                      isConnected={!!connectionUsers[member.user_id]}
+                    />
+                  ))}
+                </div>
               </div>
               <div
                 className={cn(
-                  'mb-2 max-h-[250px] overflow-y-auto [overscroll-behavior:contain]',
+                  'mb-2',
                   isOwner ? 'sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2' : ''
                 )}
               >
-                <div className="col-span-2 sticky top-0 bg-light-card dark:bg-dark-card z-10">
-                  <h3 className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary">
-                    Members Offline
-                  </h3>
+                <div className="col-span-2 sticky top-0 z-10">
+                  <h3 className="text-xs text-zinc-400 mb-1">Offline - {offlineMembers.length}</h3>
+                  {offlineMembers.length !== 0 && (
+                    <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover  max-h-[250px] overflow-y-auto [overscroll-behavior:contain]">
+                      {offlineMembers.map((member) => (
+                        <MemberCard
+                          key={member.id}
+                          member={member}
+                          isOwner={isOwner}
+                          onRemove={handleRemoveMember}
+                          isConnected={!!connectionUsers[member.user_id]}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-                {offlineMembers.map((member) => (
-                  <MemberCard
-                    key={member.id}
-                    member={member}
-                    isOwner={isOwner}
-                    onRemove={handleRemoveMember}
-                    isConnected={!!connectionUsers[member.user_id]}
-                  />
-                ))}
               </div>
             </div>
           )}
         </motion.div>
-
-        {/* Tracks Section */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-light-card dark:bg-dark-card rounded-xl shadow-xl border border-light-hover dark:border-dark-hover p-6"
-        >
-          {playlist?.length !== 0 && (
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-light-text dark:text-dark-text flex items-center gap-2">
-                <Music size={20} />
-                Tracks
-              </h2>
-            </div>
-          )}
-          {isHostRef.current === true && groupId && <PlaylistHost groupId={groupId} />}
-          {isHostRef.current === false && <PlaylistListener />}
-        </motion.div>
       </div>
 
-      {isHostRef.current === true && <AudioPlayerHost />}
-      {isHostRef.current === false && (
-        <AudioPlayerListener name={playlist?.[0]?.title} artist={playlist?.[0]?.artist} />
-      )}
-
+      <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2 mt-4">
+        Group Information
+      </h2>
       {/* Additional Info */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="mt-6 bg-light-card dark:bg-dark-card rounded-xl shadow-xl border border-light-hover dark:border-dark-hover p-6"
+        className="bg-light-card dark:bg-dark-card rounded-xl border border-light-hover dark:border-dark-hover p-4"
       >
-        <h2 className="text-xl font-semibold text-light-text dark:text-dark-text mb-4 flex items-center gap-2">
-          <Clock size={20} />
-          Group Information
-        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-1">
-              Created by
-            </p>
+          <div className="flex items-center gap-2 justify-between">
+            <p className="text-sm text-zinc-400 mb-1">Code</p>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center text-white text-xs font-bold">
-                {getInitials(group.created_by_name)}
-              </div>
-              <p className="font-medium text-light-text dark:text-dark-text">
-                {group.created_by_name || 'Unknown'}
-              </p>
+              <code className="font-mono text-sm text-zinc-400">{group.code}</code>
             </div>
           </div>
-          <div>
-            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-1">
-              Created at
-            </p>
-            <p className="font-medium text-light-text dark:text-dark-text">
-              {formatDate(group.created_at)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-1">
-              Last updated
-            </p>
-            <p className="font-medium text-light-text dark:text-dark-text">
-              {formatDate(group.updated_at)}
-            </p>
-          </div>
-          {group.is_playing && group.current_time_ms > 0 && (
-            <div>
-              <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-1">
-                Current time
-              </p>
-              <p className="font-medium text-light-text dark:text-dark-text">
-                {formatTime(group.current_time_ms)}
-              </p>
-            </div>
-          )}
         </div>
       </motion.div>
 
@@ -899,7 +827,7 @@ const MemberCard = ({ member, isOwner, onRemove, isConnected }: MemberCardProps)
     <>
       <div
         className={cn(
-          'flex items-center gap-3 p-3 rounded-lg bg-light-surface dark:bg-dark-surface border border-light-hover dark:border-dark-hover hover:border-primary-600/30 transition-colors',
+          'flex items-center last:mb-0 gap-3 hover:border-primary-600/30 transition-colors',
           !isConnected ? 'opacity-50' : ''
         )}
       >
@@ -934,15 +862,9 @@ const MemberCard = ({ member, isOwner, onRemove, isConnected }: MemberCardProps)
             )}
           </div>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs text-light-text-secondary dark:text-dark-text-secondary capitalize">
-              {member.role}
-            </span>
-            <span className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
-              •
-            </span>
-            <span className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
-              Joined {formatDate(member.joined_at)}
-            </span>
+            <span className="text-xs text-zinc-400 capitalize">{member.role}</span>
+            <span className="text-xs text-zinc-400">•</span>
+            <span className="text-xs text-zinc-400">Joined {formatDate(member.joined_at)}</span>
           </div>
         </div>
         {isOwner && member.role !== 'dj' && (

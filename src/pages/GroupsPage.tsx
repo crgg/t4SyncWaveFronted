@@ -175,7 +175,7 @@ const GroupsPage = () => {
           </motion.div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 border rounded-lg bg-white dark:bg-dark-surface dark:border-dark-hover">
+        <div className="grid grid-cols-1 md:grid-cols-2 border rounded-lg bg-light-card dark:bg-dark-card dark:border-dark-hover">
           {displayedGroups.map((group) => (
             <GroupCard
               key={group.id}
