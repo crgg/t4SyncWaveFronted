@@ -77,7 +77,7 @@ const SidebarLayout = () => {
                 <p className="font-bold text-xs text-ellipsis overflow-hidden whitespace-nowrap max-w-[230px] line-clamp-1 truncate pr-3">
                   {user?.name}
                 </p>
-                <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary text-ellipsis overflow-hidden whitespace-nowrap">
+                <p className="text-xs text-zinc-400 text-ellipsis overflow-hidden whitespace-nowrap">
                   {user?.email}
                 </p>
               </div>
@@ -106,7 +106,7 @@ const SidebarLayout = () => {
         </AnimatePresence>
         <div className="flex flex-col gap-1 pt-2 border-t border-light-hover/50 dark:border-dark-hover/50">
           <button
-            className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-light-hover/50 dark:hover:bg-dark-hover/50 transition-colors text-light-text-secondary dark:text-dark-text-secondary hover:text-red-600 dark:hover:text-red-400"
+            className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-light-hover/50 dark:hover:bg-dark-hover/50 transition-colors text-zinc-400 hover:text-red-600 dark:hover:text-red-400"
             onClick={handleLogout}
           >
             <LogOutIcon size={18} />

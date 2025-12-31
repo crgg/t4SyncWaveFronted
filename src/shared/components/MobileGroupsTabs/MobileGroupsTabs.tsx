@@ -1,4 +1,4 @@
-import { AudioLines, User, UsersRound } from 'lucide-react';
+import { Headphones, User, UsersRound } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 import type { LayoutState } from '@/app/slices/layoutSlice';
@@ -25,7 +25,7 @@ export function MobileGroupsTabs({ onTabChange, className }: MobileGroupsTabsPro
     {
       id: 'listeners' as const,
       label: 'Listeners',
-      icon: AudioLines,
+      icon: Headphones,
       iconSize: 20,
       getActivePath: () => pathname.startsWith(paths.LISTENERS(null)),
     },
