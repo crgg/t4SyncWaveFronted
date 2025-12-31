@@ -13,6 +13,7 @@ import { withGuest } from '@shared/hoc/withGuest';
 import { useAppDispatch } from '@/app/hooks';
 import { authActions } from '@/features/auth/authSlice';
 import { validationIsObject } from '@/shared/utils';
+import logo from '@/app/assets/logo.png';
 
 const schema = yup.object({
   name: yup.string().required('Name is required'),
@@ -68,25 +69,21 @@ function RegisterPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 bg-gradient-to-br from-primary-50 to-primary-100 dark:from-dark-bg dark:to-dark-surface">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 bg-[#f2f2f6]">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="bg-light-card dark:bg-dark-card rounded-2xl shadow-2xl p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-light-text dark:text-dark-text mb-2">
-              Create Account
-            </h1>
-            <p className="text-zinc-400">Join T4SyncWave and sync your music</p>
+        <div className="rounded-2xl p-8">
+          <div className="flex justify-center mb-4">
+            <img src={logo} alt="T4SyncWave" className="w-24 h-24" />
           </div>
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-400 text-sm">
-              {error}
-            </div>
-          )}
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-light-text dark:text-dark-text mb-2">
+              Create your account
+            </h1>
+          </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input
@@ -124,6 +121,12 @@ function RegisterPage() {
               error={errors.confirmPassword?.message}
               maxLength={50}
             />
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                {error}
+              </div>
+            )}
 
             <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
               Register
