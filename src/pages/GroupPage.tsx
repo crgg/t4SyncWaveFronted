@@ -41,6 +41,7 @@ import DeleteDialog from '@/shared/components/DeleteDialog/DeleteDialog';
 import { GroupPageSkeleton } from './GroupPage/components/GroupPageSkeleton';
 import { cn, orderBy } from '@/shared/utils';
 import { AvatarPreview } from '@/shared/components/AvatarPreview/AvatarPreview';
+import { STORAGE_KEYS } from '@/shared/constants';
 
 const GroupPage = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -62,6 +63,7 @@ const GroupPage = () => {
   const { play } = useAudio();
 
   const isConnected = useAppSelector((state) => state.connection.isConnected);
+  const audioState = useAppSelector((state) => state.audio);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['group', groupId],
@@ -71,6 +73,28 @@ const GroupPage = () => {
     gcTime: 1000 * 60 * 5, // 5 minutes
     retry: false,
   });
+
+  // Obtener el estado del grupo al cargar la página
+  const { data: groupStateData } = useQuery({
+    queryKey: ['group-state', groupId],
+    queryFn: () => groupsApi.getGroupState(groupId!),
+    enabled: !!groupId,
+    staleTime: 1000 * 30, // 30 seconds
+    gcTime: 1000 * 60 * 2, // 2 minutes
+    retry: false,
+  });
+
+  // Log del estado del grupo para debugging (puedes usar groupStateData.state para lógica futura)
+  useEffect(() => {
+    if (groupStateData?.state) {
+      console.log('Group State:', groupStateData.state);
+      // Aquí puedes agregar lógica basada en el estado:
+      // - IDLE: No active playback
+      // - PLAYING_HOSTED: DJ present, controls unlocked
+      // - PLAYING_NO_HOST: DJ absent, controls LOCKED
+      // - CONTROL_AVAILABLE: DJ can retake control
+    }
+  }, [groupStateData]);
 
   const handleLeaveGroup = () => {
     leaveSession();
@@ -255,6 +279,84 @@ const GroupPage = () => {
     }
   }, [data]);
 
+  // Ref para evitar envíos duplicados
+  const disconnectSentRef = useRef(false);
+
+  // Función para enviar el POST de desconexión del DJ
+  const sendDjDisconnect = async (useKeepalive = false) => {
+    if (!groupId || !isOwner || disconnectSentRef.current) return;
+
+    const hasTrack = !!audioState.trackUrl;
+
+    // Marcar como enviado para evitar duplicados
+    disconnectSentRef.current = true;
+
+    try {
+      if (useKeepalive) {
+        // Usar fetch con keepalive solo para beforeunload (axios puede no completarse cuando la página se cierra)
+        const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+        const payload = JSON.stringify({
+          groupId,
+          hasTrack,
+          isPlaying: false,
+        });
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+        const url = `${apiBaseUrl}/api/groups/dj-disconnect`;
+
+        await fetch(url, {
+          method: 'POST',
+          body: payload,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token ? `Bearer ${token}` : '',
+          },
+          keepalive: true,
+        });
+      } else {
+        // Usar axios para navegación normal (más consistente con el resto de la app)
+        await groupsApi.djDisconnect({
+          groupId,
+          hasTrack,
+          isPlaying: false,
+        });
+      }
+    } catch (error) {
+      console.error('Error al enviar desconexión del DJ:', error);
+      // Resetear el ref si falla para permitir reintentos
+      disconnectSentRef.current = false;
+    }
+  };
+
+  // Manejar refresh/cierre de página (F5, cerrar pestaña, etc.)
+  useEffect(() => {
+    if (!isOwner || !groupId) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const isPlaying = audioState.isPlaying || false;
+
+      // Solo mostrar confirmación si está reproduciéndose y es el host
+      if (isPlaying) {
+        // Enviar el POST antes de que la página se cierre
+        sendDjDisconnect(true);
+
+        e.preventDefault();
+        e.returnValue = ''; // Requerido para Chrome
+        return ''; // Requerido para algunos navegadores
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isOwner, groupId, audioState.isPlaying]);
+
+  // Resetear el ref cuando cambia el groupId para permitir nuevos envíos
+  useEffect(() => {
+    disconnectSentRef.current = false;
+  }, [groupId]);
+
   if (isLoading) {
     return <GroupPageSkeleton />;
   }
@@ -300,6 +402,21 @@ const GroupPage = () => {
         <div className="mb-4 mt-2">
           <Link
             to={isOwner ? paths.GROUPS(null) : paths.LISTENERS(null)}
+            onClick={async (e) => {
+              if (isOwner && groupId) {
+                const isPlaying = audioState.isPlaying || false;
+
+                // Solo preguntar si está reproduciéndose y es el host
+                if (isPlaying) {
+                  e.preventDefault();
+                  const confirmed = window.confirm('¿Estás seguro de que quieres salir del grupo?');
+                  if (confirmed) {
+                    await sendDjDisconnect(false);
+                    navigate(isOwner ? paths.GROUPS(null) : paths.LISTENERS(null));
+                  }
+                }
+              }
+            }}
             className="inline-flex items-center gap-2 text-light-text-secondary dark:text-dark-text-secondary hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
           >
             <ArrowLeft size={18} />

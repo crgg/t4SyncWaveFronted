@@ -6,6 +6,7 @@ import type {
   FormCreateGroup,
   GroupResponse,
   GroupsResponse,
+  GroupStateResponse,
   IPayloadDeleteGroup,
   IPayloadLeaveGroup,
   IPayloadRemoveMember,
@@ -60,6 +61,17 @@ class GroupsApi {
     if (!response?.data?.status) {
       throw new Error(response?.data?.error || 'Failed to leave group');
     }
+    return response.data;
+  }
+  async djDisconnect(data: {
+    groupId: string;
+    hasTrack: boolean;
+    isPlaying: boolean;
+  }): Promise<void> {
+    await http.post('/groups/dj-disconnect', data);
+  }
+  async getGroupState(groupId: string): Promise<GroupStateResponse> {
+    const response = await http.get<GroupStateResponse>(`/groups/state/${groupId}`);
     return response.data;
   }
 }

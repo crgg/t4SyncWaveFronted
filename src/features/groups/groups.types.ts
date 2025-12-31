@@ -113,6 +113,19 @@ export interface IPayloadLeaveGroup {
   groupId: string;
 }
 
+export type GroupState = 'IDLE' | 'PLAYING_HOSTED' | 'PLAYING_NO_HOST' | 'CONTROL_AVAILABLE';
+
+export interface GroupStateResponse {
+  status: boolean;
+  state?: {
+    state: GroupState;
+    host_id: string | null;
+    control_locked: boolean;
+    last_dj_active: string;
+  };
+  msg?: string;
+}
+
 export interface IRoomUser {
   odooUserId: string;
   odooName: string;
