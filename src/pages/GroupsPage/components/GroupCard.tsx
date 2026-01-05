@@ -33,15 +33,14 @@ export function GroupCard({
   return (
     <div
       className={cn(
-        'group relative p-4 pb-3',
-        'border-b border-light-hover/30 dark:border-dark-hover/30',
-        'hover:border-primary/50 dark:hover:border-primary-light/50',
+        'border rounded-lg bg-light-card dark:bg-dark-card dark:border-dark-hover relative p-4 pb-3',
+        'hover:border-primary/50',
         'transition-all duration-200',
         'cursor-pointer'
       )}
       onClick={handleClick}
     >
-      <div className="flex items-start justify-between ">
+      <div className="flex items-start justify-between">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary-light/10 flex items-center justify-center">
             <span className="text-primary dark:text-primary-light font-semibold text-base">

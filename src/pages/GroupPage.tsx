@@ -519,12 +519,16 @@ const GroupPage = () => {
           transition={{ delay: 0.4 }}
           className="bg-light-card dark:bg-dark-card rounded-xl border border-light-hover dark:border-dark-hover p-4"
         >
-          <div className="grid grid-cols-1 gap-4">
-            <div className="flex items-center gap-2 justify-between">
-              <p className="text-sm text-zinc-400 mb-1">Code</p>
-              <div className="flex items-center gap-2">
-                <code className="font-mono text-sm text-zinc-400">{group.code}</code>
-              </div>
+          <div className="flex items-center gap-2 justify-between">
+            <p className="text-sm text-zinc-400 mb-1">Name</p>
+            <div className="flex items-center gap-2">
+              <code className="font-mono text-sm text-zinc-400 font-semibold">{group.name}</code>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 justify-between">
+            <p className="text-sm text-zinc-400 mb-1">Code</p>
+            <div className="flex items-center gap-2">
+              <code className="font-mono text-sm text-zinc-400">{group.code}</code>
             </div>
           </div>
         </motion.div>

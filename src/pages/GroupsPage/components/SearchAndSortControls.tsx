@@ -51,7 +51,7 @@ export function SearchAndSortControls({
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row gap-3 mb-2">
+      <div className="flex flex-col sm:flex-row gap-1.5 mb-2">
         <div className="flex-1 relative">
           <Search
             size={18}
@@ -65,7 +65,7 @@ export function SearchAndSortControls({
             onChange={(e) => onSearchChange(e.target.value)}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            className="pl-10 pr-2"
+            className="pl-10 pr-2 rounded"
             maxLength={50}
           />
           {searchQuery && (
@@ -80,7 +80,7 @@ export function SearchAndSortControls({
         </div>
 
         <Dropdown>
-          <Dropdown.Trigger className="px-4 py-2.5 flex items-center gap-2 min-w-[160px] justify-between border dark:bg-dark-surface border-b border-light-hover dark:border-dark-hover/30 text-light-text dark:text-dark-text hover:border-primary dark:hover:border-primary-light transition-colors">
+          <Dropdown.Trigger className="px-4 py-2.5 rounded flex items-center gap-2 min-w-[160px] justify-between border dark:bg-dark-surface border-b border-light-hover dark:border-light-hover/50 text-light-text dark:text-dark-text hover:border-primary dark:hover:border-primary-light transition-colors">
             <div className="flex items-center gap-2">
               <ArrowUpDown
                 size={16}

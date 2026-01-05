@@ -389,7 +389,7 @@ export function useWebSocket() {
       wsService.off(SOCKET_EVENTS.MEMBER_LEFT, handleMemberLeft);
       wsService.off(SOCKET_EVENTS.KICKED, handleKickedEvent);
     };
-  }, [dispatch, role]);
+  }, [dispatch, role, isConnected]);
 
   const createSession = useCallback(
     async (roomName: string, user: IUserData) => {

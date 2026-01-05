@@ -102,7 +102,7 @@ const Item = ({ children, onClick, className = '' }: SubComponentProps) => {
     <button
       onClick={handleItemClick}
       className={`w-full text-left px-4 py-2.5 text-sm transition-colors
-      text-light-text dark:text-dark-text hover:bg-light-hover/50 dark:hover:bg-dark-hover/50 hover:text-primary dark:hover:text-primary-light ${className}`}
+      text-light-text dark:text-dark-text hover:bg-light-hover/50 dark:hover:bg-dark-hover/50 ${className}`}
     >
       {children}
     </button>
