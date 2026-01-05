@@ -171,3 +171,5 @@ export interface IPayloadPlay {
 export interface IPayloadPause {
   groupId: string;
 }
+
+export type DialogType = 'leave-group' | null;

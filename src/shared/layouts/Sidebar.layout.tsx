@@ -1,11 +1,11 @@
 import { HomeIcon, LogOutIcon, PanelRightOpen, UserIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-
-import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { getInitials } from '../utils';
-import { layoutActions } from '@/app/slices/layoutSlice';
-import { STORAGE_KEYS } from '../constants';
 import { Link, useNavigate } from 'react-router-dom';
+
+import { clearAuthStorageKeys } from '@/features/auth/helpers';
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { layoutActions } from '@/app/slices/layoutSlice';
+import { getInitials } from '../utils';
 import { paths } from '@/routes/paths';
 
 const SidebarLayout = () => {
@@ -20,8 +20,7 @@ const SidebarLayout = () => {
 
   const handleLogout = () => {
     onCloseSidebar();
-    localStorage.removeItem(STORAGE_KEYS.TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.USER);
+    clearAuthStorageKeys();
     navigate('/login');
   };
 

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 
 import { Header } from '@/components/Header';
@@ -7,6 +8,10 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { layoutActions, LayoutState } from '@/app/slices/layoutSlice';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { paths } from '@/routes/paths';
+import { profileService } from '@/services/profile';
+import { authActions } from '@/features/auth/authSlice';
+import { STORAGE_KEYS } from '@/shared/constants';
+import { getErrorMessage } from '@/shared/utils';
 
 const AppLayout = () => {
   const activeTab = useAppSelector((state) => state.layout.activeTab);
@@ -14,6 +19,25 @@ const AppLayout = () => {
   const navigate = useNavigate();
 
   useWebSocket();
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+      if (!token) return;
+
+      try {
+        const response = await profileService.getProfile();
+        if (!response.status) {
+          throw new Error(getErrorMessage(response));
+        }
+        dispatch(authActions.updateUser(response.user));
+      } catch (err: any) {
+        console.error('Error loading profile:', err);
+      }
+    };
+
+    loadProfile();
+  }, [dispatch]);
 
   const onTabChange = (tab: LayoutState['activeTab']) => {
     dispatch(layoutActions.setActiveTab(tab));

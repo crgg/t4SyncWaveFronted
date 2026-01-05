@@ -176,3 +176,7 @@ export const orderBy = <T>(array: T[], key: keyof T, direction: 'asc' | 'desc' =
     return direction === 'asc' ? 0 : 0;
   }) as T[];
 };
+
+export const msToSeconds = (ms: number): number => {
+  return ms / 1000;
+};

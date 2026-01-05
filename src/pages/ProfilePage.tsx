@@ -47,9 +47,7 @@ function ProfilePage() {
     },
   });
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
+  // El perfil se carga automáticamente desde App.layout.tsx al recargar la página
 
   useEffect(() => {
     if (user) {
@@ -62,33 +60,6 @@ function ProfilePage() {
       }
     }
   }, [user, reset]);
-
-  const loadProfile = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await profileService.getProfile();
-      if (!response.status) {
-        throw new Error(getErrorMessage(response));
-      }
-      dispatch(authActions.updateUser(response.user));
-      reset({
-        name: response.user.name || '',
-        nickname: response.user.nickname || '',
-      });
-      if (response.user.avatar_url) {
-        setAvatarPreview(response.user.avatar_url);
-      }
-    } catch (err: any) {
-      if (validationIsObject(err.response?.data)) {
-        setError(err.response?.data?.error || 'Error loading profile');
-      } else {
-        setError('Error loading profile');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const onSubmit = async (data: ProfileFormData) => {
     setIsLoading(true);

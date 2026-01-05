@@ -1,6 +1,7 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 
 import { API_BASE_URL, STORAGE_KEYS } from '@shared/constants';
+import { clearAuthStorageKeys } from '@/features/auth/helpers';
 
 const sanitizeUrl = (url: string) => {
   return url.replace(/\/$/, '');
@@ -18,7 +19,17 @@ http.interceptors.request.use((config) => {
   return config;
 });
 
-// http.interceptors.response.use((response) => {
-//   // console.log({ response });
-//   return response;
-// });
+http.interceptors.response.use(
+  (response: AxiosResponse) => {
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      clearAuthStorageKeys();
+      if (error.response?.config?.url !== '/auth/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);

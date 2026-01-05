@@ -85,7 +85,7 @@ function LoginPage() {
             <Input
               label="Email"
               type="email"
-              placeholder="tu@email.com"
+              placeholder="your@email.com"
               {...register('email')}
               error={errors.email?.message}
               maxLength={100}

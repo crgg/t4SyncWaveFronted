@@ -14,9 +14,18 @@ interface ModalProps {
   children: React.ReactNode;
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  footer?: React.ReactNode;
 }
 
-export function Modal({ isOpen, onClose, title, children, className, size = 'md' }: ModalProps) {
+export function Modal({
+  isOpen,
+  onClose,
+  title,
+  children,
+  className,
+  size = 'md',
+  footer,
+}: ModalProps) {
   // Cerrar con ESC
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -102,6 +111,7 @@ export function Modal({ isOpen, onClose, title, children, className, size = 'md'
 
               {/* Content */}
               <div className="flex-1 overflow-y-auto p-6">{children}</div>
+              {footer}
             </motion.div>
           </div>
         </>
