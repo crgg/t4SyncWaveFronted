@@ -21,6 +21,7 @@ import { EmptyGroupsState } from './GroupsPage/components/EmptyGroupsState';
 import { GroupCard } from './GroupsPage/components/GroupCard';
 import { JoinGroupByCode } from './GroupsPage/components/JoinGroupByCode';
 import type { SortOption } from './GroupsPage/types';
+import { withAuth } from '@/shared/hoc/withAuth';
 import { paths } from '@/routes/paths';
 
 const GroupsPage = () => {
@@ -257,4 +258,4 @@ const GroupsPage = () => {
   );
 };
 
-export default GroupsPage;
+export default withAuth(GroupsPage);

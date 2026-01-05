@@ -4,11 +4,14 @@ import type {
   CreateResponse,
   FormAddMemberToGroup,
   FormCreateGroup,
+  GroupPlaybackStateResponse,
   GroupResponse,
   GroupsResponse,
   GroupStateResponse,
   IPayloadDeleteGroup,
   IPayloadLeaveGroup,
+  IPayloadPause,
+  IPayloadPlay,
   IPayloadRemoveMember,
   IPayloadUpdateGroup,
 } from './groups.types';
@@ -20,6 +23,11 @@ class GroupsApi {
   }
   async getOthersGroups(): Promise<GroupsResponse> {
     const response = await http.get<GroupsResponse>(`/groups/groups-listens`);
+    return response.data;
+  }
+  async getGroupPlaybackState(groupId: string): Promise<GroupPlaybackStateResponse> {
+    const uri = `/groups/${groupId}/playback-state`;
+    const response = await http.get<GroupPlaybackStateResponse>(uri);
     return response.data;
   }
   async createGroup(data: FormCreateGroup): Promise<CreateResponse> {
@@ -72,6 +80,14 @@ class GroupsApi {
   }
   async getGroupState(groupId: string): Promise<GroupStateResponse> {
     const response = await http.get<GroupStateResponse>(`/groups/state/${groupId}`);
+    return response.data;
+  }
+  async play(payload: IPayloadPlay): Promise<GroupPlaybackStateResponse> {
+    const response = await http.post<GroupPlaybackStateResponse>(`/groups/playback/play`, payload);
+    return response.data;
+  }
+  async pause(payload: IPayloadPause): Promise<GroupPlaybackStateResponse> {
+    const response = await http.post<GroupPlaybackStateResponse>(`/groups/playback/pause`, payload);
     return response.data;
   }
 }

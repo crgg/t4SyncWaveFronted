@@ -13,6 +13,7 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { authActions } from '@/features/auth/authSlice';
 import { getErrorMessage, getInitials, validationIsObject } from '@/shared/utils';
 import { STORAGE_KEYS } from '@/shared/constants';
+import { withAuth } from '@/shared/hoc/withAuth';
 
 const schema = yup.object({
   name: yup.string().required('Name is required').min(2, 'Name must be at least 2 characters'),
@@ -393,4 +394,4 @@ function ProfilePage() {
   );
 }
 
-export default ProfilePage;
+export default withAuth(ProfilePage);

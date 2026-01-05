@@ -4,6 +4,9 @@ import { formatTime } from '@shared/utils';
 import { motion } from 'framer-motion';
 import { STORAGE_KEYS } from '@/shared/constants';
 import { useTheme } from '@/contexts/ThemeContext';
+import { CirclePlay, Pause } from 'lucide-react';
+import { groupsApi } from '@/features/groups/groupsApi';
+import { useParams } from 'react-router-dom';
 
 export function AudioPlayerHost() {
   const { audioState, play, pause, seek, setVolume, toggleMute, next, restart } = useAudio();
@@ -12,6 +15,7 @@ export function AudioPlayerHost() {
   const [isDragging, setIsDragging] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
   const volumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { groupId } = useParams<{ groupId: string }>();
 
   useEffect(() => {
     const savedVolume = localStorage.getItem(STORAGE_KEYS.VOLUME);
@@ -122,6 +126,32 @@ export function AudioPlayerHost() {
     seek(newPosition);
   };
 
+  const handlePlay = async () => {
+    play();
+    try {
+      const resp = await groupsApi.play({
+        groupId: groupId!,
+        trackId: audioState.trackId,
+        startedAt: audioState.timestamp,
+      });
+      console.log({ resp });
+    } catch (error) {
+      console.error('Error playing audio:', error);
+    }
+  };
+
+  const handlePause = async () => {
+    pause();
+    try {
+      const resp = await groupsApi.pause({
+        groupId: groupId!,
+      });
+      console.log({ resp });
+    } catch (error) {
+      console.error('Error pausing audio:', error);
+    }
+  };
+
   const progressPercentage = audioState.trackDuration
     ? (audioState.currentPosition / audioState.trackDuration) * 100
     : 0;
@@ -227,27 +257,11 @@ export function AudioPlayerHost() {
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          onClick={audioState.isPlaying ? pause : play}
+          onClick={audioState.isPlaying ? handlePause : handlePlay}
           disabled={!audioState.trackUrl}
-          className="p-4 rounded-full bg-primary-600 hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+          className="p-4 rounded-full bg-primary-600 hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-white"
         >
-          {audioState.isPlaying ? (
-            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-          ) : (
-            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                clipRule="evenodd"
-              />
-            </svg>
-          )}
+          {!audioState.isPlaying ? <CirclePlay size={28} /> : <Pause size={28} />}
         </motion.button>
 
         <motion.button

@@ -95,6 +95,24 @@ export interface AddMemberToGroupResponse extends ResponseBase {
   error?: string;
 }
 
+export interface GroupPlaybackStateResponse extends ResponseBase {
+  message?: string;
+  msg?: string;
+  playbackState?: IGroupPlaybackState | null;
+}
+
+export interface IGroupPlaybackState {
+  isPlaying: boolean;
+  trackId: string;
+  startedAt: number;
+  lastEvent: string;
+  lastEventTime: number;
+  position: number | null;
+  userId: string | null;
+  userName: string | null;
+  clientsCount: number;
+}
+
 export interface IPayloadUpdateGroup {
   id: string;
   name: string;
@@ -141,4 +159,15 @@ export interface IRoomUsers {
   room: string;
   users: IRoomUser[];
   count: number;
+}
+
+// Play / Pause Payload
+export interface IPayloadPlay {
+  groupId: string;
+  trackId: string;
+  startedAt: number;
+}
+
+export interface IPayloadPause {
+  groupId: string;
 }

@@ -17,3 +17,8 @@ http.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// http.interceptors.response.use((response) => {
+//   // console.log({ response });
+//   return response;
+// });

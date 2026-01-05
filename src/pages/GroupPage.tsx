@@ -42,6 +42,7 @@ import { GroupPageSkeleton } from './GroupPage/components/GroupPageSkeleton';
 import { cn, orderBy } from '@/shared/utils';
 import { AvatarPreview } from '@/shared/components/AvatarPreview/AvatarPreview';
 import { STORAGE_KEYS } from '@/shared/constants';
+import { withAuth } from '@/shared/hoc/withAuth';
 
 const GroupPage = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -75,9 +76,18 @@ const GroupPage = () => {
   });
 
   // Obtener el estado del grupo al cargar la página
-  const { data: groupStateData } = useQuery({
-    queryKey: ['group-state', groupId],
-    queryFn: () => groupsApi.getGroupState(groupId!),
+  // const { data: groupStateData } = useQuery({
+  //   queryKey: ['group-state', groupId],
+  //   queryFn: () => groupsApi.getGroupState(groupId!),
+  //   enabled: !!groupId,
+  //   staleTime: 1000 * 30,
+  //   gcTime: 1000 * 60 * 2,
+  //   retry: false,
+  // });
+
+  const { data: groupPlaybackStateData } = useQuery({
+    queryKey: ['group-playback-state', groupId],
+    queryFn: () => groupsApi.getGroupPlaybackState(groupId!),
     enabled: !!groupId,
     staleTime: 1000 * 30, // 30 seconds
     gcTime: 1000 * 60 * 2, // 2 minutes
@@ -85,16 +95,22 @@ const GroupPage = () => {
   });
 
   // Log del estado del grupo para debugging (puedes usar groupStateData.state para lógica futura)
+  // useEffect(() => {
+  //   if (groupStateData?.state) {
+  //     console.log('Group State:', groupStateData.state);
+  //     // Aquí puedes agregar lógica basada en el estado:
+  //     // - IDLE: No active playback
+  //     // - PLAYING_HOSTED: DJ present, controls unlocked
+  //     // - PLAYING_NO_HOST: DJ absent, controls LOCKED
+  //     // - CONTROL_AVAILABLE: DJ can retake control
+  //   }
+  // }, [groupStateData]);
+
   useEffect(() => {
-    if (groupStateData?.state) {
-      console.log('Group State:', groupStateData.state);
-      // Aquí puedes agregar lógica basada en el estado:
-      // - IDLE: No active playback
-      // - PLAYING_HOSTED: DJ present, controls unlocked
-      // - PLAYING_NO_HOST: DJ absent, controls LOCKED
-      // - CONTROL_AVAILABLE: DJ can retake control
+    if (groupPlaybackStateData?.playbackState) {
+      console.log('Group Playback State:', groupPlaybackStateData.playbackState);
     }
-  }, [groupStateData]);
+  }, [groupPlaybackStateData]);
 
   const handleLeaveGroup = () => {
     leaveSession();
@@ -1010,4 +1026,4 @@ const MemberCard = ({ member, isOwner, onRemove, isConnected }: MemberCardProps)
   );
 };
 
-export default GroupPage;
+export default withAuth(GroupPage);
