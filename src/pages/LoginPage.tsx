@@ -13,6 +13,7 @@ import { STORAGE_KEYS } from '@/shared/constants';
 import { useAppDispatch } from '@/app/hooks';
 import { authActions } from '@/features/auth/authSlice';
 import { validationIsObject } from '@/shared/utils';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import logo from '@/app/assets/logo.png';
 
 const schema = yup.object({
@@ -61,13 +62,16 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 bg-[#f2f2f6]">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 bg-light-bg dark:bg-dark-bg transition-colors duration-200">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="rounded-2xl p-8">
+        <div className="bg-light-card dark:bg-dark-card rounded-2xl p-8 shadow-xl border border-light-hover dark:border-dark-hover">
           <div className="flex justify-center mb-4">
             <img src={logo} alt="T4SyncWave" className="w-24 h-24" />
           </div>
@@ -97,7 +101,7 @@ function LoginPage() {
             />
 
             {error && (
-              <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-400 text-sm">
+              <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
                 {error}
               </div>
             )}
@@ -108,9 +112,12 @@ function LoginPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
               Don't have an account?{' '}
-              <Link to="/register" className="text-primary hover:text-primary-dark font-bold">
+              <Link
+                to="/register"
+                className="text-primary hover:text-primary-dark font-bold transition-colors"
+              >
                 Register
               </Link>
             </p>
