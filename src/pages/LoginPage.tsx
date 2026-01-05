@@ -17,7 +17,12 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import logo from '@/app/assets/logo.png';
 
 const schema = yup.object({
-  email: yup.string().email('Invalid email').required('Email is required'),
+  email: yup
+    .string()
+    .email('Invalid email')
+    .max(100, 'Email must be less than 100 characters')
+    .required('Email is required')
+    .trim(),
   password: yup
     .string()
     .min(6, 'Password must be at least 6 characters')
@@ -112,11 +117,11 @@ function LoginPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 font-extralight">
               Don't have an account?{' '}
               <Link
                 to="/register"
-                className="text-primary hover:text-primary-dark font-bold transition-colors"
+                className="text-primary hover:text-primary-dark font-bold transition-colors underline underline-offset-8 ps-1"
               >
                 Register
               </Link>

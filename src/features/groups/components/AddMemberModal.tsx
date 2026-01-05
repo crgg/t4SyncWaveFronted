@@ -12,7 +12,12 @@ import { FormAddMemberToGroup } from '../groups.types';
 import { getErrorMessage } from '@/shared/utils';
 
 const schema = yup.object({
-  email: yup.string().email('Invalid email address').required('Email is required'),
+  email: yup
+    .string()
+    .email('Invalid email address')
+    .max(100, 'Email must be less than 100 characters')
+    .required('Email is required')
+    .trim(),
   role: yup
     .string()
     .oneOf(['dj', 'member'], 'Role must be either "dj" or "member"')
@@ -40,6 +45,7 @@ export function AddMemberModal({ isOpen, onClose, groupId, onSuccess }: AddMembe
     formState: { errors },
     reset,
     clearErrors,
+    watch,
   } = useForm<AddMemberFormData>({
     resolver: yupResolver(schema),
     mode: 'onSubmit',
@@ -83,7 +89,7 @@ export function AddMemberModal({ isOpen, onClose, groupId, onSuccess }: AddMembe
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Add Member to Group" size="md">
+    <Modal isOpen={isOpen} onClose={handleClose} title="New Member" size="md">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
         <div className="flex justify-center mb-4">
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center shadow-lg">
@@ -92,19 +98,20 @@ export function AddMemberModal({ isOpen, onClose, groupId, onSuccess }: AddMembe
         </div>
 
         <p className="text-center text-sm text-light-text-secondary dark:text-dark-text-secondary">
-          Invite a user to join this group by email address. You can assign them as a member or DJ.
+          Invite a user to join this group by email address
         </p>
 
         <div className="space-y-4">
           <Input
             {...register('email')}
+            value={watch('email') || ''}
             label="Email Address"
             type="email"
-            placeholder="user@example.com"
             error={errors.email?.message}
             disabled={mutation.isPending}
             autoComplete="off"
             maxLength={100}
+            countCharacters
             autoFocus
           />
 

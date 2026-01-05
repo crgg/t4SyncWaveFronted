@@ -14,7 +14,8 @@ const schema = yup.object({
   name: yup
     .string()
     .required('Group name is required')
-    .min(3, 'Name must be at least 3 characters'),
+    .min(3, 'Name must be at least 3 characters')
+    .max(50, 'Name must be less than 50 characters'),
 });
 
 type EditGroupFormData = yup.InferType<typeof schema>;
@@ -41,6 +42,7 @@ export function EditGroupModal({
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
   } = useForm<EditGroupFormData>({
     resolver: yupResolver(schema),
     defaultValues: {
@@ -73,32 +75,30 @@ export function EditGroupModal({
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Edit Group" size="md">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Icon/Illustration */}
         <div className="flex justify-center mb-4">
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center shadow-lg">
             <Edit2 size={32} className="text-white" />
           </div>
         </div>
 
-        {/* Description */}
         <p className="text-center text-sm text-light-text-secondary dark:text-dark-text-secondary">
           Update your group name. Changes will be reflected immediately.
         </p>
 
-        {/* Form Fields */}
         <div className="space-y-4">
           <Input
             {...register('name')}
             label="Group Name"
-            placeholder="My Awesome Group"
             error={errors.name?.message}
             disabled={mutation.isPending}
             autoComplete="off"
+            maxLength={50}
+            value={watch('name') || ''}
+            countCharacters
             autoFocus
           />
         </div>
 
-        {/* Error Message */}
         {mutation.error && (
           <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
             <p className="text-sm text-red-600 dark:text-red-400">
@@ -109,7 +109,6 @@ export function EditGroupModal({
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex gap-3 pt-4">
           <Button
             type="button"

@@ -1,7 +1,3 @@
-/**
- * Modal para crear un nuevo grupo
- */
-
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -19,7 +15,8 @@ const schema = yup.object({
   name: yup
     .string()
     .required('Group name is required')
-    .min(3, 'Name must be at least 3 characters'),
+    .min(3, 'Name must be at least 3 characters')
+    .max(50, 'Name must be less than 50 characters'),
 });
 
 type CreateGroupFormData = yup.InferType<typeof schema>;
@@ -38,6 +35,7 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess }: CreateGroupModa
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
   } = useForm<CreateGroupFormData>({
     resolver: yupResolver(schema),
   });
@@ -64,7 +62,7 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess }: CreateGroupModa
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Create New Group" size="md">
+    <Modal isOpen={isOpen} onClose={handleClose} title="New Group" size="md">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Icon/Illustration */}
         <div className="flex justify-center mb-4">
@@ -83,10 +81,12 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess }: CreateGroupModa
           <Input
             {...register('name')}
             label="Group Name"
-            placeholder="My Awesome Group"
             error={errors.name?.message}
             disabled={mutation.isPending}
+            value={watch('name') || ''}
             autoComplete="off"
+            maxLength={50}
+            countCharacters
             autoFocus
           />
         </div>
