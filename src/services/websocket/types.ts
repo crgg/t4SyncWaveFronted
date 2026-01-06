@@ -61,15 +61,8 @@ export interface SocketEventHandlers {
     trackArtist?: string;
     duration?: number;
   }) => void;
-  [SOCKET_EVENTS.REQUEST_PLAYBACK_STATE]: (data: {
-    requestId: string;
-    groupId?: string;
-  }) => void;
-  [SOCKET_EVENTS.DJ_RETURN]: (data: {
-    userId?: string;
-    groupId?: string;
-    state?: string;
-  }) => void;
+  [SOCKET_EVENTS.REQUEST_PLAYBACK_STATE]: (data: { requestId: string; groupId?: string }) => void;
+  [SOCKET_EVENTS.DJ_RETURN]: (data: { userId?: string; groupId?: string; state?: string }) => void;
 }
 
 export interface WebSocketServiceConfig {

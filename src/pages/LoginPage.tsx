@@ -13,8 +13,7 @@ import { STORAGE_KEYS } from '@/shared/constants';
 import { useAppDispatch } from '@/app/hooks';
 import { authActions } from '@/features/auth/authSlice';
 import { validationIsObject } from '@/shared/utils';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import logo from '@/app/assets/logo.png';
+import { paths } from '@/routes/paths';
 
 const schema = yup.object({
   email: yup
@@ -67,25 +66,18 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 bg-light-bg dark:bg-dark-bg transition-colors duration-200">
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
+    <>
+      <div className="text-center mb-14">
+        <p className="text-light-text-secondary dark:text-dark-text-secondary font-extralight">
+          Login to your account
+        </p>
       </div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="bg-light-card dark:bg-dark-card rounded-2xl p-8 shadow-xl border border-light-hover dark:border-dark-hover">
-          <div className="flex justify-center mb-4">
-            <img src={logo} alt="T4SyncWave" className="w-24 h-24" />
-          </div>
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-light-text dark:text-dark-text mb-2">
-              Welcome back
-            </h1>
-          </div>
-
+        <div className="">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input
               label="Email"
@@ -116,11 +108,11 @@ function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 font-extralight">
+          <div className="mt-16 text-center">
+            <p className="text-xs sm:text-sm font-extralight">
               Don't have an account?{' '}
               <Link
-                to="/register"
+                to={paths.REGISTER}
                 className="text-primary hover:text-primary-dark font-bold transition-colors underline underline-offset-8 ps-1"
               >
                 Register
@@ -129,7 +121,7 @@ function LoginPage() {
           </div>
         </div>
       </motion.div>
-    </div>
+    </>
   );
 }
 

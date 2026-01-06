@@ -7,6 +7,8 @@ import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import AppLayout from '@/shared/layouts/App.layout';
+import AuthLayout from '@/shared/layouts/Auth.layout';
+import AuthPage from '@/pages/AuthPage';
 import { paths } from './paths';
 
 const GroupsPage = lazy(() => import('@/pages/GroupsPage'));
@@ -53,12 +55,22 @@ const routes: RouteObject[] = [
     ],
   },
   {
-    path: paths.LOGIN,
-    element: <LoginPage />,
-  },
-  {
-    path: paths.REGISTER,
-    element: <RegisterPage />,
+    path: paths.AUTH,
+    element: <AuthLayout />,
+    children: [
+      {
+        index: true,
+        element: <AuthPage />,
+      },
+      {
+        path: paths.LOGIN,
+        element: <LoginPage />,
+      },
+      {
+        path: paths.REGISTER,
+        element: <RegisterPage />,
+      },
+    ],
   },
   {
     path: '*',
