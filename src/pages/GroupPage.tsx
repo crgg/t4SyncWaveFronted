@@ -23,9 +23,8 @@ import { setTrack } from '@/features/audio/audioSlice';
 import { useAudio } from '@/shared/hooks/useAudio';
 import DeleteDialog from '@/shared/components/DeleteDialog/DeleteDialog';
 import { GroupPageSkeleton } from './GroupPage/components/GroupPageSkeleton';
-import { cn, orderBy } from '@/shared/utils';
+import { cn, orderBy, unixTimestampToSeconds } from '@/shared/utils';
 import { AvatarPreview } from '@/shared/components/AvatarPreview/AvatarPreview';
-import { STORAGE_KEYS } from '@/shared/constants';
 import { withAuth } from '@/shared/hoc/withAuth';
 import AlertDialog from '@/shared/components/AlertDialog/AlertDialog';
 
@@ -69,11 +68,28 @@ const GroupPage = () => {
     retry: false,
   });
 
+  const group = data?.status && data?.group ? data.group : null;
+  const members = group?.members || [];
+  const isOwner = group?.created_by === user?.id;
+
+  // useEffect(() => {
+  //   // const isOwner = group?.created_by === user?.id;
+  //   if (isOwner && groupId) {
+  //     groupsApi.djConnect({ groupId, hasTrack: false, isPlaying: false });
+  //   }
+  // }, [group, groupId]);
+
   useEffect(() => {
     if (groupPlaybackStateData?.playbackState) {
-      console.log('Group Playback State:', groupPlaybackStateData.playbackState);
+      try {
+        const time = groupPlaybackStateData.playbackState.lastEventTime;
+        const currPosSeconds = unixTimestampToSeconds(time);
+        console.log('Current Position:', currPosSeconds);
+      } catch (error) {
+        console.error('Error al obtener el estado de reproducción:', error);
+      }
     }
-  }, [groupPlaybackStateData]);
+  }, [groupPlaybackStateData, group]);
 
   const handleLeaveGroup = () => {
     leaveSession();
@@ -218,10 +234,6 @@ const GroupPage = () => {
     isHostRef.current = null;
   }, [groupId]);
 
-  const group = data?.status && data?.group ? data.group : null;
-  const members = group?.members || [];
-  const isOwner = group?.created_by === user?.id;
-
   const onlineMembers = members.filter((member) => connectionUsers[member.user_id]);
   const offlineMembers = members.filter((member) => !connectionUsers[member.user_id]);
 
@@ -259,25 +271,12 @@ const GroupPage = () => {
 
     try {
       if (useKeepalive) {
-        // Usar fetch con keepalive solo para beforeunload (axios puede no completarse cuando la página se cierra)
-        const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-        const payload = JSON.stringify({
+        const payload = {
           groupId,
           hasTrack,
           isPlaying: false,
-        });
-        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-        const url = `${apiBaseUrl}/api/groups/dj-disconnect`;
-
-        await fetch(url, {
-          method: 'POST',
-          body: payload,
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: token ? `Bearer ${token}` : '',
-          },
-          keepalive: true,
-        });
+        };
+        groupsApi.djToggleConnect(payload, 'disconnect');
       } else {
         // Usar axios para navegación normal (más consistente con el resto de la app)
         await groupsApi.djDisconnect({

@@ -9,6 +9,7 @@ import type {
   GroupsResponse,
   GroupStateResponse,
   IPayloadDeleteGroup,
+  IPayloadDjConnecDisconnect,
   IPayloadLeaveGroup,
   IPayloadPause,
   IPayloadPlay,
@@ -89,6 +90,13 @@ class GroupsApi {
   async pause(payload: IPayloadPause): Promise<GroupPlaybackStateResponse> {
     const response = await http.post<GroupPlaybackStateResponse>(`/groups/playback/pause`, payload);
     return response.data;
+  }
+  async djToggleConnect(
+    payload: IPayloadDjConnecDisconnect,
+    type: 'connect' | 'disconnect' = 'connect'
+  ): Promise<any> {
+    const resp = await http.post<GroupPlaybackStateResponse>(`/groups/dj-${type}`, payload);
+    return resp.data;
   }
 }
 

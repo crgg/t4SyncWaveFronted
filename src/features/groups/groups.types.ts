@@ -173,3 +173,9 @@ export interface IPayloadPause {
 }
 
 export type DialogType = 'leave-group' | null;
+
+export type IPayloadDjConnecDisconnect = {
+  groupId: string;
+  hasTrack: boolean;
+  isPlaying: boolean;
+};

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
@@ -35,6 +35,7 @@ const GroupsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const {
     data: dataMyGroups,
@@ -53,7 +54,7 @@ const GroupsPage = () => {
     data: dataOthersGroups,
     isLoading: isLoadingOthersGroups,
     error: errorOthersGroups,
-    refetch: refetchOthersGroups,
+    refetch: refetchOthersGroupsHandler,
   } = useQuery({
     queryKey: ['others-groups', { userId }],
     queryFn: () => groupsApi.getOthersGroups(),
@@ -61,6 +62,11 @@ const GroupsPage = () => {
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 5,
   });
+
+  const refetchOthersGroups = () => {
+    queryClient.invalidateQueries({ queryKey: ['others-groups', { userId }] });
+    refetchOthersGroupsHandler();
+  };
 
   const isMyGroups = activeTab === 'my-groups';
 
@@ -197,7 +203,6 @@ const GroupsPage = () => {
                     !isMyGroups
                       ? () => {
                           setLeavingGroup(group);
-                          refetchOthersGroups();
                         }
                       : undefined
                   }
@@ -253,6 +258,7 @@ const GroupsPage = () => {
           onSuccess={() => {
             toast.success('Successfully left the group');
             setLeavingGroup(null);
+            refetchOthersGroups();
           }}
         />
       )}

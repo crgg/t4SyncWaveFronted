@@ -30,7 +30,10 @@ interface SFUSignalingMessage {
     | 'joined'
     | 'kicked'
     | 'member-left'
-    | 'member-joined';
+    | 'member-joined'
+    | 'dj-state-change'
+    | 'request-playback-state'
+    | 'playback-event';
   data?: unknown;
   sessionId?: string;
   event?: string;
@@ -324,6 +327,12 @@ class WebRTCSFUService {
         break;
       }
 
+      case 'dj-state-change':
+      case 'request-playback-state':
+      case 'playback-event': {
+        break;
+      }
+
       default:
         console.warn('Tipo de mensaje de señalización desconocido:', message.type);
     }
@@ -574,9 +583,9 @@ class WebRTCSFUService {
     } catch (error) {
       console.error('Error al abandonar sesión:', error);
     } finally {
-      this.disconnect();
-      this.sessionId = null;
-      this.role = null;
+      // this.disconnect();
+      // this.sessionId = null;
+      // this.role = null;
     }
   }
 

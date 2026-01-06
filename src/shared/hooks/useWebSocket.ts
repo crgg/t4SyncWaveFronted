@@ -249,7 +249,10 @@ export function useWebSocket() {
     };
 
     const handleRoomUsers = (data: IRoomUsers) => dispatch(updateConnectionUsers(data));
-    const handleConnectionUserJoined = (data: IRoomUser) => dispatch(addConnectionUser(data));
+    const handleConnectionUserJoined = (data: IRoomUser) => {
+      console.log('Audio State:', store.getState().audio);
+      dispatch(addConnectionUser(data));
+    };
     const handleConnectionUserLeft = (data: IRoomUser) => dispatch(removeConnectionUser(data));
 
     const handleMemberJoined = (data: {
@@ -263,13 +266,12 @@ export function useWebSocket() {
         role: string;
       };
     }) => {
-      // Cuando un miembro se une, NO enviar automáticamente playback-state
-      // Invalidar la query del grupo para que se actualice la lista de miembros
+      // Enviar automáticamente playback-state
       const groupId = data.room;
       if (groupId) {
         queryClient.invalidateQueries({ queryKey: ['group', groupId] });
       }
-      console.log('Member joined:', data.member);
+      // console.log('Audio State', store.getState().audio);
     };
 
     const handleMemberLeft = (data: {

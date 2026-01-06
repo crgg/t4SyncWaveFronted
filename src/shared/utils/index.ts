@@ -180,3 +180,10 @@ export const orderBy = <T>(array: T[], key: keyof T, direction: 'asc' | 'desc' =
 export const msToSeconds = (ms: number): number => {
   return ms / 1000;
 };
+
+export const unixTimestampToSeconds = (unixTimestamp: number | null): number => {
+  if (!unixTimestamp) return 0;
+  const date = new Date();
+  const diff = date.getTime() - unixTimestamp;
+  return diff / 1000;
+};
