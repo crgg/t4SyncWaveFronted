@@ -50,6 +50,26 @@ export interface SocketEventHandlers {
     trackUrl: string;
   }) => void;
   [SOCKET_EVENTS.ROOM_USERS]: (data: IRoomUsers) => void;
+  [SOCKET_EVENTS.PLAYBACK_EVENT]: (data: {
+    event: 'playback-play' | 'playback-pause';
+    groupId?: string;
+    trackId?: string;
+    position?: number;
+    isPlaying?: boolean;
+    trackUrl?: string;
+    trackTitle?: string;
+    trackArtist?: string;
+    duration?: number;
+  }) => void;
+  [SOCKET_EVENTS.REQUEST_PLAYBACK_STATE]: (data: {
+    requestId: string;
+    groupId?: string;
+  }) => void;
+  [SOCKET_EVENTS.DJ_RETURN]: (data: {
+    userId?: string;
+    groupId?: string;
+    state?: string;
+  }) => void;
 }
 
 export interface WebSocketServiceConfig {

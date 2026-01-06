@@ -4,10 +4,12 @@ import { formatTime } from '@shared/utils';
 import { motion } from 'framer-motion';
 import { STORAGE_KEYS } from '@/shared/constants';
 import { CirclePlay, Pause } from 'lucide-react';
-import { groupsApi } from '@/features/groups/groupsApi';
 import { useParams } from 'react-router-dom';
+
+import { groupsApi } from '@/features/groups/groupsApi';
 import { VolumeSlider } from './VolumeSlider';
 import AudioButtonToggleMuted from './AudioButtonToggleMuted';
+import { getAudioService } from '@services/audio/audioService';
 
 export function AudioPlayerHost() {
   const { audioState, play, pause, seek, setVolume, toggleMute, next, restart } = useAudio();
@@ -90,25 +92,40 @@ export function AudioPlayerHost() {
 
   const handlePlay = async () => {
     play();
+
     try {
-      const resp = await groupsApi.play({
-        groupId: groupId!,
-        trackId: audioState.trackId,
-        startedAt: audioState.timestamp,
-      });
-      console.log({ resp });
+      setTimeout(async () => {
+        const currentAudioState = audioState;
+        const audioService = getAudioService();
+        const audioServiceState = audioService.getState();
+        const currentPosition =
+          audioServiceState?.currentPosition ?? currentAudioState.currentPosition ?? 0;
+
+        const resp = await groupsApi.play({
+          groupId: groupId!,
+          trackId: currentAudioState.trackId || '',
+          startedAt: currentPosition,
+        });
+        console.log({ resp });
+      }, 100);
     } catch (error) {
       console.error('Error playing audio:', error);
     }
   };
 
   const handlePause = async () => {
+    // Primero ejecutar pause localmente
     pause();
+
     try {
-      const resp = await groupsApi.pause({
-        groupId: groupId!,
-      });
-      console.log({ resp });
+      // Obtener el estado actualizado del audio después de pause()
+      // Esperar un momento para que el estado se actualice
+      setTimeout(async () => {
+        const resp = await groupsApi.pause({
+          groupId: groupId!,
+        });
+        console.log({ resp });
+      }, 100);
     } catch (error) {
       console.error('Error pausing audio:', error);
     }

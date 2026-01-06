@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 
 import { groupsApi } from '@/features/groups/groupsApi';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { store } from '@/app/store';
 import { Button } from '@shared/components/Button/Button';
 import { AddMemberModal } from '@/features/groups/components/AddMemberModal';
 import type { DialogType, Member } from '@/features/groups/groups.types';
@@ -19,11 +20,12 @@ import { PlaylistListener } from '@/features/playlist/components/PlaylistListene
 import { AudioPlayerListener } from '@/features/audio/components/AudioPlayerListener';
 import { paths } from '@/routes/paths';
 import PlaylistAdapter from '@/features/playlist/playlistAdapter';
-import { setTrack } from '@/features/audio/audioSlice';
+import { setTrack, setAudioState } from '@/features/audio/audioSlice';
 import { useAudio } from '@/shared/hooks/useAudio';
+import { getAudioService } from '@services/audio/audioService';
 import DeleteDialog from '@/shared/components/DeleteDialog/DeleteDialog';
 import { GroupPageSkeleton } from './GroupPage/components/GroupPageSkeleton';
-import { cn, orderBy, unixTimestampToSeconds } from '@/shared/utils';
+import { cn, orderBy } from '@/shared/utils';
 import { AvatarPreview } from '@/shared/components/AvatarPreview/AvatarPreview';
 import { withAuth } from '@/shared/hoc/withAuth';
 import AlertDialog from '@/shared/components/AlertDialog/AlertDialog';
@@ -44,6 +46,7 @@ const GroupPage = () => {
   const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const processedGroupIdRef = useRef<string | null>(null);
   const createdByRef = useRef<string | null>(null);
+  const listenerAudioInitializedRef = useRef<string | null>(null);
   const { play } = useAudio();
   const [dialogOpen, setDialogOpen] = useState<DialogType>(null);
 
@@ -79,17 +82,58 @@ const GroupPage = () => {
   //   }
   // }, [group, groupId]);
 
+  // Cuando un listener se une, inicializar el audio con el estado de reproducción actual
+  // Este useEffect actúa como respaldo si el estado se actualiza después de unirse
   useEffect(() => {
-    if (groupPlaybackStateData?.playbackState) {
+    if (!groupPlaybackStateData?.playbackState || !groupId) return;
+    if (isOwner) return; // Solo para listeners, no para DJ
+
+    const { playbackState: state } = groupPlaybackStateData;
+    const currentRole = store.getState().session.role;
+
+    // Solo procesar si somos listener y hay un track reproduciéndose
+    // Y solo si no se ha inicializado ya para este grupo
+    if (
+      currentRole === 'member' &&
+      state.trackId &&
+      state.trackUrl &&
+      listenerAudioInitializedRef.current !== groupId
+    ) {
       try {
-        const time = groupPlaybackStateData.playbackState.lastEventTime;
-        const currPosSeconds = unixTimestampToSeconds(time);
-        console.log('Current Position:', currPosSeconds);
+        // Marcar como inicializado para este grupo
+        listenerAudioInitializedRef.current = groupId;
+
+        // Establecer el track en el estado
+        dispatch(
+          setTrack({
+            trackId: state.trackId,
+            trackUrl: state.trackUrl,
+            trackTitle: state.trackTitle || undefined,
+            trackArtist: state.trackArtist || undefined,
+          })
+        );
+
+        // Inicializar el audio con el estado actual
+        const audioService = getAudioService();
+        const currentPosition = state.position ? state.position / 1000 : 0; // Convertir de ms a segundos
+        const currentTimestamp = state.lastEventTime || Date.now();
+
+        // Inicializar el audio service con el track
+        audioService.init(state.trackUrl, (audioState) => {
+          dispatch(setAudioState(audioState));
+        });
+
+        // Esperar un momento para que el audio se inicialice y luego sincronizar
+        setTimeout(() => {
+          audioService.sync(currentPosition, currentTimestamp, state.isPlaying, state.trackUrl);
+        }, 500);
       } catch (error) {
-        console.error('Error al obtener el estado de reproducción:', error);
+        console.error('Error al inicializar audio para listener:', error);
+        // Resetear el ref si hay error para permitir reintentos
+        listenerAudioInitializedRef.current = null;
       }
     }
-  }, [groupPlaybackStateData, group]);
+  }, [groupPlaybackStateData, groupId, isOwner, dispatch]);
 
   const handleLeaveGroup = () => {
     leaveSession();
@@ -169,6 +213,59 @@ const GroupPage = () => {
           dispatch(joinSessionStart({ sessionId: sessionName }));
           joinSession(sessionName);
           isHostRef.current = false;
+
+          // Obtener el estado de reproducción cuando el listener se une al grupo
+          setTimeout(async () => {
+            try {
+              if (listenerAudioInitializedRef.current === sessionName) {
+                return;
+              }
+
+              const playbackState = await groupsApi.getGroupPlaybackState(sessionName);
+
+              if (playbackState.status && playbackState.playbackState) {
+                const { playbackState: state } = playbackState;
+
+                // Si hay un track reproduciéndose, inicializar el audio
+                if (state.trackId && state.trackUrl) {
+                  // Marcar como inicializado
+                  listenerAudioInitializedRef.current = sessionName;
+
+                  dispatch(
+                    setTrack({
+                      trackId: state.trackId,
+                      trackUrl: state.trackUrl,
+                      trackTitle: state.trackTitle || undefined,
+                      trackArtist: state.trackArtist || undefined,
+                    })
+                  );
+
+                  // Sincronizar el audio con el estado actual
+                  const audioService = getAudioService();
+                  const currentPosition = state.position ? state.position / 1000 : 0; // Convertir de ms a segundos
+
+                  // Inicializar el audio con el track y sincronizar posición
+                  audioService.init(state.trackUrl, (audioState) => {
+                    dispatch(setAudioState(audioState));
+                  });
+
+                  // Esperar un momento para que el audio se inicialice y luego sincronizar
+                  setTimeout(() => {
+                    audioService.sync(
+                      currentPosition,
+                      state.lastEventTime,
+                      state.isPlaying,
+                      state.trackUrl
+                    );
+                  }, 500);
+                }
+              }
+            } catch (error) {
+              console.error('Error al obtener estado de reproducción para listener:', error);
+              // Resetear el ref si hay error para permitir reintentos
+              listenerAudioInitializedRef.current = null;
+            }
+          }, 1500); // Esperar 1.5 segundos para asegurar conexión WebSocket
         }
         return;
       }
@@ -177,6 +274,71 @@ const GroupPage = () => {
       dispatch(createSessionStart({ name: sessionName }));
       createSession(sessionName, user);
       isHostRef.current = true;
+
+      // Llamar a dj-connect cuando el DJ se une al grupo
+      // Esperar un momento para asegurar que el WebSocket esté conectado
+      setTimeout(async () => {
+        try {
+          // Obtener el estado real del audio del store
+          const currentAudioState = store.getState().audio;
+
+          // Primero validar si puede tomar control
+          const validationResult = await groupsApi.validateControl(sessionName);
+
+          if (validationResult.status) {
+            // Llamar a dj-connect con el estado real del audio
+            await groupsApi.djToggleConnect(
+              {
+                groupId: sessionName,
+                hasTrack: !!currentAudioState.trackUrl,
+                isPlaying: currentAudioState.isPlaying || false,
+              },
+              'connect'
+            );
+
+            // Si hay un estado de reproducción disponible, obtenerlo para sincronizar
+            if (
+              validationResult.state?.state === 'PLAYING_NO_HOST' ||
+              validationResult.state?.state === 'CONTROL_AVAILABLE'
+            ) {
+              const playbackState = await groupsApi.getGroupPlaybackState(sessionName);
+
+              if (
+                playbackState.status &&
+                playbackState.playbackState &&
+                playbackState.playbackState.isPlaying
+              ) {
+                const { playbackState: state } = playbackState;
+
+                // Sincronizar el estado local con el estado remoto
+                if (state.trackId && state.trackUrl) {
+                  dispatch(
+                    setTrack({
+                      trackId: state.trackId,
+                      trackUrl: state.trackUrl,
+                      trackTitle: state.trackTitle || undefined,
+                      trackArtist: state.trackArtist || undefined,
+                    })
+                  );
+
+                  // Si está reproduciendo, sincronizar posición
+                  if (state.position !== null && state.position > 0) {
+                    const audioService = getAudioService();
+                    audioService.sync(
+                      state.position / 1000, // Convertir de ms a segundos
+                      state.lastEventTime,
+                      state.isPlaying,
+                      state.trackUrl
+                    );
+                  }
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error al conectar DJ:', error);
+        }
+      }, 1000); // Esperar 1 segundo para asegurar conexión WebSocket
     };
 
     if (isConnected) {
@@ -232,6 +394,7 @@ const GroupPage = () => {
     processedGroupIdRef.current = null;
     isConnectingRef.current = false;
     isHostRef.current = null;
+    listenerAudioInitializedRef.current = null; // Resetear cuando cambia el grupo
   }, [groupId]);
 
   const onlineMembers = members.filter((member) => connectionUsers[member.user_id]);
@@ -264,7 +427,10 @@ const GroupPage = () => {
   const sendDjDisconnect = async (useKeepalive = false) => {
     if (!groupId || !isOwner || disconnectSentRef.current) return;
 
-    const hasTrack = !!audioState.trackUrl;
+    // Obtener el estado real del audio del store
+    const currentAudioState = store.getState().audio;
+    const hasTrack = !!currentAudioState.trackUrl;
+    const isPlaying = currentAudioState.isPlaying || false;
 
     // Marcar como enviado para evitar duplicados
     disconnectSentRef.current = true;
@@ -274,7 +440,7 @@ const GroupPage = () => {
         const payload = {
           groupId,
           hasTrack,
-          isPlaying: false,
+          isPlaying,
         };
         groupsApi.djToggleConnect(payload, 'disconnect');
       } else {
@@ -282,7 +448,7 @@ const GroupPage = () => {
         await groupsApi.djDisconnect({
           groupId,
           hasTrack,
-          isPlaying: false,
+          isPlaying,
         });
       }
     } catch (error) {
@@ -297,7 +463,9 @@ const GroupPage = () => {
     if (!isOwner || !groupId) return;
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      const isPlaying = audioState.isPlaying || false;
+      // Obtener el estado real del audio del store
+      const currentAudioState = store.getState().audio;
+      const isPlaying = currentAudioState.isPlaying || false;
 
       // Solo mostrar confirmación si está reproduciéndose y es el host
       if (isPlaying) {

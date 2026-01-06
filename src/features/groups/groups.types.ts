@@ -104,6 +104,10 @@ export interface GroupPlaybackStateResponse extends ResponseBase {
 export interface IGroupPlaybackState {
   isPlaying: boolean;
   trackId: string;
+  trackUrl?: string;
+  trackTitle?: string | null;
+  trackArtist?: string | null;
+  duration?: number | null;
   startedAt: number;
   lastEvent: string;
   lastEventTime: number;

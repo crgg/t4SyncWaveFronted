@@ -98,6 +98,10 @@ class GroupsApi {
     const resp = await http.post<GroupPlaybackStateResponse>(`/groups/dj-${type}`, payload);
     return resp.data;
   }
+  async validateControl(groupId: string): Promise<GroupStateResponse> {
+    const response = await http.post<GroupStateResponse>(`/groups/validate-control`, { groupId });
+    return response.data;
+  }
 }
 
 export const groupsApi = new GroupsApi();

@@ -2,6 +2,7 @@ import { SOCKET_EVENTS, RECONNECTION_CONFIG } from '@shared/constants';
 import type { SocketEventHandlers, WebSocketServiceConfig } from '../websocket/types';
 import type { AudioState, UserRole } from '@shared/types';
 import { store } from '@app/store';
+import { getAudioService } from '@services/audio/audioService';
 
 interface SFUSignalingMessage {
   type:
@@ -33,7 +34,8 @@ interface SFUSignalingMessage {
     | 'member-joined'
     | 'dj-state-change'
     | 'request-playback-state'
-    | 'playback-event';
+    | 'playback-event'
+    | 'playback-state-response';
   data?: unknown;
   sessionId?: string;
   event?: string;
@@ -327,9 +329,77 @@ class WebRTCSFUService {
         break;
       }
 
-      case 'dj-state-change':
-      case 'request-playback-state':
+      case 'dj-state-change': {
+        // Manejar cambios de estado del DJ
+        this.handleEvent(SOCKET_EVENTS.DJ_RETURN, message);
+        break;
+      }
+
+      case 'request-playback-state': {
+        // Cuando el SFU solicita el estado de reproducción (solo para listeners)
+        if (this.role === 'member') {
+          const audioState = store.getState().audio;
+          const audioService = getAudioService();
+          const audioServiceState = audioService.getState();
+
+          if (audioServiceState && audioState.trackUrl) {
+            const playbackStateResponse = {
+              requestId: (message as any).requestId,
+              isPlaying: audioServiceState.isPlaying || false,
+              trackId: audioState.trackId || '',
+              position: (audioServiceState.currentPosition || 0) * 1000, // Convertir a ms
+              trackUrl: audioState.trackUrl,
+              trackTitle: audioState.trackTitle || null,
+              trackArtist: audioState.trackArtist || null,
+              duration: audioState.trackDuration ? audioState.trackDuration * 1000 : null, // Convertir a ms
+              userId: (store.getState().auth.user as any)?.id || null,
+              userName: (store.getState().auth.user as any)?.name || null,
+            };
+
+            this.sendSignalingMessage({
+              type: 'playback-state-response',
+              data: playbackStateResponse,
+            });
+          }
+        }
+        break;
+      }
+
       case 'playback-event': {
+        // Evento de playback (play/pause) del DJ
+        const playbackEvent = message as {
+          type: string;
+          event: 'playback-play' | 'playback-pause';
+          groupId?: string;
+          trackId?: string;
+          position?: number;
+          isPlaying?: boolean;
+          trackUrl?: string;
+          trackTitle?: string;
+          trackArtist?: string;
+          duration?: number;
+        };
+
+        if (playbackEvent.event === 'playback-play' || playbackEvent.event === 'playback-pause') {
+          const audioState: AudioState = {
+            isPlaying: playbackEvent.isPlaying ?? playbackEvent.event === 'playback-play',
+            currentPosition:
+              playbackEvent.position !== undefined
+                ? playbackEvent.position / 1000
+                : store.getState().audio.currentPosition || 0, // Convertir de ms a segundos
+            volume: store.getState().audio.volume ?? 100,
+            trackId: playbackEvent.trackId || store.getState().audio.trackId || '',
+            trackUrl: playbackEvent.trackUrl || store.getState().audio.trackUrl || '',
+            trackTitle: playbackEvent.trackTitle || store.getState().audio.trackTitle,
+            trackArtist: playbackEvent.trackArtist || store.getState().audio.trackArtist,
+            trackDuration: playbackEvent.duration
+              ? playbackEvent.duration / 1000
+              : store.getState().audio.trackDuration, // Convertir de ms a segundos
+            timestamp: Date.now(),
+          };
+
+          this.handleEvent(SOCKET_EVENTS.AUDIO_STATE, audioState);
+        }
         break;
       }
 

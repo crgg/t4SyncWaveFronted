@@ -24,6 +24,7 @@ import type { AudioState, SessionInfo, Track } from '@shared/types';
 import { isValidAudioUrl } from '@shared/utils';
 import { store } from '@app/store';
 import { IRoomUser, IRoomUsers } from '@/features/groups/groups.types';
+import { groupsApi } from '@/features/groups/groupsApi';
 
 export function useWebSocket() {
   const dispatch = useAppDispatch();
@@ -251,7 +252,45 @@ export function useWebSocket() {
     const handleRoomUsers = (data: IRoomUsers) => dispatch(updateConnectionUsers(data));
     const handleConnectionUserJoined = (data: IRoomUser) => {
       console.log('Audio State:', store.getState().audio);
+
       dispatch(addConnectionUser(data));
+
+      // Si somos el DJ y hay un nuevo listener conectándose, enviar el estado de reproducción actual
+      const currentRole = store.getState().session.role;
+      const currentAudioState = store.getState().audio;
+      const sessionId = store.getState().session.sessionName;
+
+      if (currentRole === 'dj' && currentAudioState.trackUrl && sessionId) {
+        try {
+          const audioService = getAudioService();
+          const audioServiceState = audioService.getState();
+          const currentPosition =
+            audioServiceState?.currentPosition ?? currentAudioState.currentPosition ?? 0;
+          const timestamp = Date.now();
+
+          // Enviar playback-state para sincronizar al nuevo listener
+          // El formato espera position en segundos (no milisegundos)
+          wsService.emit(SOCKET_EVENTS.PLAYBACK_STATE, {
+            room: sessionId,
+            userName: store.getState().auth.user?.name || 'DJ',
+            position: currentPosition, // En segundos
+            isPlaying: currentAudioState.isPlaying || false,
+            trackUrl: currentAudioState.trackUrl,
+            duration: currentAudioState.trackDuration || null, // En segundos
+            trackTitle: currentAudioState.trackTitle || null,
+            trackArtist: currentAudioState.trackArtist || null,
+            timestamp,
+          });
+        } catch (error) {
+          console.error('Error al enviar playback-state al nuevo listener:', error);
+        }
+      } else {
+        console.log({
+          currentRole,
+          currentAudioState,
+          session: store.getState(),
+        });
+      }
     };
     const handleConnectionUserLeft = (data: IRoomUser) => dispatch(removeConnectionUser(data));
 
@@ -312,6 +351,118 @@ export function useWebSocket() {
       console.warn('Usuario removido del grupo:', data.reason);
     };
 
+    const handlePlaybackEvent = (data: {
+      event: 'playback-play' | 'playback-pause';
+      groupId?: string;
+      trackId?: string;
+      position?: number;
+      isPlaying?: boolean;
+      trackUrl?: string;
+      trackTitle?: string;
+      trackArtist?: string;
+      duration?: number;
+    }) => {
+      // Este evento se maneja principalmente en webrtcSFUService
+      // pero también podemos manejarlo aquí para actualizar el estado
+      if (data.event === 'playback-play' || data.event === 'playback-pause') {
+        const currentState = store.getState().audio;
+        const audioStateToDispatch: AudioState = {
+          isPlaying: data.isPlaying ?? data.event === 'playback-play',
+          currentPosition:
+            data.position !== undefined ? data.position / 1000 : currentState.currentPosition || 0, // Convertir de ms a segundos
+          volume: currentState.volume ?? 100,
+          trackId: data.trackId || currentState.trackId || '',
+          trackUrl: data.trackUrl || currentState.trackUrl || '',
+          trackTitle: data.trackTitle || currentState.trackTitle,
+          trackArtist: data.trackArtist || currentState.trackArtist,
+          trackDuration: data.duration ? data.duration / 1000 : currentState.trackDuration, // Convertir de ms a segundos
+          timestamp: Date.now(),
+        };
+
+        dispatch(setAudioState(audioStateToDispatch));
+
+        // Si somos listeners, sincronizar el audio
+        const currentRole = store.getState().session.role;
+        if (currentRole === 'member' && audioStateToDispatch.trackUrl) {
+          try {
+            const audioService = getAudioService();
+            audioService.sync(
+              audioStateToDispatch.currentPosition,
+              audioStateToDispatch.timestamp,
+              audioStateToDispatch.isPlaying,
+              audioStateToDispatch.trackUrl
+            );
+          } catch (error) {
+            console.error('Error al sincronizar audio con playback-event:', error);
+          }
+        }
+      }
+    };
+
+    const handleDJReturn = async (data: { userId?: string; groupId?: string; state?: string }) => {
+      // Cuando el DJ regresa, necesitamos obtener el estado de reproducción actual
+      const currentUser = store.getState().auth.user;
+      const currentRole = store.getState().session.role;
+
+      // Solo procesar si somos el DJ que regresó
+      if (currentRole === 'dj' && currentUser && data.userId === currentUser.id && data.groupId) {
+        try {
+          // Primero validar si puede tomar control
+          const validationResult = await groupsApi.validateControl(data.groupId);
+
+          if (!validationResult.status) {
+            console.warn('DJ no puede tomar control:', validationResult.msg);
+            return;
+          }
+
+          // Obtener el estado del grupo
+          const groupState = await groupsApi.getGroupState(data.groupId);
+
+          // Si el estado es PLAYING_NO_HOST o CONTROL_AVAILABLE, obtener el estado de reproducción
+          if (
+            groupState.status &&
+            (groupState.state?.state === 'PLAYING_NO_HOST' ||
+              groupState.state?.state === 'CONTROL_AVAILABLE')
+          ) {
+            // Llamar al endpoint para obtener el estado de reproducción
+            const playbackState = await groupsApi.getGroupPlaybackState(data.groupId);
+
+            if (playbackState.status && playbackState.playbackState) {
+              const { playbackState: state } = playbackState;
+
+              // Sincronizar el estado local con el estado remoto
+              if (state.trackId && state.trackUrl) {
+                const audioState: AudioState = {
+                  isPlaying: state.isPlaying,
+                  currentPosition: state.position ? state.position / 1000 : 0, // Convertir de ms a segundos
+                  volume: store.getState().audio.volume ?? 100,
+                  trackId: state.trackId,
+                  trackUrl: state.trackUrl,
+                  trackTitle: state.trackTitle || undefined,
+                  trackArtist: state.trackArtist || undefined,
+                  trackDuration: state.duration ? state.duration / 1000 : undefined, // Convertir de ms a segundos
+                  timestamp: Date.now(),
+                };
+
+                dispatch(setAudioState(audioState));
+
+                // Inicializar y sincronizar el audio
+                const audioService = getAudioService();
+                audioService.sync(
+                  audioState.currentPosition,
+                  audioState.timestamp,
+                  audioState.isPlaying,
+                  audioState.trackUrl
+                );
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error al obtener estado de reproducción después de DJ_RETURN:', error);
+        }
+      }
+    };
+
     wsService.on(SOCKET_EVENTS.SESSION_CREATED, handleSessionCreated);
     wsService.on(SOCKET_EVENTS.SESSION_JOINED, handleSessionJoined);
     wsService.on(SOCKET_EVENTS.SESSION_ERROR, handleSessionError);
@@ -324,6 +475,8 @@ export function useWebSocket() {
     wsService.on(SOCKET_EVENTS.MEMBER_JOINED, handleMemberJoined);
     wsService.on(SOCKET_EVENTS.MEMBER_LEFT, handleMemberLeft);
     wsService.on(SOCKET_EVENTS.KICKED, handleKickedEvent);
+    wsService.on(SOCKET_EVENTS.PLAYBACK_EVENT, handlePlaybackEvent);
+    wsService.on(SOCKET_EVENTS.DJ_RETURN, handleDJReturn);
 
     if (wsService.isConnected()) {
       return () => {
@@ -340,6 +493,8 @@ export function useWebSocket() {
         wsService.off(SOCKET_EVENTS.MEMBER_JOINED, handleMemberJoined);
         wsService.off(SOCKET_EVENTS.MEMBER_LEFT, handleMemberLeft);
         wsService.off(SOCKET_EVENTS.KICKED, handleKickedEvent);
+        wsService.off(SOCKET_EVENTS.PLAYBACK_EVENT, handlePlaybackEvent);
+        wsService.off(SOCKET_EVENTS.DJ_RETURN, handleDJReturn);
       };
     }
 
@@ -355,6 +510,8 @@ export function useWebSocket() {
         wsService.off(SOCKET_EVENTS.MEMBER_JOINED, handleMemberJoined);
         wsService.off(SOCKET_EVENTS.MEMBER_LEFT, handleMemberLeft);
         wsService.off(SOCKET_EVENTS.KICKED, handleKickedEvent);
+        wsService.off(SOCKET_EVENTS.PLAYBACK_EVENT, handlePlaybackEvent);
+        wsService.off(SOCKET_EVENTS.DJ_RETURN, handleDJReturn);
       };
     }
 
@@ -390,6 +547,8 @@ export function useWebSocket() {
       wsService.off(SOCKET_EVENTS.MEMBER_JOINED, handleMemberJoined);
       wsService.off(SOCKET_EVENTS.MEMBER_LEFT, handleMemberLeft);
       wsService.off(SOCKET_EVENTS.KICKED, handleKickedEvent);
+      wsService.off(SOCKET_EVENTS.PLAYBACK_EVENT, handlePlaybackEvent);
+      wsService.off(SOCKET_EVENTS.DJ_RETURN, handleDJReturn);
     };
   }, [dispatch, role, isConnected]);
 

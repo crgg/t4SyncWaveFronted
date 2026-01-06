@@ -39,6 +39,10 @@ export const SOCKET_EVENTS = {
   PLAYLIST_SYNC: 'playlist:sync',
   ONLINE: 'pong',
   SERVER_PING: 'server-ping',
+  PLAYBACK_EVENT: 'playback-event',
+  REQUEST_PLAYBACK_STATE: 'request-playback-state',
+  PLAYBACK_STATE_RESPONSE: 'playback-state-response',
+  DJ_RETURN: 'DJ_RETURN',
 } as const;
 
 // Configuración de sincronización
