@@ -2,6 +2,7 @@ import axios, { AxiosResponse } from 'axios';
 
 import { API_BASE_URL, STORAGE_KEYS } from '@shared/constants';
 import { clearAuthStorageKeys } from '@/features/auth/helpers';
+import { paths } from '@/routes/paths';
 
 const sanitizeUrl = (url: string) => {
   return url.replace(/\/$/, '');
@@ -19,6 +20,8 @@ http.interceptors.request.use((config) => {
   return config;
 });
 
+const PATHS_TO_SKIP_AUTH = [paths.LOGIN, paths.VERIFY_CODE];
+
 http.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
@@ -26,8 +29,8 @@ http.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       clearAuthStorageKeys();
-      if (error.response?.config?.url !== '/auth/login') {
-        window.location.href = '/login';
+      if (!PATHS_TO_SKIP_AUTH.includes(error.response?.config?.url || '')) {
+        window.location.href = paths.AUTH;
       }
     }
     return Promise.reject(error);

@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MoveLeft } from 'lucide-react';
 
@@ -10,6 +10,7 @@ import { paths } from '@/routes/paths';
 
 const AuthLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isAuthPage = location.pathname === paths.AUTH;
 
@@ -19,13 +20,14 @@ const AuthLayout = () => {
         <div className="flex items-center justify-between gap-2">
           <div>
             {!isAuthPage && (
-              <Link
+              <button
                 className="inline-flex items-center gap-2 text-xs sm:text-sm font-extralight underline underline-offset-8 text-zinc-600 dark:text-zinc-400 hover:text-zinc-500 dark:hover:text-zinc-300"
-                to={paths.AUTH}
+                onClick={() => navigate(-1)}
+                type="button"
               >
                 <MoveLeft className="inline" size={16} />
-                Change method
-              </Link>
+                Go Back
+              </button>
             )}
           </div>
           <ThemeToggle />

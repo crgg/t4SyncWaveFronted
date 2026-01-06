@@ -21,7 +21,7 @@ const SidebarLayout = () => {
   const handleLogout = () => {
     onCloseSidebar();
     clearAuthStorageKeys();
-    navigate('/login');
+    navigate(paths.AUTH);
   };
 
   const menuItems = [
@@ -63,21 +63,21 @@ const SidebarLayout = () => {
                 {user?.avatar_url ? (
                   <img
                     src={user.avatar_url}
-                    alt={user.name}
+                    alt={user.name || ''}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <span className="text-primary dark:text-primary-light font-medium text-xs">
-                    {getInitials(user?.name)}
+                    {user?.name ? getInitials(user?.name) : '?'}
                   </span>
                 )}
               </div>
               <div className="min-w-0 flex-1 max-w-[230px] overflow-hidden">
                 <p className="font-bold text-xs text-ellipsis overflow-hidden whitespace-nowrap max-w-[230px] line-clamp-1 truncate pr-3">
-                  {user?.name}
+                  {user?.name || 'Unknown'}
                 </p>
                 <p className="text-xs text-zinc-400 text-ellipsis overflow-hidden whitespace-nowrap">
-                  {user?.email}
+                  {user?.email || user?.phone || 'Unknown'}
                 </p>
               </div>
             </div>

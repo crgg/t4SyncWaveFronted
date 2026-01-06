@@ -79,79 +79,90 @@ function RegisterPage() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-md"
-    >
-      <div className="">
-        {/* <div className="text-center mb-8">
-          <h1 className="text-sm font-bold text-light-text dark:text-dark-text mb-2">
-            Create your account
-          </h1>
-        </div> */}
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input
-            label="Name"
-            type="text"
-            placeholder="John Doe"
-            {...register('name')}
-            error={errors.name?.message}
-            maxLength={150}
-          />
-
-          <Input
-            label="Email"
-            type="email"
-            placeholder="tu@email.com"
-            {...register('email')}
-            error={errors.email?.message}
-            maxLength={100}
-          />
-
-          <Input
-            label="Password"
-            type="password"
-            placeholder="••••••••"
-            {...register('password')}
-            error={errors.password?.message}
-            maxLength={50}
-          />
-
-          <Input
-            label="Confirm Password"
-            type="password"
-            placeholder="••••••••"
-            {...register('confirmPassword')}
-            error={errors.confirmPassword?.message}
-            maxLength={50}
-          />
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
-              {error}
-            </div>
-          )}
-
-          <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
-            Register
-          </Button>
-        </form>
-
-        <div className="mt-16 text-center">
-          <p className="text-sm font-extralight">
-            Already have an account?{' '}
-            <Link
-              to={paths.LOGIN}
-              className="text-primary hover:text-primary-dark font-bold transition-colors underline underline-offset-8 ps-1"
-            >
-              Login
-            </Link>
-          </p>
-        </div>
+    <>
+      <div className="text-center mb-14">
+        <p className="text-light-text-secondary dark:text-dark-text-secondary font-extralight">
+          Create your account
+        </p>
       </div>
-    </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
+      >
+        <div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <Input
+              label="Name"
+              type="text"
+              placeholder="John Doe"
+              {...register('name')}
+              error={errors.name?.message}
+              maxLength={150}
+            />
+
+            <Input
+              label="Email"
+              type="email"
+              placeholder="tu@email.com"
+              {...register('email')}
+              error={errors.email?.message}
+              maxLength={100}
+            />
+
+            <Input
+              label="Password"
+              type="password"
+              placeholder="••••••••"
+              {...register('password')}
+              error={errors.password?.message}
+              maxLength={50}
+            />
+
+            <Input
+              label="Confirm Password"
+              type="password"
+              placeholder="••••••••"
+              {...register('confirmPassword')}
+              error={errors.confirmPassword?.message}
+              maxLength={50}
+            />
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
+                {error}
+              </div>
+            )}
+
+            <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
+              Register
+            </Button>
+          </form>
+          <div className="mt-16 text-center">
+            <p className="text-sm font-extralight">
+              Already have an account?{' '}
+              <Link
+                to={paths.LOGIN}
+                className="text-primary hover:text-primary-dark font-bold transition-colors underline underline-offset-8 ps-1"
+              >
+                Login
+              </Link>
+            </p>
+          </div>
+          <div className="mt-2 text-center">
+            <p className="text-xs sm:text-sm font-extralight">
+              Do you have a phone number?{' '}
+              <Link
+                to={paths.AUTH}
+                className="text-primary hover:text-primary-dark font-bold transition-colors underline ps-1"
+              >
+                Change method
+              </Link>
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </>
   );
 }
 

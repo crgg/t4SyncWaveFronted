@@ -9,6 +9,8 @@ import NotFoundPage from '@/pages/NotFoundPage';
 import AppLayout from '@/shared/layouts/App.layout';
 import AuthLayout from '@/shared/layouts/Auth.layout';
 import AuthPage from '@/pages/AuthPage';
+import PhoneNumberPage from '@/pages/PhoneNumberPage/PhoneNumberPage';
+import VerificationCodePage from '@/pages/VerificationCodePage/VerificationCodePage';
 import { paths } from './paths';
 
 const GroupsPage = lazy(() => import('@/pages/GroupsPage'));
@@ -63,11 +65,19 @@ const routes: RouteObject[] = [
         element: <AuthPage />,
       },
       {
-        path: paths.LOGIN,
+        path: 'phone-number',
+        element: <PhoneNumberPage />,
+      },
+      {
+        path: 'verify-code',
+        element: <VerificationCodePage />,
+      },
+      {
+        path: 'login',
         element: <LoginPage />,
       },
       {
-        path: paths.REGISTER,
+        path: 'register',
         element: <RegisterPage />,
       },
     ],

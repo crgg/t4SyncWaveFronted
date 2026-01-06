@@ -57,7 +57,7 @@ export function Header() {
                   />
                 ) : (
                   <span className="text-primary dark:text-primary-light font-medium">
-                    {getInitials(user?.name)}
+                    {user?.name ? getInitials(user?.name) : '?'}
                   </span>
                 )}
               </button>
@@ -71,7 +71,7 @@ export function Header() {
           isOpen={isAvatarPreviewOpen}
           onClose={() => setIsAvatarPreviewOpen(false)}
           imageUrl={user.avatar_url}
-          name={user.name}
+          name={user.name || 'Unknown'}
         />
       )}
     </>

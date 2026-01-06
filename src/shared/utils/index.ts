@@ -143,10 +143,8 @@ export function getInitials(name?: string): string {
   if (!name) return '';
 
   const [firstName] = name.trim().split(' ');
-
   return firstName[0].toUpperCase();
   // const [firstName, ...others] = name.trim().split(' ');
-
   // return `${firstName} ${others.map((n) => n[0].toUpperCase()).join('')}`;
 }
 
@@ -154,14 +152,17 @@ export function validationIsObject(value: unknown): boolean {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-export const getErrorMessage = (error: unknown): string => {
-  if (!error) return 'Failed to perform action. Please try again.';
+export const getErrorMessage = (
+  error: unknown,
+  defaultMessage: string = 'Failed to perform action. Please try again.'
+): string => {
+  if (!error) return defaultMessage;
   if (error instanceof AxiosError) {
     return (
       error.response?.data?.error ||
       error.response?.data?.message ||
       error.response?.data?.msg ||
-      'An unknown error occurred'
+      defaultMessage
     );
   } else if (error instanceof Error) {
     return error.message;

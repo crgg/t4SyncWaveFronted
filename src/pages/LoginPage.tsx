@@ -113,9 +113,20 @@ function LoginPage() {
               Don't have an account?{' '}
               <Link
                 to={paths.REGISTER}
-                className="text-primary hover:text-primary-dark font-bold transition-colors underline underline-offset-8 ps-1"
+                className="text-primary hover:text-primary-dark font-bold transition-colors underline ps-1"
               >
                 Register
+              </Link>
+            </p>
+          </div>
+          <div className="mt-2 text-center">
+            <p className="text-xs sm:text-sm font-extralight">
+              Do you have a phone number?{' '}
+              <Link
+                to={paths.AUTH}
+                className="text-primary hover:text-primary-dark font-bold transition-colors underline ps-1"
+              >
+                Change method
               </Link>
             </p>
           </div>

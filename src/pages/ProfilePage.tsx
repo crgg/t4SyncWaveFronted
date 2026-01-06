@@ -14,6 +14,7 @@ import { authActions } from '@/features/auth/authSlice';
 import { getErrorMessage, getInitials, validationIsObject } from '@/shared/utils';
 import { STORAGE_KEYS } from '@/shared/constants';
 import { withAuth } from '@/shared/hoc/withAuth';
+import { paths } from '@/routes/paths';
 
 const schema = yup.object({
   name: yup.string().required('Name is required').min(2, 'Name must be at least 2 characters'),
@@ -139,7 +140,7 @@ function ProfilePage() {
   const handleLogout = () => {
     localStorage.removeItem(STORAGE_KEYS.TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER);
-    navigate('/login');
+    navigate(paths.AUTH);
   };
 
   if (isLoading && !user) {
@@ -172,17 +173,15 @@ function ProfilePage() {
           </button>
         </div>
 
-        {/* Profile Information Card */}
         <div className="bg-light-card dark:bg-dark-card rounded-2xl p-4 sm:p-6 shadow-sm border border-light-hover/30 dark:border-dark-hover/30">
           <div className="flex items-start gap-4 sm:gap-6">
-            {/* Avatar with Camera Icon Overlay */}
             <div className="relative flex-shrink-0">
               <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full overflow-hidden bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
                 {avatarPreview ? (
                   <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
                   <div className="text-white text-2xl sm:text-3xl md:text-4xl font-bold">
-                    {getInitials(user?.name)}
+                    {user?.name ? getInitials(user?.name) : '?'}
                   </div>
                 )}
                 {isLoadingAvatar && (
@@ -191,7 +190,7 @@ function ProfilePage() {
                   </div>
                 )}
               </div>
-              {/* Camera Icon Overlay */}
+
               <button
                 onClick={handleAvatarClick}
                 disabled={isLoadingAvatar}

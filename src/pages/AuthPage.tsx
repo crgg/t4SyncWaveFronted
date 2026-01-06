@@ -2,6 +2,7 @@ import { Mail, Phone } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { Button } from '@/shared/components/Button/Button';
+import { withGuest } from '@/shared/hoc/withGuest';
 import { paths } from '@/routes/paths';
 
 const AuthPage = () => {
@@ -16,7 +17,11 @@ const AuthPage = () => {
       </div>
 
       <div className="space-y-2 mt-32">
-        <Button variant="primary" className="w-full gap-2 py-3">
+        <Button
+          variant="primary"
+          className="w-full gap-2 py-3"
+          onClick={() => navigate(paths.PHONE_NUMBER)}
+        >
           <Phone size={16} /> <span className="text-xs sm:text-sm">Continue with Phone</span>
         </Button>
         <Button
@@ -49,4 +54,4 @@ const AuthPage = () => {
   );
 };
 
-export default AuthPage;
+export default withGuest(AuthPage);
