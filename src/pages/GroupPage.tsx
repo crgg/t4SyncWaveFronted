@@ -12,7 +12,11 @@ import { Button } from '@shared/components/Button/Button';
 import { AddMemberModal } from '@/features/groups/components/AddMemberModal';
 import type { DialogType, Member } from '@/features/groups/groups.types';
 import { PlaylistHost } from '@/features/playlist/components/PlaylistHost';
-import { setCurrentTrackIndex, setPlaylistFromApi } from '@/features/playlist/playlistSlice';
+import {
+  playListSelectors,
+  setCurrentTrackIndex,
+  setPlaylistFromApi,
+} from '@/features/playlist/playlistSlice';
 import { AudioPlayerHost } from '@/features/audio/components/AudioPlayerHost';
 import { useWebSocket } from '@/shared/hooks/useWebSocket';
 import { createSessionStart, joinSessionStart, setRole } from '@/features/session/sessionSlice';
@@ -52,6 +56,7 @@ const GroupPage = () => {
 
   const isConnected = useAppSelector((state) => state.connection.isConnected);
   const audioState = useAppSelector((state) => state.audio);
+  const tracks = useAppSelector(playListSelectors.tracks);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['group', groupId],
@@ -578,14 +583,14 @@ const GroupPage = () => {
                 </h2>
               </div>
             )}
-            {isHostRef.current === true && groupId && <PlaylistHost groupId={groupId} />}
-            {isHostRef.current === false && <PlaylistListener />}
+            {isHostRef.current && groupId && <PlaylistHost groupId={groupId} />}
+            {!isHostRef.current && <PlaylistListener />}
           </motion.div>
         ) : (
           <>
-            {isHostRef.current === true && <AudioPlayerHost />}
-            {isHostRef.current === false && (
-              <AudioPlayerListener name={playlist?.[0]?.title} artist={playlist?.[0]?.artist} />
+            {isHostRef.current && <AudioPlayerHost />}
+            {!isHostRef.current && (
+              <AudioPlayerListener name={tracks?.[0]?.title} artist={tracks?.[0]?.artist} />
             )}
           </>
         )}
@@ -718,10 +723,7 @@ const GroupPage = () => {
         onClose={() => setIsDeleteMember(false)}
         queryKeys={[['group', groupId!]]}
         isOpen={isDeleteMember}
-        payload={{
-          // groupId: groupId!,
-          id: selectedMember?.id || '',
-        }}
+        payload={{ id: selectedMember?.id ?? '' }}
         modelName="member"
         onSuccess={() => {
           toast.success('Member deleted successfully');

@@ -1,3 +1,4 @@
+import { RootState } from '@/app/store';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { Track } from '@shared/types';
 
@@ -121,13 +122,11 @@ const playlistSlice = createSlice({
       }
     },
     setPlaylistFromApi: (state, action: PayloadAction<{ tracks: Track[] }>) => {
-      // Sincronizar playlist desde la API
-      // La API devuelve tracks sin addedAt, así que lo agregamos si falta
       state.tracks = action.payload.tracks.map((track) => ({
         ...track,
         addedAt: track.addedAt || Date.now(),
       }));
-      // Si hay un track actual, mantener el índice si existe en la nueva lista
+
       if (state.currentTrackIndex !== null) {
         const currentTrackId = state.tracks[state.currentTrackIndex]?.id;
         if (currentTrackId) {
@@ -154,5 +153,10 @@ export const {
   syncPlaylist,
   setPlaylistFromApi,
 } = playlistSlice.actions;
+
+export const playListSelectors = {
+  tracks: (state: RootState) => state.playlist.tracks,
+  currentTrackIndex: (state: RootState) => state.playlist.currentTrackIndex,
+};
 
 export default playlistSlice.reducer;
