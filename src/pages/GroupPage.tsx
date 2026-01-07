@@ -72,7 +72,7 @@ const GroupPage = () => {
   const { data: groupPlaybackStateData } = useQuery({
     queryKey: ['group-playback-state', groupId],
     queryFn: () => groupsApi.getGroupPlaybackState(groupId!),
-    enabled: false,
+    enabled: !!data,
     staleTime: 1000 * 50,
     gcTime: 1000 * 60 * 2,
     retry: false,
@@ -81,37 +81,80 @@ const GroupPage = () => {
   const group = data?.status && data?.group ? data.group : null;
   const members = group?.members || [];
   const isOwner = group?.created_by === user?.id;
+  // console.log('out', groupPlaybackStateData);
 
   useEffect(() => {
+    console.log({
+      groupPlaybackStateData,
+      groupId,
+    });
     if (!groupPlaybackStateData?.playbackState || !groupId) return;
-    if (isOwner) return;
+    // if (isOwner) return;
 
     const { playbackState: state } = groupPlaybackStateData;
     const currentRole = store.getState().session.role;
 
-    if (
-      currentRole === 'member' &&
-      state.trackId &&
-      state.trackUrl &&
-      listenerAudioInitializedRef.current !== groupId
-    ) {
+    const match =
+      currentRole === 'dj' && state.trackUrl && listenerAudioInitializedRef.current !== groupId;
+
+    console.log({
+      match,
+      currentRole,
+      state,
+      listenerAudioInitializedRef: listenerAudioInitializedRef.current,
+    });
+
+    if (match) {
       try {
         listenerAudioInitializedRef.current = groupId;
 
+        // Generar un trackId si no está presente (usar URL como fallback)
+        const trackId = state.trackId || state.trackUrl || '';
+
         dispatch(
           setTrack({
-            trackId: state.trackId,
-            trackUrl: state.trackUrl,
+            trackId,
+            trackUrl: state.trackUrl!,
             trackTitle: state.trackTitle || undefined,
             trackArtist: state.trackArtist || undefined,
           })
         );
 
         const audioService = getAudioService();
-        const currentPosition = state.position ? state.position / 1000 : 0;
-        const currentTimestamp = state.lastEventTime || Date.now();
 
-        audioService.init(state.trackUrl, (audioState) => {
+        // Convertir posición de milisegundos a segundos y validar
+        let currentPosition = 0;
+        if (state.position !== null && state.position !== undefined) {
+          const positionInSeconds = state.position / 1000;
+          // Validar que la posición esté en un rango razonable
+          if (state.duration && state.duration > 0) {
+            // Asegurar que la posición no exceda la duración
+            currentPosition = Math.max(0, Math.min(positionInSeconds, state.duration));
+          } else {
+            currentPosition = Math.max(0, positionInSeconds);
+          }
+        }
+
+        // Validar timestamp - si es muy grande o inválido, usar el actual
+        let currentTimestamp = Date.now();
+        if (state.lastEventTime && state.lastEventTime > 0) {
+          // Verificar que el timestamp sea razonable (no más de 1 año en el futuro o pasado)
+          const now = Date.now();
+          const oneYearInMs = 365 * 24 * 60 * 60 * 1000;
+          const timestampDiff = Math.abs(state.lastEventTime - now);
+
+          if (timestampDiff < oneYearInMs) {
+            currentTimestamp = state.lastEventTime;
+          } else {
+            console.warn('Timestamp inválido detectado, usando timestamp actual:', {
+              lastEventTime: state.lastEventTime,
+              now,
+              diff: timestampDiff,
+            });
+          }
+        }
+
+        audioService.init(state.trackUrl!, (audioState) => {
           dispatch(setAudioState(audioState));
         });
 
@@ -123,7 +166,7 @@ const GroupPage = () => {
         listenerAudioInitializedRef.current = null;
       }
     }
-  }, [groupPlaybackStateData, groupId, isOwner, dispatch]);
+  }, [groupPlaybackStateData, groupId, dispatch]);
 
   const handleLeaveGroup = () => {
     // dispatch(leaveSessionSlice());
@@ -217,13 +260,16 @@ const GroupPage = () => {
                 const { playbackState: state } = playbackState;
 
                 // Si hay un track reproduciéndose, inicializar el audio
-                if (state.trackId && state.trackUrl) {
+                if (state.trackUrl) {
                   // Marcar como inicializado
                   listenerAudioInitializedRef.current = sessionName;
 
+                  // Generar un trackId si no está presente (usar URL como fallback)
+                  const trackId = state.trackId || state.trackUrl || '';
+
                   dispatch(
                     setTrack({
-                      trackId: state.trackId,
+                      trackId,
                       trackUrl: state.trackUrl,
                       trackTitle: state.trackTitle || undefined,
                       trackArtist: state.trackArtist || undefined,
@@ -232,7 +278,38 @@ const GroupPage = () => {
 
                   // Sincronizar el audio con el estado actual
                   const audioService = getAudioService();
-                  const currentPosition = state.position ? state.position / 1000 : 0; // Convertir de ms a segundos
+
+                  // Convertir posición de milisegundos a segundos y validar
+                  let currentPosition = 0;
+                  if (state.position !== null && state.position !== undefined) {
+                    const positionInSeconds = state.position / 1000;
+                    // Validar que la posición esté en un rango razonable
+                    if (state.duration && state.duration > 0) {
+                      // Asegurar que la posición no exceda la duración
+                      currentPosition = Math.max(0, Math.min(positionInSeconds, state.duration));
+                    } else {
+                      currentPosition = Math.max(0, positionInSeconds);
+                    }
+                  }
+
+                  // Validar timestamp - si es muy grande o inválido, usar el actual
+                  let currentTimestamp = Date.now();
+                  if (state.lastEventTime && state.lastEventTime > 0) {
+                    // Verificar que el timestamp sea razonable (no más de 1 año en el futuro o pasado)
+                    const now = Date.now();
+                    const oneYearInMs = 365 * 24 * 60 * 60 * 1000;
+                    const timestampDiff = Math.abs(state.lastEventTime - now);
+
+                    if (timestampDiff < oneYearInMs) {
+                      currentTimestamp = state.lastEventTime;
+                    } else {
+                      console.warn('Timestamp inválido detectado, usando timestamp actual:', {
+                        lastEventTime: state.lastEventTime,
+                        now,
+                        diff: timestampDiff,
+                      });
+                    }
+                  }
 
                   // Inicializar el audio con el track y sincronizar posición
                   audioService.init(state.trackUrl, (audioState) => {
@@ -243,7 +320,7 @@ const GroupPage = () => {
                   setTimeout(() => {
                     audioService.sync(
                       currentPosition,
-                      state.lastEventTime,
+                      currentTimestamp,
                       state.isPlaying,
                       state.trackUrl
                     );
@@ -300,10 +377,13 @@ const GroupPage = () => {
                 const { playbackState: state } = playbackState;
 
                 // Sincronizar el estado local con el estado remoto
-                if (state.trackId && state.trackUrl) {
+                if (state.trackUrl) {
+                  // Generar un trackId si no está presente (usar URL como fallback)
+                  const trackId = state.trackId || state.trackUrl || '';
+
                   dispatch(
                     setTrack({
-                      trackId: state.trackId,
+                      trackId,
                       trackUrl: state.trackUrl,
                       trackTitle: state.trackTitle || undefined,
                       trackArtist: state.trackArtist || undefined,
@@ -311,11 +391,44 @@ const GroupPage = () => {
                   );
 
                   // Si está reproduciendo, sincronizar posición
-                  if (state.position !== null && state.position > 0) {
+                  if (state.position !== null && state.position !== undefined) {
                     const audioService = getAudioService();
+
+                    // Convertir posición de milisegundos a segundos y validar
+                    let currentPosition = 0;
+                    if (state.position > 0) {
+                      const positionInSeconds = state.position / 1000;
+                      // Validar que la posición esté en un rango razonable
+                      if (state.duration && state.duration > 0) {
+                        // Asegurar que la posición no exceda la duración
+                        currentPosition = Math.max(0, Math.min(positionInSeconds, state.duration));
+                      } else {
+                        currentPosition = Math.max(0, positionInSeconds);
+                      }
+                    }
+
+                    // Validar timestamp - si es muy grande o inválido, usar el actual
+                    let currentTimestamp = Date.now();
+                    if (state.lastEventTime && state.lastEventTime > 0) {
+                      // Verificar que el timestamp sea razonable (no más de 1 año en el futuro o pasado)
+                      const now = Date.now();
+                      const oneYearInMs = 365 * 24 * 60 * 60 * 1000;
+                      const timestampDiff = Math.abs(state.lastEventTime - now);
+
+                      if (timestampDiff < oneYearInMs) {
+                        currentTimestamp = state.lastEventTime;
+                      } else {
+                        console.warn('Timestamp inválido detectado, usando timestamp actual:', {
+                          lastEventTime: state.lastEventTime,
+                          now,
+                          diff: timestampDiff,
+                        });
+                      }
+                    }
+
                     audioService.sync(
-                      state.position / 1000, // Convertir de ms a segundos
-                      state.lastEventTime,
+                      currentPosition,
+                      currentTimestamp,
                       state.isPlaying,
                       state.trackUrl
                     );
