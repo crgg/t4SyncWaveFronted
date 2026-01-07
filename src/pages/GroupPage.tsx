@@ -33,7 +33,6 @@ import { cn, orderBy } from '@/shared/utils';
 import { AvatarPreview } from '@/shared/components/AvatarPreview/AvatarPreview';
 import { withAuth } from '@/shared/hoc/withAuth';
 import AlertDialog from '@/shared/components/AlertDialog/AlertDialog';
-// import { leaveSession as leaveSessionSlice } from '@features/session/sessionSlice';
 
 const GroupPage = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -64,7 +63,7 @@ const GroupPage = () => {
     queryKey: ['group', groupId],
     queryFn: () => groupsApi.getGroupById(groupId!),
     enabled: !!groupId,
-    staleTime: 1000 * 10,
+    staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 5,
     retry: false,
   });
@@ -72,22 +71,17 @@ const GroupPage = () => {
   const { data: groupPlaybackStateData } = useQuery({
     queryKey: ['group-playback-state', groupId],
     queryFn: () => groupsApi.getGroupPlaybackState(groupId!),
-    enabled: !!data,
-    staleTime: 1000 * 50,
-    gcTime: 1000 * 60 * 2,
+    enabled: !!groupId,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 5,
     retry: false,
   });
 
   const group = data?.status && data?.group ? data.group : null;
   const members = group?.members || [];
   const isOwner = group?.created_by === user?.id;
-  // console.log('out', groupPlaybackStateData);
 
   useEffect(() => {
-    console.log({
-      groupPlaybackStateData,
-      groupId,
-    });
     if (!groupPlaybackStateData?.playbackState || !groupId) return;
     // if (isOwner) return;
 
@@ -96,13 +90,6 @@ const GroupPage = () => {
 
     const match =
       currentRole === 'dj' && state.trackUrl && listenerAudioInitializedRef.current !== groupId;
-
-    console.log({
-      match,
-      currentRole,
-      state,
-      listenerAudioInitializedRef: listenerAudioInitializedRef.current,
-    });
 
     if (match) {
       try {
@@ -246,92 +233,6 @@ const GroupPage = () => {
           dispatch(joinSessionStart({ sessionId: sessionName }));
           joinSession(sessionName);
           isHostRef.current = false;
-
-          // Obtener el estado de reproducción cuando el listener se une al grupo
-          setTimeout(async () => {
-            try {
-              if (listenerAudioInitializedRef.current === sessionName) {
-                return;
-              }
-
-              const playbackState = await groupsApi.getGroupPlaybackState(sessionName);
-
-              if (playbackState.status && playbackState.playbackState) {
-                const { playbackState: state } = playbackState;
-
-                // Si hay un track reproduciéndose, inicializar el audio
-                if (state.trackUrl) {
-                  // Marcar como inicializado
-                  listenerAudioInitializedRef.current = sessionName;
-
-                  // Generar un trackId si no está presente (usar URL como fallback)
-                  const trackId = state.trackId || state.trackUrl || '';
-
-                  dispatch(
-                    setTrack({
-                      trackId,
-                      trackUrl: state.trackUrl,
-                      trackTitle: state.trackTitle || undefined,
-                      trackArtist: state.trackArtist || undefined,
-                    })
-                  );
-
-                  // Sincronizar el audio con el estado actual
-                  const audioService = getAudioService();
-
-                  // Convertir posición de milisegundos a segundos y validar
-                  let currentPosition = 0;
-                  if (state.position !== null && state.position !== undefined) {
-                    const positionInSeconds = state.position / 1000;
-                    // Validar que la posición esté en un rango razonable
-                    if (state.duration && state.duration > 0) {
-                      // Asegurar que la posición no exceda la duración
-                      currentPosition = Math.max(0, Math.min(positionInSeconds, state.duration));
-                    } else {
-                      currentPosition = Math.max(0, positionInSeconds);
-                    }
-                  }
-
-                  // Validar timestamp - si es muy grande o inválido, usar el actual
-                  let currentTimestamp = Date.now();
-                  if (state.lastEventTime && state.lastEventTime > 0) {
-                    // Verificar que el timestamp sea razonable (no más de 1 año en el futuro o pasado)
-                    const now = Date.now();
-                    const oneYearInMs = 365 * 24 * 60 * 60 * 1000;
-                    const timestampDiff = Math.abs(state.lastEventTime - now);
-
-                    if (timestampDiff < oneYearInMs) {
-                      currentTimestamp = state.lastEventTime;
-                    } else {
-                      console.warn('Timestamp inválido detectado, usando timestamp actual:', {
-                        lastEventTime: state.lastEventTime,
-                        now,
-                        diff: timestampDiff,
-                      });
-                    }
-                  }
-
-                  // Inicializar el audio con el track y sincronizar posición
-                  audioService.init(state.trackUrl, (audioState) => {
-                    dispatch(setAudioState(audioState));
-                  });
-
-                  // Esperar un momento para que el audio se inicialice y luego sincronizar
-                  setTimeout(() => {
-                    audioService.sync(
-                      currentPosition,
-                      currentTimestamp,
-                      state.isPlaying,
-                      state.trackUrl
-                    );
-                  }, 500);
-                }
-              }
-            } catch (error) {
-              console.error('Error al obtener estado de reproducción para listener:', error);
-              listenerAudioInitializedRef.current = null;
-            }
-          }, 1500);
         }
         return;
       }
@@ -340,107 +241,6 @@ const GroupPage = () => {
       dispatch(createSessionStart({ name: sessionName }));
       createSession(sessionName, user);
       isHostRef.current = true;
-
-      // Llamar a dj-connect cuando el DJ se une al grupo
-      // Esperar un momento para asegurar que el WebSocket esté conectado
-      setTimeout(async () => {
-        try {
-          // Obtener el estado real del audio del store
-          const currentAudioState = store.getState().audio;
-
-          // Primero validar si puede tomar control
-          const validationResult = await groupsApi.validateControl(sessionName);
-
-          if (validationResult.status) {
-            // Llamar a dj-connect con el estado real del audio
-            await groupsApi.djToggleConnect(
-              {
-                groupId: sessionName,
-                hasTrack: !!currentAudioState.trackUrl,
-                isPlaying: currentAudioState.isPlaying || false,
-              },
-              'connect'
-            );
-
-            // Si hay un estado de reproducción disponible, obtenerlo para sincronizar
-            if (
-              validationResult.state?.state === 'PLAYING_NO_HOST' ||
-              validationResult.state?.state === 'CONTROL_AVAILABLE'
-            ) {
-              const playbackState = await groupsApi.getGroupPlaybackState(sessionName);
-
-              if (
-                playbackState.status &&
-                playbackState.playbackState &&
-                playbackState.playbackState.isPlaying
-              ) {
-                const { playbackState: state } = playbackState;
-
-                // Sincronizar el estado local con el estado remoto
-                if (state.trackUrl) {
-                  // Generar un trackId si no está presente (usar URL como fallback)
-                  const trackId = state.trackId || state.trackUrl || '';
-
-                  dispatch(
-                    setTrack({
-                      trackId,
-                      trackUrl: state.trackUrl,
-                      trackTitle: state.trackTitle || undefined,
-                      trackArtist: state.trackArtist || undefined,
-                    })
-                  );
-
-                  // Si está reproduciendo, sincronizar posición
-                  if (state.position !== null && state.position !== undefined) {
-                    const audioService = getAudioService();
-
-                    // Convertir posición de milisegundos a segundos y validar
-                    let currentPosition = 0;
-                    if (state.position > 0) {
-                      const positionInSeconds = state.position / 1000;
-                      // Validar que la posición esté en un rango razonable
-                      if (state.duration && state.duration > 0) {
-                        // Asegurar que la posición no exceda la duración
-                        currentPosition = Math.max(0, Math.min(positionInSeconds, state.duration));
-                      } else {
-                        currentPosition = Math.max(0, positionInSeconds);
-                      }
-                    }
-
-                    // Validar timestamp - si es muy grande o inválido, usar el actual
-                    let currentTimestamp = Date.now();
-                    if (state.lastEventTime && state.lastEventTime > 0) {
-                      // Verificar que el timestamp sea razonable (no más de 1 año en el futuro o pasado)
-                      const now = Date.now();
-                      const oneYearInMs = 365 * 24 * 60 * 60 * 1000;
-                      const timestampDiff = Math.abs(state.lastEventTime - now);
-
-                      if (timestampDiff < oneYearInMs) {
-                        currentTimestamp = state.lastEventTime;
-                      } else {
-                        console.warn('Timestamp inválido detectado, usando timestamp actual:', {
-                          lastEventTime: state.lastEventTime,
-                          now,
-                          diff: timestampDiff,
-                        });
-                      }
-                    }
-
-                    audioService.sync(
-                      currentPosition,
-                      currentTimestamp,
-                      state.isPlaying,
-                      state.trackUrl
-                    );
-                  }
-                }
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Error al conectar DJ:', error);
-        }
-      }, 1000);
     };
 
     if (isConnected) {

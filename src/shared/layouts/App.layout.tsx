@@ -6,7 +6,7 @@ import SidebarLayout from './Sidebar.layout';
 import { MobileGroupsTabs } from '../components/MobileGroupsTabs/MobileGroupsTabs';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { layoutActions, LayoutState } from '@/app/slices/layoutSlice';
-import { useWebSocket } from '../hooks/useWebSocket';
+// import { useWebSocket } from '../hooks/useWebSocket';
 import { paths } from '@/routes/paths';
 import { profileService } from '@/services/profile';
 import { authActions } from '@/features/auth/authSlice';
@@ -18,7 +18,7 @@ const AppLayout = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  useWebSocket();
+  // useWebSocket();
 
   useEffect(() => {
     const loadProfile = async () => {

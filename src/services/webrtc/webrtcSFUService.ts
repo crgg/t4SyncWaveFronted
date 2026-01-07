@@ -447,8 +447,6 @@ class WebRTCSFUService {
 
     this.peerConnection.onconnectionstatechange = () => {
       const state = this.peerConnection?.connectionState;
-      console.log('PeerConnection state changed:', state);
-
       if (state === 'connected') {
         this.reconnectAttempts = 0;
         this.handleEvent(SOCKET_EVENTS.CONNECTION_STATUS, { connected: true });
@@ -650,9 +648,9 @@ class WebRTCSFUService {
     } catch (error) {
       console.error('Error al abandonar sesión:', error);
     } finally {
-      // this.disconnect();
-      // this.sessionId = null;
-      // this.role = null;
+      this.disconnect();
+      this.sessionId = null;
+      this.role = null;
     }
   }
 

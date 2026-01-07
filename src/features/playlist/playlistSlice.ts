@@ -156,6 +156,7 @@ export const {
 
 export const playListSelectors = {
   tracks: (state: RootState) => state.playlist.tracks,
+  countTracks: (state: RootState) => state.playlist.tracks.length,
   currentTrackIndex: (state: RootState) => state.playlist.currentTrackIndex,
 };
 

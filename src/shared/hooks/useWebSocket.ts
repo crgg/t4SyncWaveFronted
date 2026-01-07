@@ -1,6 +1,8 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@app/hooks';
 import { useQueryClient } from '@tanstack/react-query';
+import { useParams } from 'react-router-dom';
+
 import { connecting, connected, disconnected } from '@features/connection/connectionSlice';
 import {
   createSessionSuccess,
@@ -13,7 +15,7 @@ import {
   handleKicked,
 } from '@features/session/sessionSlice';
 import { setAudioState, reset as resetAudio } from '@features/audio/audioSlice';
-import { syncPlaylist } from '@features/playlist/playlistSlice';
+import { playListSelectors, syncPlaylist } from '@features/playlist/playlistSlice';
 import {
   getWebSocketService,
   initializeWebSocketService,
@@ -31,8 +33,10 @@ export function useWebSocket() {
   const queryClient = useQueryClient();
   const { isConnected, latency } = useAppSelector((state) => state.connection);
   const { sessionId, role } = useAppSelector((state) => state.session);
+  const countTracks = useAppSelector(playListSelectors.countTracks);
   const user = useAppSelector((state) => state.auth?.user);
   const socketServiceRef = useRef<ReturnType<typeof getWebSocketService> | null>(null);
+  const { groupId } = useParams();
 
   const audioStateRef = useRef(store.getState().audio);
   const connectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -91,6 +95,12 @@ export function useWebSocket() {
 
     const handleAudioState = (data: AudioState) => {
       if (!data) return;
+
+      // TODO
+      if (countTracks === 0) {
+        queryClient.invalidateQueries({ queryKey: ['group', groupId] });
+      }
+
       const newTrackUrl = data.trackUrl || data.truckUrl || '';
       updateAudioStateRef();
       const currentAudioState = audioStateRef.current;
@@ -535,7 +545,7 @@ export function useWebSocket() {
       wsService.off(SOCKET_EVENTS.PLAYBACK_EVENT, handlePlaybackEvent);
       wsService.off(SOCKET_EVENTS.DJ_RETURN, handleDJStatusChange);
     };
-  }, [dispatch, role, isConnected]);
+  }, [dispatch, role, isConnected, countTracks, groupId]);
 
   const createSession = useCallback(
     async (roomName: string, user: IUserData) => {
