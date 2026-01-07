@@ -16,3 +16,10 @@ export interface VerifyCodeResponse extends ResponseBase {
   user: IUserData;
   token: string;
 }
+
+export interface Country {
+  code: string;
+  dialCode: string;
+  name: string;
+  flag: string;
+}

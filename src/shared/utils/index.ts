@@ -188,3 +188,7 @@ export const unixTimestampToSeconds = (unixTimestamp: number | null): number => 
   const diff = date.getTime() - unixTimestamp;
   return diff / 1000;
 };
+
+export const formatPhoneNumber = (phone: string): string => {
+  return phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+};

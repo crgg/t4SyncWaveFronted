@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Link, useNavigate } from 'react-router-dom';
@@ -12,25 +12,51 @@ import { Button } from '@shared/components/Button/Button';
 import { CountryCodeSelector } from '@shared/components/CountryCodeSelector/CountryCodeSelector';
 import { authService } from '@/services/auth';
 import { getErrorMessage } from '@/shared/utils';
+import { Country } from '@/shared/types/auth.types';
+import { countries } from '@/shared/components/CountryCodeSelector/countryCodeSelectorState';
+
+const formatPhoneNumber = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+  const limitedDigits = digits.slice(0, 10);
+  if (limitedDigits.length <= 3) {
+    return limitedDigits;
+  } else if (limitedDigits.length <= 6) {
+    return `${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3)}`;
+  } else {
+    return `${limitedDigits.slice(0, 3)}-${limitedDigits.slice(3, 6)}-${limitedDigits.slice(6)}`;
+  }
+};
+
+const removePhoneFormat = (value: string): string => {
+  return value.replace(/\D/g, '');
+};
 
 const schema = yup.object({
   phoneNumber: yup
     .string()
     .required('Phone number is required')
-    .matches(/^[0-9\s\-()]+$/, 'Please enter a valid phone number')
-    .min(7, 'Phone number must be at least 7 digits'),
+    .test('phone-format', 'Please enter a valid phone number (e.g., 555-123-4567)', (value) => {
+      if (!value) return false;
+      const digits = removePhoneFormat(value);
+      return digits.length === 10;
+    }),
 });
 
 type PhoneFormData = yup.InferType<typeof schema>;
 
 const PhoneNumberPage = () => {
   const navigate = useNavigate();
-  const [countryCode, setCountryCode] = useState('+1');
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]);
+
+  const handleCountryCodeChange = (selectedCountry: Country) => {
+    setSelectedCountry(selectedCountry);
+  };
 
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<PhoneFormData>({
@@ -42,7 +68,8 @@ const PhoneNumberPage = () => {
     setError(null);
 
     try {
-      const phone = countryCode + data.phoneNumber.trim();
+      const phoneDigits = removePhoneFormat(data.phoneNumber);
+      const phone = selectedCountry.dialCode + phoneDigits;
       const response = await authService.getCode({ phone });
       if (response.status) {
         navigate(`${paths.VERIFY_CODE}?phone=${encodeURIComponent(phone)}`);
@@ -60,47 +87,58 @@ const PhoneNumberPage = () => {
   return (
     <>
       <div className="w-full max-w-md mx-auto">
-        {/* Título y subtítulo */}
         <div className="text-center mb-8">
           <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary font-light">
             We'll send you a verification code
           </p>
         </div>
 
-        {/* Formulario */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="w-full"
         >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Campos de código de país y número */}
             <div className="flex gap-3 items-start">
-              <CountryCodeSelector value={countryCode} onChange={setCountryCode} />
+              <CountryCodeSelector
+                value={selectedCountry.code}
+                onChange={handleCountryCodeChange}
+              />
               <div className="flex-1">
-                <Input
-                  type="tel"
-                  placeholder="Phone number"
-                  {...register('phoneNumber')}
-                  error={errors.phoneNumber?.message}
-                  className="w-full rounded-xl"
+                <Controller
+                  name="phoneNumber"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      type="tel"
+                      placeholder="555-123-4567"
+                      value={field.value || ''}
+                      onChange={(e) => {
+                        const formatted = formatPhoneNumber(e.target.value);
+                        field.onChange(formatted);
+                      }}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                      maxLength={12}
+                      error={errors.phoneNumber?.message}
+                      className="w-full rounded-xl"
+                    />
+                  )}
                 />
               </div>
             </div>
 
-            {/* Texto de ejemplo */}
             <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
-              Example: {countryCode} 555-123-4567
+              Example: {selectedCountry.dialCode} 555-123-4567
             </p>
 
-            {/* Error */}
             {error && (
               <div className="p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">
                 {error}
               </div>
             )}
 
-            {/* Botón de envío */}
             <Button
               type="submit"
               variant="primary"
@@ -112,12 +150,11 @@ const PhoneNumberPage = () => {
           </form>
         </motion.div>
 
-        {/* Link para cambiar método */}
         <div className="mt-8 text-center">
-          <p className="text-xs sm:text-sm font-extralight text-light-text-secondary dark:text-dark-text-secondary">
+          <p className="text-xs sm:text-sm font-extralight text-zinc-500 dark:text-zinc-400">
             Do you have an email?{' '}
             <Link
-              to={paths.LOGIN}
+              to={paths.AUTH}
               className="text-primary hover:text-primary-dark font-bold transition-colors underline underline-offset-2"
             >
               Change method

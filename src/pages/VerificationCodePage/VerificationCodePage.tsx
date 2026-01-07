@@ -35,6 +35,12 @@ const VerificationCodePage = () => {
   const [resendingCode, setResendingCode] = useState(false);
   const dispatch = useAppDispatch();
 
+  useEffect(() => {
+    if (!phoneNumber) {
+      navigate(paths.PHONE_NUMBER);
+    }
+  }, [phoneNumber, navigate]);
+
   const {
     register,
     handleSubmit,
@@ -47,15 +53,12 @@ const VerificationCodePage = () => {
 
   const codeValue = watch('code') || '';
 
-  // Manejar entrada de código en campos individuales
   useEffect(() => {
     if (codeValue.length === 6) {
-      // Auto-enviar cuando se completa el código
       handleSubmit(onSubmit)();
     }
   }, [codeValue]);
 
-  // Contador para reenvío
   useEffect(() => {
     if (resendCooldown > 0) {
       const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
@@ -71,7 +74,6 @@ const VerificationCodePage = () => {
     const newCode = currentCode.join('').slice(0, 6);
     setValue('code', newCode);
 
-    // Mover al siguiente campo
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -143,7 +145,6 @@ const VerificationCodePage = () => {
   return (
     <>
       <div className="w-full max-w-md mx-auto">
-        {/* Título y subtítulo */}
         <div className="text-center mb-8 mt-16">
           <h1 className="text-2xl font-bold text-light-text dark:text-dark-text mb-2">
             Enter verification code
@@ -154,17 +155,14 @@ const VerificationCodePage = () => {
           </p>
         </div>
 
-        {/* Formulario */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="w-full"
         >
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Input oculto para validación */}
             <input type="hidden" {...register('code')} />
 
-            {/* Campos de código */}
             <div className="flex gap-2 justify-center">
               {[0, 1, 2, 3, 4, 5].map((index) => (
                 <input
@@ -193,14 +191,12 @@ const VerificationCodePage = () => {
               ))}
             </div>
 
-            {/* Error */}
             {error && (
               <div className="p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm text-center">
                 {error}
               </div>
             )}
 
-            {/* Botón de verificación */}
             <Button
               type="submit"
               variant="primary"
@@ -212,7 +208,6 @@ const VerificationCodePage = () => {
             </Button>
           </form>
 
-          {/* Reenviar código */}
           <div className="mt-6 text-center">
             <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
               Didn't receive the code?{' '}
@@ -232,7 +227,6 @@ const VerificationCodePage = () => {
           </div>
         </motion.div>
 
-        {/* Link para cambiar número */}
         <div className="mt-8 text-center">
           <Link
             to={paths.PHONE_NUMBER}

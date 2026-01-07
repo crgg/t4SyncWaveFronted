@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { motion } from 'framer-motion';
-import { Camera, Loader2, Edit2, Mail, ArrowLeftCircle, Lock } from 'lucide-react';
+import { Camera, Loader2, Edit2, Mail, ArrowLeftCircle, Lock, Phone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -12,10 +12,16 @@ import { Input } from '@shared/components/Input/Input';
 import { Button } from '@shared/components/Button/Button';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { authActions } from '@/features/auth/authSlice';
-import { getErrorMessage, getInitials, validationIsObject } from '@/shared/utils';
+import {
+  formatPhoneNumber,
+  getErrorMessage,
+  getInitials,
+  validationIsObject,
+} from '@/shared/utils';
 import { STORAGE_KEYS } from '@/shared/constants';
 import { withAuth } from '@/shared/hoc/withAuth';
 import { paths } from '@/routes/paths';
+import { toast } from 'react-toastify';
 
 const schema = yup.object({
   name: yup
@@ -45,6 +51,12 @@ const changePasswordSchema = yup.object({
 
 type ChangePasswordFormData = yup.InferType<typeof changePasswordSchema>;
 
+const changeEmailSchema = yup.object({
+  email: yup.string().required('Email is required').email('Please enter a valid email address'),
+});
+
+type ChangeEmailFormData = yup.InferType<typeof changeEmailSchema>;
+
 function ProfilePage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -56,7 +68,9 @@ function ProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isChangePasswordMode, setIsChangePasswordMode] = useState(false);
+  const [isChangeEmailMode, setIsChangeEmailMode] = useState(false);
   const [isLoadingPassword, setIsLoadingPassword] = useState(false);
+  const [isLoadingEmail, setIsLoadingEmail] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -98,17 +112,32 @@ function ProfilePage() {
     },
   });
 
+  const {
+    register: registerEmail,
+    handleSubmit: handleSubmitEmail,
+    formState: { errors: emailErrors },
+    reset: resetEmail,
+  } = useForm<ChangeEmailFormData>({
+    resolver: yupResolver(changeEmailSchema),
+    defaultValues: {
+      email: user?.email || '',
+    },
+  });
+
   useEffect(() => {
     if (user) {
       reset({
         name: user.name || '',
         nickname: user.nickname || '',
       });
+      resetEmail({
+        email: user.email || '',
+      });
       if (user.avatar_url) {
         setAvatarPreview(user.avatar_url);
       }
     }
-  }, [user, reset]);
+  }, [user, reset, resetEmail]);
 
   const onSubmit = async (data: ProfileFormData) => {
     setIsLoading(true);
@@ -188,10 +217,10 @@ function ProfilePage() {
     fileInputRef.current?.click();
   };
 
-  const handleLogout = () => {
+  const handleLogout = (path: string = paths.AUTH) => {
     localStorage.removeItem(STORAGE_KEYS.TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER);
-    navigate(paths.AUTH);
+    navigate(path);
   };
 
   const onSubmitPassword = async (data: ChangePasswordFormData) => {
@@ -207,7 +236,8 @@ function ProfilePage() {
       setSuccess('Password changed successfully');
       setIsChangePasswordMode(false);
       resetPassword();
-      setTimeout(() => setSuccess(null), 3000);
+      toast.success('Password changed successfully, please login again');
+      handleLogout(paths.LOGIN);
     } catch (err: any) {
       if (validationIsObject(err.response?.data)) {
         setError(err.response?.data?.error || 'Error changing password');
@@ -216,6 +246,29 @@ function ProfilePage() {
       }
     } finally {
       setIsLoadingPassword(false);
+    }
+  };
+
+  const onSubmitEmail = async (data: ChangeEmailFormData) => {
+    setIsLoadingEmail(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await profileService.updateEmail({ email: data.email });
+      dispatch(authActions.updateUser(response.user));
+      setSuccess('Email updated successfully');
+      setIsChangeEmailMode(false);
+      queryClient.invalidateQueries({ queryKey: ['groups', { userId: user?.id }] });
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      if (validationIsObject(err.response?.data)) {
+        setError(err.response?.data?.error || 'Error updating email');
+      } else {
+        setError(getErrorMessage(err));
+      }
+    } finally {
+      setIsLoadingEmail(false);
     }
   };
 
@@ -327,7 +380,7 @@ function ProfilePage() {
           <h3 className="text-xs font-semibold uppercase tracking-wider text-light-text-secondary dark:text-dark-text-secondary">
             Account
           </h3>
-          <div className="bg-light-card dark:bg-dark-card rounded-xl p-4 border border-light-hover/30 dark:border-dark-hover/30">
+          <div className="bg-light-card dark:bg-dark-card rounded-xl p-4 space-y-2 border border-light-hover/30 dark:border-dark-hover/30">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary-light/10">
                 <Mail size={18} className="text-primary dark:text-primary-light" />
@@ -337,7 +390,20 @@ function ProfilePage() {
                   Email
                 </p>
                 <p className="text-sm sm:text-base font-medium text-light-text dark:text-dark-text truncate">
-                  {user?.email}
+                  {user?.email ?? '-'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary-light/10">
+                <Phone size={18} className="text-primary dark:text-primary-light" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mb-0.5">
+                  Phone
+                </p>
+                <p className="text-sm sm:text-base font-medium text-light-text dark:text-dark-text truncate">
+                  {user?.phone ? formatPhoneNumber(user?.phone) : '-'}
                 </p>
               </div>
             </div>
@@ -350,6 +416,16 @@ function ProfilePage() {
             Actions
           </h3>
           <div className="bg-light-card dark:bg-dark-card rounded-xl border border-light-hover/30 dark:border-dark-hover/30 overflow-hidden">
+            <button
+              onClick={() => setIsChangeEmailMode(!isChangeEmailMode)}
+              className="w-full flex items-center gap-3 p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98] border-b border-light-hover/30 dark:border-dark-hover/30"
+            >
+              <Mail size={20} className="text-primary dark:text-primary-light flex-shrink-0" />
+              <span className="text-sm sm:text-base font-medium text-primary dark:text-primary-light">
+                Edit Email
+              </span>
+            </button>
+
             {/* Edit Profile */}
             <button
               onClick={() => setIsEditMode(!isEditMode)}
@@ -388,7 +464,7 @@ function ProfilePage() {
 
             {/* Logout */}
             <button
-              onClick={handleLogout}
+              onClick={() => handleLogout()}
               className="w-full flex items-center gap-3 p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98]"
             >
               <ArrowLeftCircle
@@ -509,6 +585,62 @@ function ProfilePage() {
                   isLoading={isLoadingPassword}
                 >
                   Change Password
+                </Button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+
+        {/* Change Email Form */}
+        {isChangeEmailMode && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="bg-light-card dark:bg-dark-card rounded-2xl p-4 sm:p-6 shadow-sm border border-light-hover/30 dark:border-dark-hover/30"
+          >
+            <h3 className="text-lg sm:text-xl font-bold text-light-text dark:text-dark-text mb-4">
+              Change Email
+            </h3>
+            <form onSubmit={handleSubmitEmail(onSubmitEmail)} className="space-y-4">
+              <div className="p-3 bg-light-hover/20 dark:bg-dark-hover/30 rounded-lg mb-2">
+                <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mb-1">
+                  Current Email
+                </p>
+                <p className="text-sm font-medium text-light-text dark:text-dark-text">
+                  {user?.email}
+                </p>
+              </div>
+
+              <Input
+                label="New Email"
+                type="email"
+                placeholder="Enter your new email address"
+                {...registerEmail('email')}
+                error={emailErrors.email?.message}
+                autoComplete="email"
+              />
+
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setIsChangeEmailMode(false);
+                    resetEmail({ email: user?.email || '' });
+                    setError(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="flex-1"
+                  isLoading={isLoadingEmail}
+                >
+                  Update Email
                 </Button>
               </div>
             </form>

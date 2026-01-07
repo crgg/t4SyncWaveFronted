@@ -1,38 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
+
+import type { Country } from '@/shared/types/auth.types';
+import { countries } from './countryCodeSelectorState';
 import { cn } from '@shared/utils';
-
-interface Country {
-  code: string;
-  dialCode: string;
-  name: string;
-  flag: string;
-}
-
-const countries: Country[] = [
-  { code: 'US', dialCode: '+1', name: 'United States', flag: '🇺🇸' },
-  { code: 'MX', dialCode: '+52', name: 'Mexico', flag: '🇲🇽' },
-  { code: 'CA', dialCode: '+1', name: 'Canada', flag: '🇨🇦' },
-  { code: 'GB', dialCode: '+44', name: 'United Kingdom', flag: '🇬🇧' },
-  { code: 'ES', dialCode: '+34', name: 'Spain', flag: '🇪🇸' },
-  { code: 'FR', dialCode: '+33', name: 'France', flag: '🇫🇷' },
-  { code: 'DE', dialCode: '+49', name: 'Germany', flag: '🇩🇪' },
-  { code: 'IT', dialCode: '+39', name: 'Italy', flag: '🇮🇹' },
-  { code: 'BR', dialCode: '+55', name: 'Brazil', flag: '🇧🇷' },
-  { code: 'AR', dialCode: '+54', name: 'Argentina', flag: '🇦🇷' },
-  { code: 'PE', dialCode: '+51', name: 'Peru', flag: '🇵🇪' },
-];
 
 interface CountryCodeSelectorProps {
   value: string;
-  onChange: (dialCode: string) => void;
+  onChange: (country: Country) => void;
   className?: string;
 }
 
 export const CountryCodeSelector = ({ value, onChange, className }: CountryCodeSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const selectedCountry = countries.find((c) => c.dialCode === value) || countries[0];
+  const selectedCountry = countries.find((c) => c.code === value) || countries[0];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -90,7 +72,7 @@ export const CountryCodeSelector = ({ value, onChange, className }: CountryCodeS
                 key={country.code}
                 type="button"
                 onClick={() => {
-                  onChange(country.dialCode);
+                  onChange(country);
                   setIsOpen(false);
                 }}
                 className={cn(

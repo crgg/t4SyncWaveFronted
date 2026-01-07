@@ -180,7 +180,7 @@ export function AudioPlayerHost() {
           <div className="absolute inset-0 bg-light-hover dark:bg-dark-hover rounded-full transition-colors duration-200" />
           <motion.div
             ref={progressRef}
-            className="absolute h-full bg-primary-600 rounded-full pointer-events-none"
+            className="absolute h-full bg-primary-700 rounded-full pointer-events-none"
             initial={{ width: 0 }}
             animate={{ width: `${progressPercentage}%` }}
             transition={{ duration: isDragging ? 0 : 0.1, ease: 'linear' }}

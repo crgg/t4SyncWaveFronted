@@ -172,7 +172,7 @@ export function LocalAudioPlayer({
           onClick={onNextTrack}
           disabled={!hasNextTrack}
           className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Anterior"
+          title="Previous"
         >
           <svg
             className="w-5 h-5 text-light-text-secondary dark:text-dark-text-secondary"
@@ -193,7 +193,7 @@ export function LocalAudioPlayer({
           onClick={onSkipBackward}
           disabled={!trackDuration}
           className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
-          title="Retroceder 10s"
+          title="Rewind 10s"
         >
           <svg
             className="w-6 h-6 text-light-text-secondary dark:text-dark-text-secondary"
@@ -239,7 +239,7 @@ export function LocalAudioPlayer({
           onClick={onSkipForward}
           disabled={!trackDuration}
           className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
-          title="Adelantar 10s"
+          title="Forward 10s"
         >
           <svg
             className="w-6 h-6 text-light-text-secondary dark:text-dark-text-secondary"
@@ -259,7 +259,7 @@ export function LocalAudioPlayer({
           onClick={onPreviousTrack}
           disabled={!hasPreviousTrack}
           className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Siguiente"
+          title="Next"
         >
           <svg
             className="w-5 h-5 text-light-text-secondary dark:text-dark-text-secondary"

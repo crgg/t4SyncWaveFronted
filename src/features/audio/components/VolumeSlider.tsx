@@ -108,22 +108,17 @@ export function VolumeSlider({ value, onChange }: VolumeSliderProps) {
     <>
       <div
         ref={volumeSliderRef}
-        className="flex-1 h-1 bg-light-hover dark:bg-dark-hover rounded-lg cursor-pointer relative group transition-colors duration-200"
+        className="flex-1 h-1 bg-primary-800 dark:bg-dark-hover rounded-lg cursor-pointer relative group transition-colors duration-200"
         onMouseDown={handleVolumeMouseDown}
         onTouchStart={handleVolumeTouchStart}
       >
         <div
-          className="absolute h-full rounded-lg transition-all duration-75 ease-out"
-          style={{
-            width: `${localVolume / 10}%`,
-            backgroundColor: '#C5A059',
-          }}
+          className="absolute h-full bg-light-hover dark:bg-primary-700 rounded-lg transition-all duration-75 ease-out"
+          style={{ width: `${localVolume / 10}%` }}
         />
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-primary-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg border-2 border-light-bg dark:border-dark-bg pointer-events-none z-10"
-          style={{
-            left: `calc(${localVolume / 10}% - 6px)`,
-          }}
+          className="absolute top-1/2 bg-primary-500 -translate-y-1/2 w-3 h-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg border-2 border-light-bg dark:border-dark-bg pointer-events-none z-10"
+          style={{ left: `calc(${localVolume / 10}% - 6px)` }}
         />
       </div>
       <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary w-10 text-right transition-colors duration-200">
