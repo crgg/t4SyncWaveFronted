@@ -3,8 +3,9 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { motion } from 'framer-motion';
-import { Camera, Loader2, Edit2, Mail, ArrowLeftCircle } from 'lucide-react';
+import { Camera, Loader2, Edit2, Mail, ArrowLeftCircle, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { profileService } from '@services/profile';
 import { Input } from '@shared/components/Input/Input';
@@ -17,11 +18,32 @@ import { withAuth } from '@/shared/hoc/withAuth';
 import { paths } from '@/routes/paths';
 
 const schema = yup.object({
-  name: yup.string().required('Name is required').min(2, 'Name must be at least 2 characters'),
+  name: yup
+    .string()
+    .required('Name is required')
+    .min(2, 'Name must be at least 2 characters')
+    .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/, 'Name can only contain letters, spaces, and accents')
+    .test('no-double-spaces', 'Name cannot contain consecutive spaces', (value) => {
+      return value ? !/\s{2,}/.test(value) : true;
+    }),
   nickname: yup.string().optional(),
 });
 
 type ProfileFormData = yup.InferType<typeof schema>;
+
+const changePasswordSchema = yup.object({
+  currentPassword: yup.string().required('Current password is required'),
+  newPassword: yup
+    .string()
+    .required('New password is required')
+    .min(6, 'Password must be at least 6 characters'),
+  confirmPassword: yup
+    .string()
+    .required('Please confirm your password')
+    .oneOf([yup.ref('newPassword')], 'Passwords must match'),
+});
+
+type ChangePasswordFormData = yup.InferType<typeof changePasswordSchema>;
 
 function ProfilePage() {
   const dispatch = useAppDispatch();
@@ -33,13 +55,17 @@ function ProfilePage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isChangePasswordMode, setIsChangePasswordMode] = useState(false);
+  const [isLoadingPassword, setIsLoadingPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
@@ -48,7 +74,29 @@ function ProfilePage() {
     },
   });
 
-  // El perfil se carga automáticamente desde App.layout.tsx al recargar la página
+  const handleNameInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    value = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+    value = value.replace(/\s{2,}/g, ' ');
+
+    setValue('name', value, { shouldValidate: true });
+  };
+
+  const nameRegister = register('name');
+
+  const {
+    register: registerPassword,
+    handleSubmit: handleSubmitPassword,
+    formState: { errors: passwordErrors },
+    reset: resetPassword,
+  } = useForm<ChangePasswordFormData>({
+    resolver: yupResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    },
+  });
 
   useEffect(() => {
     if (user) {
@@ -72,6 +120,7 @@ function ProfilePage() {
       dispatch(authActions.updateUser(response.user));
       setSuccess('Profile updated successfully');
       setIsEditMode(false);
+      queryClient.invalidateQueries({ queryKey: ['groups', { userId: user?.id }] });
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       if (validationIsObject(err.response?.data)) {
@@ -116,6 +165,8 @@ function ProfilePage() {
       const response = await profileService.uploadAvatar(file);
       dispatch(authActions.updateUser(response.user));
       setSuccess('Avatar updated successfully');
+      // clear my group query
+      queryClient.invalidateQueries({ queryKey: ['groups', { userId: user?.id }] });
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       if (validationIsObject(err.response?.data)) {
@@ -141,6 +192,31 @@ function ProfilePage() {
     localStorage.removeItem(STORAGE_KEYS.TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER);
     navigate(paths.AUTH);
+  };
+
+  const onSubmitPassword = async (data: ChangePasswordFormData) => {
+    setIsLoadingPassword(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await profileService.changePassword({
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      });
+      setSuccess('Password changed successfully');
+      setIsChangePasswordMode(false);
+      resetPassword();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      if (validationIsObject(err.response?.data)) {
+        setError(err.response?.data?.error || 'Error changing password');
+      } else {
+        setError('Error changing password');
+      }
+    } finally {
+      setIsLoadingPassword(false);
+    }
   };
 
   if (isLoading && !user) {
@@ -297,6 +373,19 @@ function ProfilePage() {
               </span>
             </button>
 
+            {/* Change Password */}
+            {!user?.phone && (
+              <button
+                onClick={() => setIsChangePasswordMode(!isChangePasswordMode)}
+                className="w-full flex items-center gap-3 p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98] border-b border-light-hover/30 dark:border-dark-hover/30"
+              >
+                <Lock size={20} className="text-primary dark:text-primary-light flex-shrink-0" />
+                <span className="text-sm sm:text-base font-medium text-primary dark:text-primary-light">
+                  Change Password
+                </span>
+              </button>
+            )}
+
             {/* Logout */}
             <button
               onClick={handleLogout}
@@ -329,7 +418,11 @@ function ProfilePage() {
                 label="Name"
                 type="text"
                 placeholder="Your full name"
-                {...register('name')}
+                {...nameRegister}
+                onChange={(e) => {
+                  nameRegister.onChange(e);
+                  handleNameInput(e);
+                }}
                 error={errors.name?.message}
                 maxLength={100}
               />
@@ -354,6 +447,68 @@ function ProfilePage() {
                 </Button>
                 <Button type="submit" variant="primary" className="flex-1" isLoading={isLoading}>
                   Save Changes
+                </Button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+
+        {/* Change Password Form */}
+        {isChangePasswordMode && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="bg-light-card dark:bg-dark-card rounded-2xl p-4 sm:p-6 shadow-sm border border-light-hover/30 dark:border-dark-hover/30"
+          >
+            <h3 className="text-lg sm:text-xl font-bold text-light-text dark:text-dark-text mb-4">
+              Change Password
+            </h3>
+            <form onSubmit={handleSubmitPassword(onSubmitPassword)} className="space-y-4">
+              <Input
+                label="Current Password"
+                type="password"
+                placeholder="Enter your current password"
+                {...registerPassword('currentPassword')}
+                error={passwordErrors.currentPassword?.message}
+              />
+
+              <Input
+                label="New Password"
+                type="password"
+                placeholder="Enter your new password"
+                {...registerPassword('newPassword')}
+                error={passwordErrors.newPassword?.message}
+              />
+
+              <Input
+                label="Confirm New Password"
+                type="password"
+                placeholder="Confirm your new password"
+                {...registerPassword('confirmPassword')}
+                error={passwordErrors.confirmPassword?.message}
+              />
+
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setIsChangePasswordMode(false);
+                    resetPassword();
+                    setError(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="flex-1"
+                  isLoading={isLoadingPassword}
+                >
+                  Change Password
                 </Button>
               </div>
             </form>

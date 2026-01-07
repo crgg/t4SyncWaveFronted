@@ -45,7 +45,6 @@ export function useWebSocket() {
   }, []);
 
   const updateAudioStateRef = () => {
-    // console.log('updateAudioStateRef', store.getState().audio);
     audioStateRef.current = store.getState().audio;
   };
 
@@ -179,7 +178,6 @@ export function useWebSocket() {
     }) => {
       updateAudioStateRef();
       const currentAudioState = audioStateRef.current;
-      console.log('PlaybackState', data);
 
       if (data.trackUrl && !isValidAudioUrl(data.trackUrl)) {
         console.warn(
@@ -251,8 +249,6 @@ export function useWebSocket() {
 
     const handleRoomUsers = (data: IRoomUsers) => dispatch(updateConnectionUsers(data));
     const handleConnectionUserJoined = (data: IRoomUser) => {
-      console.log('Audio State:', store.getState().audio);
-
       dispatch(addConnectionUser(data));
 
       // Si somos el DJ y hay un nuevo listener conectándose, enviar el estado de reproducción actual
@@ -284,12 +280,6 @@ export function useWebSocket() {
         } catch (error) {
           console.error('Error al enviar playback-state al nuevo listener:', error);
         }
-      } else {
-        console.log({
-          currentRole,
-          currentAudioState,
-          session: store.getState(),
-        });
       }
     };
     const handleConnectionUserLeft = (data: IRoomUser) => dispatch(removeConnectionUser(data));
@@ -310,7 +300,6 @@ export function useWebSocket() {
       if (groupId) {
         queryClient.invalidateQueries({ queryKey: ['group', groupId] });
       }
-      // console.log('Audio State', store.getState().audio);
     };
 
     const handleMemberLeft = (data: {
@@ -322,9 +311,6 @@ export function useWebSocket() {
         reason?: string;
       };
     }) => {
-      // Cuando un miembro sale, actualizar la UI
-      console.log('Member left:', data.member);
-      // Remover el usuario de la lista de conexiones si existe
       const currentUsers = store.getState().session.connectionUsers;
       const userToRemove = Object.values(currentUsers).find(
         (user) => user.odooUserId === data.member.userId
@@ -332,7 +318,6 @@ export function useWebSocket() {
       if (userToRemove) {
         dispatch(removeConnectionUser(userToRemove));
       }
-      // Invalidar la query del grupo para actualizar la lista de miembros
       const groupId = data.room;
       if (groupId) {
         queryClient.invalidateQueries({ queryKey: ['group', groupId] });
@@ -340,10 +325,7 @@ export function useWebSocket() {
     };
 
     const handleKickedEvent = (data: { reason: string }) => {
-      // Cuando el usuario es removido, limpiar el estado y mostrar el error
       dispatch(handleKicked({ reason: data.reason }));
-      // Redirigir al usuario a la página de listeners
-      // Usamos window.location para asegurar la navegación incluso si estamos en una ruta protegida
       const listenersPath = '/listeners';
       if (window.location.pathname !== listenersPath) {
         window.location.href = listenersPath;
@@ -399,8 +381,11 @@ export function useWebSocket() {
       }
     };
 
-    const handleDJReturn = async (data: { userId?: string; groupId?: string; state?: string }) => {
-      // Cuando el DJ regresa, necesitamos obtener el estado de reproducción actual
+    const handleDJStatusChange = async (data: {
+      userId?: string;
+      groupId?: string;
+      state?: string;
+    }) => {
       const currentUser = store.getState().auth.user;
       const currentRole = store.getState().session.role;
 
@@ -476,7 +461,7 @@ export function useWebSocket() {
     wsService.on(SOCKET_EVENTS.MEMBER_LEFT, handleMemberLeft);
     wsService.on(SOCKET_EVENTS.KICKED, handleKickedEvent);
     wsService.on(SOCKET_EVENTS.PLAYBACK_EVENT, handlePlaybackEvent);
-    wsService.on(SOCKET_EVENTS.DJ_RETURN, handleDJReturn);
+    wsService.on(SOCKET_EVENTS.DJ_RETURN, handleDJStatusChange);
 
     if (wsService.isConnected()) {
       return () => {
@@ -494,7 +479,7 @@ export function useWebSocket() {
         wsService.off(SOCKET_EVENTS.MEMBER_LEFT, handleMemberLeft);
         wsService.off(SOCKET_EVENTS.KICKED, handleKickedEvent);
         wsService.off(SOCKET_EVENTS.PLAYBACK_EVENT, handlePlaybackEvent);
-        wsService.off(SOCKET_EVENTS.DJ_RETURN, handleDJReturn);
+        wsService.off(SOCKET_EVENTS.DJ_RETURN, handleDJStatusChange);
       };
     }
 
@@ -511,7 +496,7 @@ export function useWebSocket() {
         wsService.off(SOCKET_EVENTS.MEMBER_LEFT, handleMemberLeft);
         wsService.off(SOCKET_EVENTS.KICKED, handleKickedEvent);
         wsService.off(SOCKET_EVENTS.PLAYBACK_EVENT, handlePlaybackEvent);
-        wsService.off(SOCKET_EVENTS.DJ_RETURN, handleDJReturn);
+        wsService.off(SOCKET_EVENTS.DJ_RETURN, handleDJStatusChange);
       };
     }
 
@@ -548,7 +533,7 @@ export function useWebSocket() {
       wsService.off(SOCKET_EVENTS.MEMBER_LEFT, handleMemberLeft);
       wsService.off(SOCKET_EVENTS.KICKED, handleKickedEvent);
       wsService.off(SOCKET_EVENTS.PLAYBACK_EVENT, handlePlaybackEvent);
-      wsService.off(SOCKET_EVENTS.DJ_RETURN, handleDJReturn);
+      wsService.off(SOCKET_EVENTS.DJ_RETURN, handleDJStatusChange);
     };
   }, [dispatch, role, isConnected]);
 

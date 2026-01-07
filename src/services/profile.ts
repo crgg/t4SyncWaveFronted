@@ -25,6 +25,16 @@ export interface UploadAvatarResponse {
   user: IUserData;
 }
 
+export interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ChangePasswordResponse {
+  status: boolean;
+  message: string;
+}
+
 export const profileService = {
   getProfile: async (): Promise<ProfileResponse> => {
     const response = await http.get<ProfileResponse>('/users/profile');
@@ -46,6 +56,11 @@ export const profileService = {
       },
     });
 
+    return response.data;
+  },
+
+  changePassword: async (data: ChangePasswordData): Promise<ChangePasswordResponse> => {
+    const response = await http.put<ChangePasswordResponse>('/users/change-password', data);
     return response.data;
   },
 };

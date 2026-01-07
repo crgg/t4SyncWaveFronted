@@ -2,7 +2,7 @@ import { SOCKET_EVENTS, RECONNECTION_CONFIG } from '@shared/constants';
 import type { SocketEventHandlers, WebSocketServiceConfig } from '../websocket/types';
 import type { AudioState, UserRole } from '@shared/types';
 import { store } from '@app/store';
-import { getAudioService } from '@services/audio/audioService';
+import { getAudioService } from '../audio/audioService';
 
 interface SFUSignalingMessage {
   type:
@@ -330,13 +330,11 @@ class WebRTCSFUService {
       }
 
       case 'dj-state-change': {
-        // Manejar cambios de estado del DJ
         this.handleEvent(SOCKET_EVENTS.DJ_RETURN, message);
         break;
       }
 
       case 'request-playback-state': {
-        // Cuando el SFU solicita el estado de reproducción (solo para listeners)
         if (this.role === 'member') {
           const audioState = store.getState().audio;
           const audioService = getAudioService();
@@ -355,7 +353,6 @@ class WebRTCSFUService {
               userId: (store.getState().auth.user as any)?.id || null,
               userName: (store.getState().auth.user as any)?.name || null,
             };
-
             this.sendSignalingMessage({
               type: 'playback-state-response',
               data: playbackStateResponse,
@@ -440,7 +437,7 @@ class WebRTCSFUService {
     this.peerConnection = new RTCPeerConnection(this.RTC_CONFIG);
 
     this.peerConnection.onicecandidate = (event) => {
-      if (event.candidate) {
+      if (event.candidate && this.peerConnection?.connectionState !== 'connected') {
         this.sendSignalingMessage({
           type: 'ice-candidate',
           data: event.candidate,
@@ -674,10 +671,7 @@ class WebRTCSFUService {
   }
 
   playAudio(timestamp: number, position?: number, trackUrl?: string): void {
-    console.trace({ event: 'playAudio', timestamp, position, trackUrl });
     this.emit(SOCKET_EVENTS.AUDIO_PLAY, {
-      // room: this.sessionId || '',
-      // userName: 'FredyMax',
       position: position ?? 0,
       isPlaying: true,
       trackUrl,
@@ -687,8 +681,6 @@ class WebRTCSFUService {
 
   pauseAudio(timestamp: number, position?: number, trackUrl?: string): void {
     this.emit(SOCKET_EVENTS.AUDIO_PAUSE, {
-      // room: this.sessionId || '',
-      // userName: 'FredyMax',
       position: position ?? 0,
       isPlaying: false,
       trackUrl,
@@ -696,9 +688,9 @@ class WebRTCSFUService {
     });
   }
 
-  seekAudio(position: number, _timestamp: number, trackUrl?: string): void {
+  seekAudio(position: number, _timestamp: number, trackUrl?: string, isPlaying?: boolean): void {
     if (trackUrl) {
-      this.emitPlaybackState(position, true, trackUrl);
+      this.emitPlaybackState(position, isPlaying ?? true, trackUrl);
     }
   }
 

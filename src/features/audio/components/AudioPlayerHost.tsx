@@ -59,6 +59,34 @@ export function AudioPlayerHost() {
     }
   }, [audioState.currentPosition, audioState.trackDuration, isDragging]);
 
+  useEffect(() => {
+    if (
+      audioState.isPlaying &&
+      audioState.trackDuration &&
+      audioState.currentPosition >= audioState.trackDuration - 0.1
+    ) {
+      seek(0);
+
+      setTimeout(() => {
+        pause();
+        setTimeout(async () => {
+          try {
+            await groupsApi.pause({ groupId: groupId! });
+          } catch (error) {
+            console.error('Error pausing audio after track ended:', error);
+          }
+        }, 100);
+      }, 100);
+    }
+  }, [
+    audioState.isPlaying,
+    audioState.currentPosition,
+    audioState.trackDuration,
+    groupId,
+    pause,
+    seek,
+  ]);
+
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const position = parseFloat(e.target.value);
     if (!isNaN(position) && position >= 0 && audioState.trackDuration) {
@@ -101,12 +129,11 @@ export function AudioPlayerHost() {
         const currentPosition =
           audioServiceState?.currentPosition ?? currentAudioState.currentPosition ?? 0;
 
-        const resp = await groupsApi.play({
+        await groupsApi.play({
           groupId: groupId!,
           trackId: currentAudioState.trackId || '',
           startedAt: currentPosition,
         });
-        console.log({ resp });
       }, 100);
     } catch (error) {
       console.error('Error playing audio:', error);
@@ -114,17 +141,12 @@ export function AudioPlayerHost() {
   };
 
   const handlePause = async () => {
-    // Primero ejecutar pause localmente
     pause();
 
     try {
-      // Obtener el estado actualizado del audio después de pause()
-      // Esperar un momento para que el estado se actualice
       setTimeout(async () => {
-        const resp = await groupsApi.pause({
-          groupId: groupId!,
-        });
-        console.log({ resp });
+        if (!groupId) return;
+        await groupsApi.pause({ groupId });
       }, 100);
     } catch (error) {
       console.error('Error pausing audio:', error);
@@ -268,7 +290,7 @@ export function AudioPlayerHost() {
           whileTap={{ scale: 0.9 }}
           onClick={next}
           disabled={!audioState.trackUrl}
-          className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50"
+          className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 hidden"
           title="Next"
         >
           <svg

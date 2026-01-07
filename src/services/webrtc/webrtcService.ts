@@ -446,7 +446,7 @@ class WebRTCService {
     }
   }
 
-  seekAudio(position: number, timestamp: number, trackUrl?: string): void {
+  seekAudio(position: number, timestamp: number, trackUrl?: string, isPlaying?: boolean): void {
     // Mantener compatibilidad con el evento antiguo
     this.emit(SOCKET_EVENTS.AUDIO_SEEK, { position, timestamp });
 
@@ -457,7 +457,7 @@ class WebRTCService {
         room: sessionId,
         userName: 'User', // TODO: obtener del estado de sesión
         position,
-        isPlaying: true, // Asumimos que sigue reproduciendo después de seek
+        isPlaying: isPlaying ?? true,
         truckUrl: trackUrl,
       });
     }

@@ -544,9 +544,9 @@ export function useAudio() {
       }
 
       const wsService = getWebSocketService({ url: WS_URL });
-      wsService.seekAudio(position, timestamp, audioState.trackUrl);
+      wsService.seekAudio(position, timestamp, audioState.trackUrl, audioState.isPlaying);
     },
-    [role, dispatch, audioState.trackUrl]
+    [role, dispatch, audioState.trackUrl, audioState.isPlaying]
   );
 
   const emitSeek = useCallback(
@@ -556,9 +556,9 @@ export function useAudio() {
       const timestamp = Date.now();
 
       const wsService = getWebSocketService({ url: WS_URL });
-      wsService.seekAudio(position, timestamp, audioState.trackUrl);
+      wsService.seekAudio(position, timestamp, audioState.trackUrl, audioState.isPlaying);
     },
-    [role, audioState.trackUrl]
+    [role, audioState.trackUrl, audioState.isPlaying]
   );
 
   const handleVolumeChange = useCallback(

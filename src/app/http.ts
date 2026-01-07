@@ -20,7 +20,12 @@ http.interceptors.request.use((config) => {
   return config;
 });
 
-const PATHS_TO_SKIP_AUTH = [paths.LOGIN, paths.VERIFY_CODE];
+const PATHS_TO_SKIP_AUTH = [
+  paths.LOGIN,
+  paths.VERIFY_CODE,
+  paths.PROFILE,
+  paths.USERS_CHANGE_PASSWORD,
+];
 
 http.interceptors.response.use(
   (response: AxiosResponse) => {

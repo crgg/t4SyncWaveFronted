@@ -46,8 +46,8 @@ const GroupsPage = () => {
     queryKey: ['groups', { userId }],
     queryFn: () => groupsApi.getGroups(),
     enabled: !!userId,
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 2,
   });
 
   const {
@@ -59,8 +59,8 @@ const GroupsPage = () => {
     queryKey: ['others-groups', { userId }],
     queryFn: () => groupsApi.getOthersGroups(),
     enabled: !!userId,
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 2,
   });
 
   const refetchOthersGroups = () => {

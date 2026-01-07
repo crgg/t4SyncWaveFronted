@@ -369,14 +369,14 @@ class WebSocketService {
     }
   }
 
-  seekAudio(position: number, timestamp: number, trackUrl?: string): void {
+  seekAudio(position: number, timestamp: number, trackUrl?: string, isPlaying?: boolean): void {
     if (this.useWebRTC) {
       if (this.useSFU && this.webrtcSFUService) {
-        this.webrtcSFUService.seekAudio(position, timestamp, trackUrl);
+        this.webrtcSFUService.seekAudio(position, timestamp, trackUrl, isPlaying);
         return;
       }
       if (this.webrtcService) {
-        this.webrtcService.seekAudio(position, timestamp, trackUrl);
+        this.webrtcService.seekAudio(position, timestamp, trackUrl, isPlaying);
         return;
       }
     }
@@ -389,7 +389,7 @@ class WebSocketService {
         room: sessionId,
         userName: 'User',
         position,
-        isPlaying: true,
+        isPlaying: isPlaying ?? true,
         trackUrl,
       });
     }

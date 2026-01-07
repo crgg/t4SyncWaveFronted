@@ -33,6 +33,7 @@ import { cn, orderBy } from '@/shared/utils';
 import { AvatarPreview } from '@/shared/components/AvatarPreview/AvatarPreview';
 import { withAuth } from '@/shared/hoc/withAuth';
 import AlertDialog from '@/shared/components/AlertDialog/AlertDialog';
+// import { leaveSession as leaveSessionSlice } from '@features/session/sessionSlice';
 
 const GroupPage = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -45,6 +46,7 @@ const GroupPage = () => {
   const [isLeaveGroupDialogOpen, setIsLeaveGroupDialogOpen] = useState(false);
   const dispatch = useAppDispatch();
   const { createSession, joinSession, leaveSession } = useWebSocket();
+
   const isHostRef = useRef<boolean | null>(null);
   const isConnectingRef = useRef(false);
   const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -62,17 +64,17 @@ const GroupPage = () => {
     queryKey: ['group', groupId],
     queryFn: () => groupsApi.getGroupById(groupId!),
     enabled: !!groupId,
-    staleTime: 1000 * 60 * 2, // 2 minutes
-    gcTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 10,
+    gcTime: 1000 * 60 * 5,
     retry: false,
   });
 
   const { data: groupPlaybackStateData } = useQuery({
     queryKey: ['group-playback-state', groupId],
     queryFn: () => groupsApi.getGroupPlaybackState(groupId!),
-    enabled: !!groupId,
-    staleTime: 1000 * 30, // 30 seconds
-    gcTime: 1000 * 60 * 2, // 2 minutes
+    enabled: false,
+    staleTime: 1000 * 50,
+    gcTime: 1000 * 60 * 2,
     retry: false,
   });
 
@@ -80,24 +82,13 @@ const GroupPage = () => {
   const members = group?.members || [];
   const isOwner = group?.created_by === user?.id;
 
-  // useEffect(() => {
-  //   // const isOwner = group?.created_by === user?.id;
-  //   if (isOwner && groupId) {
-  //     groupsApi.djConnect({ groupId, hasTrack: false, isPlaying: false });
-  //   }
-  // }, [group, groupId]);
-
-  // Cuando un listener se une, inicializar el audio con el estado de reproducción actual
-  // Este useEffect actúa como respaldo si el estado se actualiza después de unirse
   useEffect(() => {
     if (!groupPlaybackStateData?.playbackState || !groupId) return;
-    if (isOwner) return; // Solo para listeners, no para DJ
+    if (isOwner) return;
 
     const { playbackState: state } = groupPlaybackStateData;
     const currentRole = store.getState().session.role;
 
-    // Solo procesar si somos listener y hay un track reproduciéndose
-    // Y solo si no se ha inicializado ya para este grupo
     if (
       currentRole === 'member' &&
       state.trackId &&
@@ -105,10 +96,8 @@ const GroupPage = () => {
       listenerAudioInitializedRef.current !== groupId
     ) {
       try {
-        // Marcar como inicializado para este grupo
         listenerAudioInitializedRef.current = groupId;
 
-        // Establecer el track en el estado
         dispatch(
           setTrack({
             trackId: state.trackId,
@@ -118,29 +107,26 @@ const GroupPage = () => {
           })
         );
 
-        // Inicializar el audio con el estado actual
         const audioService = getAudioService();
-        const currentPosition = state.position ? state.position / 1000 : 0; // Convertir de ms a segundos
+        const currentPosition = state.position ? state.position / 1000 : 0;
         const currentTimestamp = state.lastEventTime || Date.now();
 
-        // Inicializar el audio service con el track
         audioService.init(state.trackUrl, (audioState) => {
           dispatch(setAudioState(audioState));
         });
 
-        // Esperar un momento para que el audio se inicialice y luego sincronizar
         setTimeout(() => {
           audioService.sync(currentPosition, currentTimestamp, state.isPlaying, state.trackUrl);
         }, 500);
       } catch (error) {
         console.error('Error al inicializar audio para listener:', error);
-        // Resetear el ref si hay error para permitir reintentos
         listenerAudioInitializedRef.current = null;
       }
     }
   }, [groupPlaybackStateData, groupId, isOwner, dispatch]);
 
   const handleLeaveGroup = () => {
+    // dispatch(leaveSessionSlice());
     leaveSession();
   };
 
@@ -203,7 +189,6 @@ const GroupPage = () => {
 
   useEffect(() => {
     if (!data || !user || isConnectingRef.current || !user) return;
-
     if (processedGroupIdRef.current === data.group.id) return;
 
     const connectToSession = () => {
@@ -267,10 +252,9 @@ const GroupPage = () => {
               }
             } catch (error) {
               console.error('Error al obtener estado de reproducción para listener:', error);
-              // Resetear el ref si hay error para permitir reintentos
               listenerAudioInitializedRef.current = null;
             }
-          }, 1500); // Esperar 1.5 segundos para asegurar conexión WebSocket
+          }, 1500);
         }
         return;
       }
@@ -343,7 +327,7 @@ const GroupPage = () => {
         } catch (error) {
           console.error('Error al conectar DJ:', error);
         }
-      }, 1000); // Esperar 1 segundo para asegurar conexión WebSocket
+      }, 1000);
     };
 
     if (isConnected) {
@@ -399,7 +383,7 @@ const GroupPage = () => {
     processedGroupIdRef.current = null;
     isConnectingRef.current = false;
     isHostRef.current = null;
-    listenerAudioInitializedRef.current = null; // Resetear cuando cambia el grupo
+    listenerAudioInitializedRef.current = null;
   }, [groupId]);
 
   const onlineMembers = members.filter((member) => connectionUsers[member.user_id]);
@@ -425,19 +409,15 @@ const GroupPage = () => {
     }
   }, [data]);
 
-  // Ref para evitar envíos duplicados
   const disconnectSentRef = useRef(false);
 
-  // Función para enviar el POST de desconexión del DJ
   const sendDjDisconnect = async (useKeepalive = false) => {
     if (!groupId || !isOwner || disconnectSentRef.current) return;
 
-    // Obtener el estado real del audio del store
     const currentAudioState = store.getState().audio;
     const hasTrack = !!currentAudioState.trackUrl;
     const isPlaying = currentAudioState.isPlaying || false;
 
-    // Marcar como enviado para evitar duplicados
     disconnectSentRef.current = true;
 
     try {
@@ -449,7 +429,6 @@ const GroupPage = () => {
         };
         groupsApi.djToggleConnect(payload, 'disconnect');
       } else {
-        // Usar axios para navegación normal (más consistente con el resto de la app)
         await groupsApi.djDisconnect({
           groupId,
           hasTrack,
@@ -458,28 +437,23 @@ const GroupPage = () => {
       }
     } catch (error) {
       console.error('Error al enviar desconexión del DJ:', error);
-      // Resetear el ref si falla para permitir reintentos
       disconnectSentRef.current = false;
     }
   };
 
-  // Manejar refresh/cierre de página (F5, cerrar pestaña, etc.)
   useEffect(() => {
     if (!isOwner || !groupId) return;
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Obtener el estado real del audio del store
       const currentAudioState = store.getState().audio;
       const isPlaying = currentAudioState.isPlaying || false;
 
-      // Solo mostrar confirmación si está reproduciéndose y es el host
       if (isPlaying) {
-        // Enviar el POST antes de que la página se cierre
         sendDjDisconnect(true);
 
         e.preventDefault();
-        e.returnValue = ''; // Requerido para Chrome
-        return ''; // Requerido para algunos navegadores
+        e.returnValue = '';
+        return '';
       }
     };
 
@@ -490,7 +464,6 @@ const GroupPage = () => {
     };
   }, [isOwner, groupId, audioState.isPlaying]);
 
-  // Resetear el ref cuando cambia el groupId para permitir nuevos envíos
   useEffect(() => {
     disconnectSentRef.current = false;
   }, [groupId]);
@@ -595,7 +568,6 @@ const GroupPage = () => {
           </>
         )}
 
-        {/* Tracks Section */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2">
             <Users size={20} />
