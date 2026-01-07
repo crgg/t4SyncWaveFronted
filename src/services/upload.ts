@@ -22,4 +22,16 @@ export const uploadService = {
 
     return response.data;
   },
+  uploadAudioToLibrary: async (file: File): Promise<UploadResponse> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await http.post<UploadResponse>('/audio/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data;
+  },
 };

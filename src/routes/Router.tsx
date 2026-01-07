@@ -15,6 +15,7 @@ import { paths } from './paths';
 
 const GroupsPage = lazy(() => import('@/pages/GroupsPage'));
 const GroupPage = lazy(() => import('@/pages/GroupPage'));
+const LibraryPage = lazy(() => import('@/pages/LibraryPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 
 const routes: RouteObject[] = [
@@ -41,6 +42,10 @@ const routes: RouteObject[] = [
       {
         path: paths.LISTENERS(),
         element: <GroupPage />,
+      },
+      {
+        path: paths.LIBRARY,
+        element: <LibraryPage />,
       },
       {
         path: '/host/:sessionId',

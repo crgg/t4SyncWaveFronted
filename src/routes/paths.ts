@@ -4,6 +4,7 @@ export const paths = {
   HOME: '/',
   GROUPS: (id: null | string = '/:groupId') => `/groups${id || ''}`,
   LISTENERS: (id: null | string = '/:groupId') => `/listeners${id || ''}`,
+  LIBRARY: '/library',
   PROFILE: '/profile',
   // Auth
   AUTH,

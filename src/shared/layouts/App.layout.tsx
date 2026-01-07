@@ -46,6 +46,8 @@ const AppLayout = () => {
       navigate(paths.GROUPS(null));
     } else if (tab === 'listeners') {
       navigate(paths.LISTENERS(null));
+    } else if (tab === 'library') {
+      navigate(paths.LIBRARY);
     } else {
       navigate(paths.PROFILE);
     }
