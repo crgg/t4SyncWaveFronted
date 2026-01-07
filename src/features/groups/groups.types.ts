@@ -183,3 +183,8 @@ export type IPayloadDjConnecDisconnect = {
   hasTrack: boolean;
   isPlaying: boolean;
 };
+
+export interface IGroupUsers {
+  dj: Member | null;
+  members: Member[];
+}

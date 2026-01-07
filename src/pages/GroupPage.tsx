@@ -10,7 +10,7 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { store } from '@/app/store';
 import { Button } from '@shared/components/Button/Button';
 import { AddMemberModal } from '@/features/groups/components/AddMemberModal';
-import type { DialogType, Member } from '@/features/groups/groups.types';
+import type { DialogType, IGroupUsers, Member } from '@/features/groups/groups.types';
 import { PlaylistHost } from '@/features/playlist/components/PlaylistHost';
 import {
   playListSelectors,
@@ -299,8 +299,24 @@ const GroupPage = () => {
     listenerAudioInitializedRef.current = null;
   }, [groupId]);
 
-  const onlineMembers = members.filter((member) => connectionUsers[member.user_id]);
-  const offlineMembers = members.filter((member) => !connectionUsers[member.user_id]);
+  const groupUsers = useMemo(() => {
+    const data: IGroupUsers = {
+      dj: null,
+      members: [],
+    };
+
+    for (const member of members) {
+      if (member.role === 'dj') {
+        data.dj = member;
+      } else if (member.role === 'member') {
+        data.members.push(member);
+      }
+    }
+    return data;
+  }, [members]);
+
+  const onlineMembers = groupUsers.members.filter((member) => connectionUsers[member.user_id]);
+  const offlineMembers = groupUsers.members.filter((member) => !connectionUsers[member.user_id]);
 
   useEffect(() => {
     return () => {
@@ -481,10 +497,26 @@ const GroupPage = () => {
           </>
         )}
 
+        {groupUsers.dj && (
+          <div>
+            <div className={cn('mb-2 sm:gap-2')}>
+              <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover overflow-y-auto [overscroll-behavior:contain]">
+                <MemberCard
+                  isConnected={!!connectionUsers[groupUsers.dj.user_id]}
+                  onRemove={handleRemoveMember}
+                  key={groupUsers.dj.id}
+                  member={groupUsers.dj}
+                  isOwner
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2">
             <Users size={20} />
-            Members ({USER_MEMBERS.length})
+            Members ({groupUsers.members.length})
           </h2>
           {isOwner && groupId && (
             <Button
@@ -526,17 +558,19 @@ const GroupPage = () => {
                   <div className="col-span-2 sticky top-0 z-10">
                     <h3 className="text-xs text-zinc-400 mb-1">{onlineMembers.length} Online</h3>
                   </div>
-                  <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover max-h-[250px] overflow-y-auto [overscroll-behavior:contain]">
-                    {onlineMembers.map((member) => (
-                      <MemberCard
-                        key={member.id}
-                        member={member}
-                        isOwner={isOwner}
-                        onRemove={handleRemoveMember}
-                        isConnected={!!connectionUsers[member.user_id]}
-                      />
-                    ))}
-                  </div>
+                  {onlineMembers.length > 0 && (
+                    <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover max-h-[420px] overflow-y-auto [overscroll-behavior:contain]">
+                      {onlineMembers.map((member) => (
+                        <MemberCard
+                          key={member.id}
+                          member={member}
+                          isOwner={isOwner}
+                          onRemove={handleRemoveMember}
+                          isConnected={!!connectionUsers[member.user_id]}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div
                   className={cn(
@@ -547,7 +581,7 @@ const GroupPage = () => {
                   <div className="col-span-2 sticky top-0 z-10">
                     <h3 className="text-xs text-zinc-400 mb-1">{offlineMembers.length} Offline</h3>
                     {offlineMembers.length !== 0 && (
-                      <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover  max-h-[250px] overflow-y-auto [overscroll-behavior:contain]">
+                      <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover  max-h-[420px] overflow-y-auto [overscroll-behavior:contain]">
                         {offlineMembers.map((member) => (
                           <MemberCard
                             key={member.id}
@@ -649,17 +683,17 @@ const MemberCard = ({ member, isOwner, onRemove, isConnected }: MemberCardProps)
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+  // const formatDate = (dateString: string) => {
+  //   const date = new Date(dateString);
+  //   const now = new Date();
+  //   const diffInMs = now.getTime() - date.getTime();
+  //   const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
-    if (diffInDays === 0) return 'Today';
-    if (diffInDays === 1) return 'Yesterday';
-    if (diffInDays < 7) return `${diffInDays} days ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  //   if (diffInDays === 0) return 'Today';
+  //   if (diffInDays === 1) return 'Yesterday';
+  //   if (diffInDays < 7) return `${diffInDays} days ago`;
+  //   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // };
 
   const handleAvatarClick = () => {
     if (member.avatar_url) {
@@ -705,11 +739,11 @@ const MemberCard = ({ member, isOwner, onRemove, isConnected }: MemberCardProps)
               <Crown size={14} className="text-primary-600 flex-shrink-0" fill="currentColor" />
             )}
           </div>
-          <div className="flex items-center gap-2 mt-1">
+          {/* <div className="flex items-center gap-2 mt-1">
             <span className="text-xs text-zinc-400 capitalize">{member.role}</span>
             <span className="text-xs text-zinc-400">•</span>
             <span className="text-xs text-zinc-400">Joined {formatDate(member.joined_at)}</span>
-          </div>
+          </div> */}
         </div>
         {isOwner && member.role !== 'dj' && (
           <Button
@@ -720,6 +754,11 @@ const MemberCard = ({ member, isOwner, onRemove, isConnected }: MemberCardProps)
           >
             <UserMinus size={16} />
           </Button>
+        )}
+        {isOwner && (
+          <div className="bg-primary-600 text-white text-xs font-semibold px-2 py-1 rounded-full">
+            DJ
+          </div>
         )}
       </div>
 
