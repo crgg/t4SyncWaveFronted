@@ -1,32 +1,32 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search } from 'lucide-react';
+
+import type { Group } from '@/features/groups/groups.types';
+import type { SortOption } from './GroupsPage/types';
 
 import { groupsApi } from '@/features/groups/groupsApi';
 import { useAppSelector } from '@/app/hooks';
 import { CreateGroupModal } from '@/features/groups/components/CreateGroupModal';
-import { EditGroupModal } from '@/features/groups/components/EditGroupModal';
 import { DeleteGroupModal } from '@/features/groups/components/DeleteGroupModal';
-import type { Group } from '@/features/groups/groups.types';
+import { EditGroupModal } from '@/features/groups/components/EditGroupModal';
+import ProfileStatus from '@/shared/components/ProfileStatus/ProfileStatus';
 import DeleteDialog from '@/shared/components/DeleteDialog/DeleteDialog';
 
-import { GroupsPageHeader } from './GroupsPage/components/GroupsPageHeader';
 import { SearchAndSortControls } from './GroupsPage/components/SearchAndSortControls';
 import { GroupsPageSkeleton } from './GroupsPage/components/GroupsPageSkeleton';
-import { ErrorState } from './GroupsPage/components/ErrorState';
+import { GroupsPageHeader } from './GroupsPage/components/GroupsPageHeader';
 import { EmptyGroupsState } from './GroupsPage/components/EmptyGroupsState';
-import { GroupCard } from './GroupsPage/components/GroupCard';
 import { JoinGroupByCode } from './GroupsPage/components/JoinGroupByCode';
-import type { SortOption } from './GroupsPage/types';
+import { ErrorState } from './GroupsPage/components/ErrorState';
+import { GroupCard } from './GroupsPage/components/GroupCard';
 import { withAuth } from '@/shared/hoc/withAuth';
 import { paths } from '@/routes/paths';
-import ProfileStatus from '@/shared/components/ProfileStatus/ProfileStatus';
 
 const GroupsPage = () => {
-  const activeTab = useAppSelector((state) => state.layout.activeTab);
   const userId = useAppSelector((state) => state.auth.user?.id);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -36,6 +36,7 @@ const GroupsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const navigate = useNavigate();
+  const pathname = useLocation().pathname;
   const queryClient = useQueryClient();
 
   const {
@@ -69,7 +70,7 @@ const GroupsPage = () => {
     refetchOthersGroupsHandler();
   };
 
-  const isMyGroups = activeTab === 'my-groups';
+  const isMyGroups = pathname === paths.GROUPS(null);
 
   const groups = dataMyGroups?.status && dataMyGroups?.groups ? dataMyGroups.groups : [];
   const othersGroups =

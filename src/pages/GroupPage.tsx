@@ -556,7 +556,9 @@ const GroupPage = () => {
                   )}
                 >
                   <div className="col-span-2 sticky top-0 z-10">
-                    <h3 className="text-xs text-zinc-400 mb-1">{onlineMembers.length} Online</h3>
+                    <h3 className="text-xs text-zinc-400 mb-1 select-none">
+                      Online <span className="mx-1.5">&#822;</span> {onlineMembers.length}
+                    </h3>
                   </div>
                   {onlineMembers.length > 0 && (
                     <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover max-h-[420px] overflow-y-auto [overscroll-behavior:contain]">
@@ -579,7 +581,9 @@ const GroupPage = () => {
                   )}
                 >
                   <div className="col-span-2 sticky top-0 z-10">
-                    <h3 className="text-xs text-zinc-400 mb-1">{offlineMembers.length} Offline</h3>
+                    <h3 className="text-xs text-zinc-400 mb-1 select-none">
+                      Offline <span className="mx-1.5">&#822;</span> {offlineMembers.length}{' '}
+                    </h3>
                     {offlineMembers.length !== 0 && (
                       <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover  max-h-[420px] overflow-y-auto [overscroll-behavior:contain]">
                         {offlineMembers.map((member) => (
