@@ -644,6 +644,22 @@ export function useAudio() {
     }
   }, [role, dispatch, tracks, currentTrackIndex]);
 
+  const handleStop = useCallback(() => {
+    if (role !== 'dj') return;
+
+    const wsService = getWebSocketService({ url: WS_URL });
+    const timestamp = Date.now();
+
+    wsService.seekAudio(0, timestamp, audioState.trackUrl, false);
+    wsService.pauseAudio(timestamp, 0, audioState.trackUrl);
+
+    dispatch(seek({ position: 0, timestamp }));
+    dispatch(pause({ timestamp }));
+
+    audioServiceRef.current?.seek(0);
+    audioServiceRef.current?.pause();
+  }, [role, audioState.trackUrl, dispatch]);
+
   const handleSelect = useCallback(
     (trackId: string) => {
       if (role !== 'dj') return;
@@ -774,6 +790,7 @@ export function useAudio() {
     next: handleNext,
     previous: handlePrevious,
     restart: handleRestart,
+    stop: handleStop,
     handleSelect,
     emitSeek,
   };

@@ -71,7 +71,7 @@ export function Modal({
           />
 
           {/* Modal */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-1 sm:p-3 pointer-events-none">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -85,14 +85,14 @@ export function Modal({
                 'rounded-xl shadow-2xl',
                 'border border-light-hover dark:border-dark-hover',
                 'pointer-events-auto',
-                'max-h-[90vh] overflow-hidden flex flex-col',
+                'max-h-[96dvh] sm:max-h-[90dvh] overflow-hidden flex flex-col',
                 className
               )}
             >
               {/* Header */}
               {title && (
-                <div className="flex items-center justify-between p-6 border-b border-light-hover dark:border-dark-hover">
-                  <h2 className="text-xl font-semibold text-light-text dark:text-dark-text">
+                <div className="flex items-center justify-between p-3 sm:p-4 border-b border-light-hover dark:border-dark-hover">
+                  <h2 className="text-base sm:text-xl font-semibold text-light-text dark:text-dark-text">
                     {title}
                   </h2>
                   <button
@@ -109,8 +109,7 @@ export function Modal({
                 </div>
               )}
 
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto p-6">{children}</div>
+              <div className="flex-1 overflow-y-auto p-3 sm:p-4">{children}</div>
               {footer}
             </motion.div>
           </div>

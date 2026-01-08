@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { msToSeconds } from '@shared/utils';
 import { STORAGE_KEYS } from '@shared/constants';
+import { AUDIO_SECONDS } from '@/features/audio/utils/constants';
 
 interface LocalAudioState {
   isPlaying: boolean;
@@ -160,6 +161,7 @@ export function useLocalAudioPlayer(
         audio
           .play()
           .then(() => {
+            console.log('playing audio');
             setAudioState((prev) => ({ ...prev, isPlaying: true }));
           })
           .catch((error) => {
@@ -257,7 +259,13 @@ export function useLocalAudioPlayer(
   }, [currentTrackIndex, tracks, setTrack, play]);
 
   const skipForward = useCallback(
-    (seconds: number = 10) => {
+    (seconds: number = AUDIO_SECONDS.SKIP_FORWARD) => {
+      console.log({
+        currentTime: audioRef.current?.currentTime,
+        duration: audioRef.current?.duration,
+        trackDuration: audioState.trackDuration,
+        seconds,
+      });
       if (!audioRef.current) return;
       const currentTime = audioRef.current.currentTime || 0;
       const duration = audioRef.current.duration || audioState.trackDuration || 0;
@@ -268,7 +276,7 @@ export function useLocalAudioPlayer(
   );
 
   const skipBackward = useCallback(
-    (seconds: number = 10) => {
+    (seconds: number = AUDIO_SECONDS.SKIP_BACKWARD) => {
       if (!audioRef.current) return;
       const currentTime = audioRef.current.currentTime || 0;
       const newPosition = Math.max(currentTime - seconds, 0);

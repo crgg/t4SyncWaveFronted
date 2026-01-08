@@ -8,6 +8,18 @@ export interface UploadResponse {
   url: string;
 }
 
+export interface IAudioUploadResponse extends ResponseBase {
+  track: IAudioUpload;
+}
+
+export interface IAudioUpload {
+  id: string;
+  title: string;
+  artist: string;
+  file_url: string;
+  duration_ms: number;
+}
+
 export const uploadService = {
   uploadAudio: async (file: File, groupId: string): Promise<UploadResponse> => {
     const formData = new FormData();
@@ -32,6 +44,13 @@ export const uploadService = {
       },
     });
 
+    return response.data;
+  },
+  addTrackToGroup: async (trackId: string, groupId: string): Promise<IAudioUploadResponse> => {
+    const response = await http.post<IAudioUploadResponse>(`/audio/add-track-to-group`, {
+      trackId,
+      groupId,
+    });
     return response.data;
   },
 };

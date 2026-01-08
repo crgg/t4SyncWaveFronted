@@ -5,14 +5,18 @@ declare global {
     status: boolean;
     error?: string;
   }
+
   interface IResponseErrorBase {
     status: boolean;
     error: string;
+    msg?: string;
   }
+
   interface IResponseBase<T> {
     status: boolean;
     data: T;
   }
+
   interface IUserData {
     authProviders: Array<'email' | 'phone'>;
     hasPassword: boolean;

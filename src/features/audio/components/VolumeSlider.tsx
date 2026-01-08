@@ -108,12 +108,12 @@ export function VolumeSlider({ value, onChange }: VolumeSliderProps) {
     <>
       <div
         ref={volumeSliderRef}
-        className="flex-1 h-1 bg-primary-800 dark:bg-dark-hover rounded-lg cursor-pointer relative group transition-colors duration-200"
+        className="flex-1 h-1 bg-zinc-200 dark:bg-dark-hover rounded-lg cursor-pointer relative group transition-colors duration-200"
         onMouseDown={handleVolumeMouseDown}
         onTouchStart={handleVolumeTouchStart}
       >
         <div
-          className="absolute h-full bg-light-hover dark:bg-primary-700 rounded-lg transition-all duration-75 ease-out"
+          className="absolute h-full bg-[#C5A059] dark:bg-primary-700 rounded-lg transition-all duration-75 ease-out"
           style={{ width: `${localVolume / 10}%` }}
         />
         <div
@@ -121,7 +121,7 @@ export function VolumeSlider({ value, onChange }: VolumeSliderProps) {
           style={{ left: `calc(${localVolume / 10}% - 6px)` }}
         />
       </div>
-      <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary w-10 text-right transition-colors duration-200">
+      <span className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 w-10">
         {Math.round(localVolume / 10)}%
       </span>
     </>

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Plus } from 'lucide-react';
+import { Upload, Plus, Music2 } from 'lucide-react';
 import { useState } from 'react';
 
 import { removeTrack } from '@features/playlist/playlistSlice';
@@ -8,6 +8,7 @@ import { useAudio } from '@/shared/hooks/useAudio';
 import { formatTime } from '@shared/utils';
 import { Button } from '@shared/components/Button/Button';
 import { UploadTrackModal } from './UploadTrackModal';
+import { AddTrackToGroupModal } from './AddTrackToGroupModal';
 
 interface PlaylistHostProps {
   groupId: string;
@@ -15,6 +16,7 @@ interface PlaylistHostProps {
 
 export function PlaylistHost({ groupId }: PlaylistHostProps) {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isAddTrackModalOpen, setIsAddTrackModalOpen] = useState(false);
   const { handleSelect } = useAudio();
 
   const dispatch = useAppDispatch();
@@ -58,32 +60,58 @@ export function PlaylistHost({ groupId }: PlaylistHostProps) {
             No tracks in playlist
           </h3>
           <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-6">
-            Upload your first track to get started
+            Upload your first track or add one from your library
           </p>
-          <Button
-            onClick={() => setIsUploadModalOpen(true)}
-            variant="primary"
-            className="flex items-center gap-2 mx-auto text-xs"
-          >
-            <Upload size={18} />
-            Upload Track
-          </Button>
+          <div className="flex items-center gap-3 justify-center">
+            <Button
+              onClick={() => setIsAddTrackModalOpen(true)}
+              variant="primary"
+              className="flex items-center gap-2 text-xs"
+            >
+              <Music2 size={18} />
+              Add from Library
+            </Button>
+            <Button
+              onClick={() => setIsUploadModalOpen(true)}
+              variant="outline"
+              className="flex items-center gap-2 text-xs"
+            >
+              <Upload size={18} />
+              Upload Track
+            </Button>
+          </div>
         </div>
         <UploadTrackModal
           isOpen={isUploadModalOpen}
           onClose={() => setIsUploadModalOpen(false)}
           groupId={groupId}
         />
+        {isAddTrackModalOpen && (
+          <AddTrackToGroupModal
+            isOpen={isAddTrackModalOpen}
+            onClose={() => setIsAddTrackModalOpen(false)}
+            groupId={groupId}
+          />
+        )}
       </>
     );
   }
 
   return (
     <>
-      <div className="mb-4 justify-end hidden">
+      <div className="mb-4 flex justify-end gap-2">
+        <Button
+          onClick={() => setIsAddTrackModalOpen(true)}
+          variant="primary"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          <Music2 size={16} />
+          Add from Library
+        </Button>
         <Button
           onClick={() => setIsUploadModalOpen(true)}
-          variant="primary"
+          variant="outline"
           size="sm"
           className="flex items-center gap-2"
         >
@@ -91,7 +119,7 @@ export function PlaylistHost({ groupId }: PlaylistHostProps) {
           Upload Track
         </Button>
       </div>
-      <div className="space-y-1 max-h-[600px] overflow-y-auto p-1 hidden">
+      <div className="space-y-1 max-h-[600px] overflow-y-auto p-1">
         <AnimatePresence>
           {tracks.map((track, index) => {
             const isCurrentTrack = track.id === currentTrackId;
@@ -179,6 +207,13 @@ export function PlaylistHost({ groupId }: PlaylistHostProps) {
         onClose={() => setIsUploadModalOpen(false)}
         groupId={groupId}
       />
+      {isAddTrackModalOpen && (
+        <AddTrackToGroupModal
+          isOpen={isAddTrackModalOpen}
+          onClose={() => setIsAddTrackModalOpen(false)}
+          groupId={groupId}
+        />
+      )}
     </>
   );
 }

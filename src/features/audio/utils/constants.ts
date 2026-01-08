@@ -1,0 +1,4 @@
+export const AUDIO_SECONDS = {
+  SKIP_FORWARD: 10,
+  SKIP_BACKWARD: 10,
+};

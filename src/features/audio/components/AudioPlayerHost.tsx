@@ -1,18 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
+import { useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
+
+import * as Icon from '@/shared/icons/Icons';
+
+import AudioButtonToggleMuted from './AudioButtonToggleMuted';
+import { VolumeSlider } from './VolumeSlider';
+
+import { AUDIO_SECONDS } from '@features/audio/utils/constants';
+import { getAudioService } from '@services/audio/audioService';
+import { groupsApi } from '@features/groups/groupsApi';
+import { STORAGE_KEYS } from '@/shared/constants';
 import { useAudio } from '@shared/hooks/useAudio';
 import { formatTime } from '@shared/utils';
-import { motion } from 'framer-motion';
-import { STORAGE_KEYS } from '@/shared/constants';
-import { CirclePlay, Pause } from 'lucide-react';
-import { useParams } from 'react-router-dom';
-
-import { groupsApi } from '@/features/groups/groupsApi';
-import { VolumeSlider } from './VolumeSlider';
-import AudioButtonToggleMuted from './AudioButtonToggleMuted';
-import { getAudioService } from '@services/audio/audioService';
+import { RefreshCw } from 'lucide-react';
 
 export function AudioPlayerHost() {
-  const { audioState, play, pause, seek, setVolume, toggleMute, next, restart } = useAudio();
+  const { audioState, play, pause, seek, setVolume, toggleMute, next, restart, stop } = useAudio();
   const [isDragging, setIsDragging] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
   const { groupId } = useParams<{ groupId: string }>();
@@ -158,26 +162,22 @@ export function AudioPlayerHost() {
     : 0;
 
   return (
-    <div className="bg-light-card dark:bg-dark-card rounded-xl p-6 space-y-6 border border-light-hover dark:border-dark-hover transition-colors duration-200 mb-4">
-      <div className="text-center">
+    <div className="bg-light-card dark:bg-dark-card rounded-xl p-3 sm:p-6 space-y-2 border border-light-hover dark:border-dark-hover transition-colors duration-200 mb-4">
+      <div className="text-center py-3">
         <motion.h3
-          className="text-xl font-bold text-light-text dark:text-dark-text mb-1 transition-colors duration-200"
+          className="text-base sm:text-lg font-semibold text-zinc-800 dark:text-zinc-100 mb-1"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
           {audioState.trackTitle || 'No title'}
         </motion.h3>
-        {audioState.trackArtist && (
-          <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200">
-            {audioState.trackArtist}
-          </p>
-        )}
       </div>
 
-      <div className="space-y-2">
-        <div className="relative h-2 bg-light-hover dark:bg-dark-hover rounded-full overflow-hidden group transition-colors duration-200">
-          <div className="absolute inset-0 bg-light-hover dark:bg-dark-hover rounded-full transition-colors duration-200" />
+      <div className="space-y-2 w-full">
+        <div className="relative h-2 rounded-full overflow-hidden group">
+          <div className="absolute inset-0 bg-zinc-200 dark:bg-dark-hover rounded-full" />
+
           <motion.div
             ref={progressRef}
             className="absolute h-full bg-primary-700 rounded-full pointer-events-none"
@@ -185,12 +185,14 @@ export function AudioPlayerHost() {
             animate={{ width: `${progressPercentage}%` }}
             transition={{ duration: isDragging ? 0 : 0.1, ease: 'linear' }}
           />
+
           <motion.div
-            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-primary-600 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg border-2 border-light-bg dark:border-dark-bg pointer-events-none z-10"
+            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg border-2 border-light-bg dark:border-dark-bg pointer-events-none z-10"
             style={{ left: `calc(${progressPercentage}% - 8px)` }}
-            initial={{ scale: 0 }}
             whileHover={{ scale: 1.2 }}
+            initial={{ scale: 0 }}
           />
+
           <input
             type="range"
             min="0"
@@ -212,111 +214,100 @@ export function AudioPlayerHost() {
           <span>{formatTime(audioState.trackDuration || 0)}</span>
         </div>
       </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-7">
+        <div className="flex items-center order-2 sm:order-1 justify-center sm:justify-start">
+          <div className="flex items-center gap-3 w-full max-w-[160px]">
+            <div className="w-5 h-5 flex items-center justify-center">
+              <AudioButtonToggleMuted
+                volume={audioState.volume || 100}
+                isMuted={audioState.isMuted}
+                toggleMute={toggleMute}
+              />
+            </div>
+            <div className="flex items-center gap-3 w-full">
+              <VolumeSlider
+                value={audioState.isMuted ? 0 : audioState.volume || 100}
+                onChange={handleVolumeChange}
+              />
+            </div>
+          </div>
+        </div>
 
-      <div className="flex items-center justify-center gap-2">
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={restart}
-          disabled={!audioState.trackUrl}
-          className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Restart"
-        >
-          <svg
-            className="w-5 h-5 text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </motion.button>
-
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={handleSkipBackward}
-          disabled={!audioState.trackUrl}
-          className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
-          title="Rewind 10s"
-        >
-          <svg
-            className="w-6 h-6 text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z" />
-          </svg>
-          <span className="text-xs absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-light-text-secondary dark:text-dark-text-secondary whitespace-nowrap transition-colors duration-200">
-            10s
-          </span>
-        </motion.button>
-
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={audioState.isPlaying ? handlePause : handlePlay}
-          disabled={!audioState.trackUrl}
-          className="p-4 rounded-full bg-primary-600 hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-white"
-        >
-          {!audioState.isPlaying ? <CirclePlay size={28} /> : <Pause size={28} />}
-        </motion.button>
-
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={handleSkipForward}
-          disabled={!audioState.trackUrl}
-          className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
-          title="Forward 10s"
-        >
-          <svg
-            className="w-6 h-6 text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0011 6v2.798l-5.445-3.63z" />
-          </svg>
-          <span className="text-xs absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200">
-            10s
-          </span>
-        </motion.button>
-
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={next}
-          disabled={!audioState.trackUrl}
-          className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 hidden"
-          title="Next"
-        >
-          <svg
-            className="w-5 h-5 text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </motion.button>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <AudioButtonToggleMuted
-          volume={audioState.volume || 100}
-          isMuted={audioState.isMuted}
-          toggleMute={toggleMute}
-        />
-        <VolumeSlider
-          value={audioState.isMuted ? 0 : audioState.volume || 100}
-          onChange={handleVolumeChange}
-        />
+        <div className="w-full flex items-center order-1 sm:order-2 justify-center gap-1.5 sm:gap-3">
+          <div className="w-full flex flex-col items-center order-1 sm:order-2 justify-center gap-1.5 sm:gap-3">
+            <div className="flex items-center justify-center gap-2">
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={restart}
+                disabled={!audioState.trackUrl || audioState.currentPosition === 0}
+                className="p-2 rounded-full enabled:hover:bg-light-hover dark:enabled:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Restart"
+              >
+                <RefreshCw strokeWidth={3} className="sm:w-4 sm:h-4 w-3 h-3" />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handleSkipBackward}
+                disabled={!audioState.trackUrl}
+                className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
+                title="Rewind 10s"
+              >
+                <Icon.Rewind className="sm:w-6 sm:h-6 w-4 h-4" />
+                <span className="text-xs absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-light-text-secondary dark:text-dark-text-secondary whitespace-nowrap transition-colors duration-200">
+                  {AUDIO_SECONDS.SKIP_BACKWARD}s
+                </span>
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={audioState.isPlaying ? handlePause : handlePlay}
+                disabled={!audioState.trackUrl}
+                className="p-4 rounded-full bg-primary-600 hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-white"
+              >
+                {audioState.isPlaying ? (
+                  <Icon.Pause className="sm:w-8 sm:h-8 w-6 h-6" />
+                ) : (
+                  <Icon.Play className="sm:w-8 sm:h-8 w-6 h-6" />
+                )}
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handleSkipForward}
+                disabled={!audioState.trackUrl}
+                className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
+                title="Forward 10s"
+              >
+                <Icon.Fordward className="sm:w-6 sm:h-6 w-4 h-4" />
+                <span className="text-xs absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200">
+                  {AUDIO_SECONDS.SKIP_BACKWARD}s
+                </span>
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={next}
+                disabled={!audioState.trackUrl}
+                className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 hidden"
+                title="Next"
+              >
+                <Icon.Next className="sm:w-5 sm:h-5 w-3 h-3" />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="p-2 rounded-full enabled:hover:bg-light-hover dark:enabled:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!audioState.trackUrl || audioState.currentPosition === 0}
+                onClick={stop}
+                title="Stop"
+              >
+                <Icon.Stop className="sm:w-5 sm:h-5 w-3 h-3" />
+              </motion.button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
