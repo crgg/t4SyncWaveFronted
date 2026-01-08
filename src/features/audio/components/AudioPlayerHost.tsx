@@ -214,6 +214,7 @@ export function AudioPlayerHost() {
           <span>{formatTime(audioState.trackDuration || 0)}</span>
         </div>
       </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-7">
         <div className="flex items-center order-2 sm:order-1 justify-center sm:justify-start">
           <div className="flex items-center gap-3 w-full max-w-[160px]">
@@ -244,7 +245,10 @@ export function AudioPlayerHost() {
                 className="p-2 rounded-full enabled:hover:bg-light-hover dark:enabled:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Restart"
               >
-                <RefreshCw strokeWidth={3} className="sm:w-4 sm:h-4 w-3 h-3" />
+                <RefreshCw
+                  strokeWidth={3}
+                  className="text-light-text-secondary dark:text-dark-text-secondary sm:w-4 sm:h-4 w-3 h-3"
+                />
               </motion.button>
               <motion.button
                 whileHover={{ scale: 1.1 }}

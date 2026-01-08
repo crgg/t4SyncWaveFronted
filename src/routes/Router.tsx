@@ -1,8 +1,8 @@
 import { lazy } from 'react';
 import { Navigate, RouteObject, useRoutes } from 'react-router-dom';
 
-import HostPage from '@/pages/HostPage';
-import ListenerPage from '@/pages/ListenerPage';
+// import HostPage from '@/pages/HostPage';
+// import ListenerPage from '@/pages/ListenerPage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import NotFoundPage from '@/pages/NotFoundPage';
@@ -47,14 +47,14 @@ const routes: RouteObject[] = [
         path: paths.LIBRARY,
         element: <LibraryPage />,
       },
-      {
-        path: '/host/:sessionId',
-        element: <HostPage />,
-      },
-      {
-        path: '/listener/:sessionId',
-        element: <ListenerPage />,
-      },
+      // {
+      //   path: '/host/:sessionId',
+      //   element: <HostPage />,
+      // },
+      // {
+      //   path: '/listener/:sessionId',
+      //   element: <ListenerPage />,
+      // },
       {
         path: paths.PROFILE,
         element: <ProfilePage />,

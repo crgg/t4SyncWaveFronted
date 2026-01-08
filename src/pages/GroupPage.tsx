@@ -513,7 +513,7 @@ const GroupPage = () => {
           </div>
         )}
 
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex justify-between mt-4">
           <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2">
             <Users size={20} />
             Members ({groupUsers.members.length})
@@ -549,12 +549,7 @@ const GroupPage = () => {
               </div>
             ) : (
               <div>
-                <div
-                  className={cn(
-                    'mb-2 ',
-                    isOwner ? 'sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2' : ''
-                  )}
-                >
+                <div className="mb-2">
                   <div className="col-span-2 sticky top-0 z-10">
                     <h3 className="text-xs text-zinc-400 mb-1 select-none">
                       Online <span className="mx-1.5">&#822;</span> {onlineMembers.length}
@@ -566,7 +561,6 @@ const GroupPage = () => {
                         <MemberCard
                           key={member.id}
                           member={member}
-                          isOwner={isOwner}
                           onRemove={handleRemoveMember}
                           isConnected={!!connectionUsers[member.user_id]}
                         />
@@ -590,7 +584,6 @@ const GroupPage = () => {
                           <MemberCard
                             key={member.id}
                             member={member}
-                            isOwner={isOwner}
                             onRemove={handleRemoveMember}
                             isConnected={!!connectionUsers[member.user_id]}
                           />
@@ -672,12 +665,12 @@ const GroupPage = () => {
 
 interface MemberCardProps {
   member: Member;
-  isOwner: boolean;
+  isOwner?: boolean;
   onRemove: (member: Member) => void;
   isConnected: boolean;
 }
 
-const MemberCard = ({ member, isOwner, onRemove, isConnected }: MemberCardProps) => {
+const MemberCard = ({ member, isOwner = false, onRemove, isConnected }: MemberCardProps) => {
   const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false);
 
   const getInitials = (name?: string) => {
@@ -721,17 +714,53 @@ const MemberCard = ({ member, isOwner, onRemove, isConnected }: MemberCardProps)
           )}
           onClick={handleAvatarClick}
         >
+          {isConnected && isOwner && (
+            <motion.div
+              className="absolute inset-0 rounded-full border-4 border-primary"
+              animate={{
+                scale: [1, 1.15, 1],
+                opacity: [0.6, 0.3, 0.6],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+          )}
           {member.avatar_url ? (
-            <img
+            <motion.img
               src={member.avatar_url}
               alt={member.name}
-              className="w-full h-full rounded-full object-cover"
+              className={cn(
+                'w-full h-full rounded-full object-cover relative z-10',
+                isOwner ? 'border border-primary' : ''
+              )}
+              animate={isConnected && isOwner ? { scale: [1, 1.02, 1] } : {}}
+              transition={
+                isConnected && isOwner ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : {}
+              }
             />
           ) : (
-            getInitials(member.name || member.guest_name || '?')
+            <motion.div
+              className={cn(
+                'w-full h-full rounded-full flex items-center justify-center relative z-10',
+                isOwner ? 'border-4 border-primary' : ''
+              )}
+              animate={isConnected && isOwner ? { scale: [1, 1.02, 1] } : {}}
+              transition={
+                isConnected && isOwner ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : {}
+              }
+            >
+              {getInitials(member.name || member.guest_name || '?')}
+            </motion.div>
           )}
           {isConnected && (
-            <div className="w-3.5 h-3.5 rounded-full bg-green-500 absolute -bottom-0.5 -right-0.5 border-2 border-white dark:border-dark-hover"></div>
+            <div
+              className={cn(
+                'w-3.5 h-3.5 rounded-full bg-green-500 absolute -bottom-0.5 -right-0.5 border-2 border-white dark:border-dark-hover z-20'
+              )}
+            ></div>
           )}
         </div>
         <div className="flex-1 min-w-0">

@@ -565,7 +565,7 @@ export function useAudio() {
     (volume: number) => {
       const clampedVolume = Math.max(0, Math.min(100, volume));
 
-      if (Math.abs(clampedVolume - (audioState.volume || 0)) < 0.1) {
+      if (Math.abs(clampedVolume - (audioState.volume ?? 0)) < 0.1) {
         return;
       }
 

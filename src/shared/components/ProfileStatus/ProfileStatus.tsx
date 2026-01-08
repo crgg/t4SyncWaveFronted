@@ -1,12 +1,13 @@
+import { Link } from 'react-router-dom';
+import { Info } from 'lucide-react';
+
 import { useAppSelector } from '@/app/hooks';
 import { paths } from '@/routes/paths';
-import { Info } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 const ProfileStatus = () => {
   const user = useAppSelector((state) => state.auth.user);
 
-  if (user?.email) return null;
+  if (user?.email || !user?.email) return null;
 
   return (
     <div className="flex items-center gap-2 text-sm max-w-md w-full mx-auto my-4">
