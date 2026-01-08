@@ -1,6 +1,8 @@
-import { motion } from 'framer-motion';
-import { formatTime } from '@shared/utils';
 import { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
+
+import { formatTime } from '@shared/utils';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface LocalAudioPlayerProps {
   isPlaying: boolean;
@@ -43,6 +45,7 @@ export function LocalAudioPlayer({
   const [localVolume, setLocalVolume] = useState(volume);
   const progressRef = useRef<HTMLDivElement>(null);
   const volumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { theme } = useTheme();
 
   useEffect(() => {
     setLocalVolume(volume);
@@ -307,9 +310,11 @@ export function LocalAudioPlayer({
           max="100"
           value={localVolume}
           onChange={handleVolumeChange}
-          className="flex-1 h-1 bg-light-hover dark:bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary-600"
+          className="flex-1 h-1 bg-light-hover dark:bg-dark-hover rounded-lg appearance-none cursor-pointer accent-primary-600 transition-colors duration-200"
           style={{
-            background: `linear-gradient(to right, #C5A059 0%, #C5A059 ${localVolume}%, #2a2516 ${localVolume}%, #2a2516 100%)`,
+            background: `linear-gradient(to right, #C5A059 0%, #C5A059 ${localVolume}%, ${
+              theme === 'dark' ? '#2a2516' : '#E2C285'
+            } ${localVolume}%, ${theme === 'dark' ? '#2a2516' : '#E2C285'} 100%)`,
           }}
         />
         <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary w-10 text-right">

@@ -14,6 +14,8 @@ declare global {
     data: T;
   }
   interface IUserData {
+    authProviders: Array<'email' | 'phone'>;
+    hasPassword: boolean;
     id: string;
     name: string | null;
     nickname?: string;

@@ -2,7 +2,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MoveLeft } from 'lucide-react';
 
-import { ThemeToggle } from '@/components/ThemeToggle';
+import { ThemeToggle } from '@shared/components/ThemeToggle/ThemeToggle';
 import { withGuest } from '@/shared/hoc/withGuest';
 
 import logo from '@/app/assets/logo.png';

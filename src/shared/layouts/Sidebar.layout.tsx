@@ -59,7 +59,7 @@ const SidebarLayout = () => {
           </div>
           <Link to={paths.PROFILE} onClick={onCloseSidebar}>
             <div className="py-2 flex gap-2 cursor-pointer hover:bg-light-hover dark:hover:bg-dark-hover rounded-lg px-2 -mx-2 transition-colors">
-              <div className="rounded-full dark:bg-primary-light bg-primary font-bold w-8 h-8 flex items-center justify-center text-secondary text-xs overflow-hidden flex-shrink-0">
+              <div className="rounded-full dark:bg-primary-dark bg-primary font-bold w-8 h-8 flex items-center justify-center text-secondary text-xs overflow-hidden flex-shrink-0">
                 {user?.avatar_url ? (
                   <img
                     src={user.avatar_url}
@@ -67,13 +67,13 @@ const SidebarLayout = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-primary dark:text-primary-light font-medium text-xs">
+                  <span className="text-white font-medium text-xs">
                     {user?.name ? getInitials(user?.name) : '?'}
                   </span>
                 )}
               </div>
               <div className="min-w-0 flex-1 max-w-[230px] overflow-hidden">
-                <p className="font-bold text-xs text-ellipsis overflow-hidden whitespace-nowrap max-w-[230px] line-clamp-1 truncate pr-3">
+                <p className="font-bold text-xs text-ellipsis overflow-hidden whitespace-nowrap max-w-[230px] line-clamp-1 truncate pr-3 text-light-text dark:text-dark-text">
                   {user?.name || 'Unknown'}
                 </p>
                 <p className="text-xs text-zinc-400 text-ellipsis overflow-hidden whitespace-nowrap">
@@ -105,7 +105,7 @@ const SidebarLayout = () => {
         </AnimatePresence>
         <div className="flex flex-col gap-1 pt-2 border-t border-light-hover/50 dark:border-dark-hover/50">
           <button
-            className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-light-hover/50 dark:hover:bg-dark-hover/50 transition-colors text-zinc-400 hover:text-red-600 dark:hover:text-red-400"
+            className="flex items-center gap-3 py-2 px-2 rounded-lg transition-colors text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400"
             onClick={handleLogout}
           >
             <LogOutIcon size={18} />

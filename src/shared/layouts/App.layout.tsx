@@ -1,12 +1,11 @@
 import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 
-import { Header } from '@/components/Header';
+import { Header } from '@shared/components/Header/Header';
 import SidebarLayout from './Sidebar.layout';
 import { MobileGroupsTabs } from '../components/MobileGroupsTabs/MobileGroupsTabs';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { layoutActions, LayoutState } from '@/app/slices/layoutSlice';
-// import { useWebSocket } from '../hooks/useWebSocket';
 import { paths } from '@/routes/paths';
 import { profileService } from '@/services/profile';
 import { authActions } from '@/features/auth/authSlice';
@@ -17,8 +16,6 @@ const AppLayout = () => {
   const activeTab = useAppSelector((state) => state.layout.activeTab);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-
-  // useWebSocket();
 
   useEffect(() => {
     const loadProfile = async () => {

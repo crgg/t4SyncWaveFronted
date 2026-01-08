@@ -3,7 +3,16 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { motion } from 'framer-motion';
-import { Camera, Loader2, Edit2, Mail, ArrowLeftCircle, Lock, Phone } from 'lucide-react';
+import {
+  Camera,
+  Loader2,
+  Edit2,
+  Mail,
+  ArrowLeftCircle,
+  Lock,
+  Phone,
+  TriangleAlert,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -13,6 +22,7 @@ import { Button } from '@shared/components/Button/Button';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { authActions } from '@/features/auth/authSlice';
 import {
+  cn,
   formatPhoneNumber,
   getErrorMessage,
   getInitials,
@@ -272,6 +282,8 @@ function ProfilePage() {
     }
   };
 
+  const hasEmail = !!user?.email;
+
   if (isLoading && !user) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
@@ -449,16 +461,43 @@ function ProfilePage() {
               </span>
             </button>
 
-            {/* Change Password */}
-            {!user?.phone && (
+            {user?.hasPassword && (
               <button
-                onClick={() => setIsChangePasswordMode(!isChangePasswordMode)}
-                className="w-full flex items-center gap-3 p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98] border-b border-light-hover/30 dark:border-dark-hover/30"
+                onClick={() => {
+                  if (!hasEmail) return;
+                  setIsChangePasswordMode(!isChangePasswordMode);
+                }}
+                disabled={!hasEmail}
+                className="disabled:cursor-not-allowed flex items-center gap-3 w-full p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98] border-b border-light-hover/30 dark:border-dark-hover/30"
               >
-                <Lock size={20} className="text-primary dark:text-primary-light flex-shrink-0" />
-                <span className="text-sm sm:text-base font-medium text-primary dark:text-primary-light">
-                  Change Password
-                </span>
+                {hasEmail ? (
+                  <Lock size={20} className="text-primary dark:text-primary-light flex-shrink-0" />
+                ) : (
+                  <TriangleAlert
+                    size={20}
+                    className="text-zinc-500 dark:text-zinc-400 flex-shrink-0"
+                  />
+                )}
+                <div>
+                  <div className="flex gap-3">
+                    <span
+                      className={cn(
+                        'text-sm sm:text-base font-medium',
+                        hasEmail
+                          ? 'text-primary dark:text-primary-light'
+                          : 'text-zinc-500 dark:text-zinc-400'
+                      )}
+                    >
+                      Change Password
+                    </span>
+                  </div>
+                  {!hasEmail && (
+                    <div className="text-xs text-start text-zinc-500 dark:text-zinc-400">
+                      <p>Do you want to change your password?</p>
+                      <p>You must set up an email address.</p>
+                    </div>
+                  )}
+                </div>
               </button>
             )}
 
@@ -467,10 +506,7 @@ function ProfilePage() {
               onClick={() => handleLogout()}
               className="w-full flex items-center gap-3 p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98]"
             >
-              <ArrowLeftCircle
-                size={20}
-                className="text-primary dark:text-primary-light flex-shrink-0"
-              />
+              <ArrowLeftCircle size={20} className="text-red-600 dark:text-red-400 flex-shrink-0" />
               <span className="text-sm sm:text-base font-medium text-red-600 dark:text-red-400">
                 Logout
               </span>
@@ -603,14 +639,16 @@ function ProfilePage() {
               Change Email
             </h3>
             <form onSubmit={handleSubmitEmail(onSubmitEmail)} className="space-y-4">
-              <div className="p-3 bg-light-hover/20 dark:bg-dark-hover/30 rounded-lg mb-2">
-                <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mb-1">
-                  Current Email
-                </p>
-                <p className="text-sm font-medium text-light-text dark:text-dark-text">
-                  {user?.email}
-                </p>
-              </div>
+              {hasEmail && (
+                <div className="p-3 bg-light-hover/20 dark:bg-dark-hover/30 rounded-lg mb-2">
+                  <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mb-1">
+                    Current Email
+                  </p>
+                  <p className="text-sm font-medium text-light-text dark:text-dark-text">
+                    {user?.email}
+                  </p>
+                </div>
+              )}
 
               <Input
                 label="New Email"

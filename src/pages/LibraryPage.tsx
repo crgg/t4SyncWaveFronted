@@ -15,6 +15,7 @@ import { TrackList } from './LibraryPage/components/TrackList';
 import { LocalAudioPlayer } from './LibraryPage/components/LocalAudioPlayer';
 import { SearchAndSortControls } from './LibraryPage/components/SearchAndSortControls';
 import { UploadTrackModal } from './LibraryPage/components/UploadTrackModal';
+import ProfileStatus from '@/shared/components/ProfileStatus/ProfileStatus';
 
 type SortOption = 'newest' | 'oldest' | 'title-asc' | 'title-desc' | 'artist-asc' | 'artist-desc';
 
@@ -125,10 +126,14 @@ const LibraryPage = () => {
 
   if (allTracks.length === 0) {
     return (
-      <div className="w-full max-w-4xl mx-auto pb-24">
-        <LibraryPageHeader tracksCount={0} onAddTrack={handleAddTrack} />
-        <EmptyLibraryState onAddTrack={handleAddTrack} />
-      </div>
+      <>
+        <div className="w-full max-w-4xl mx-auto pb-24">
+          <LibraryPageHeader tracksCount={0} onAddTrack={handleAddTrack} />
+          <ProfileStatus />
+          <EmptyLibraryState onAddTrack={handleAddTrack} />
+        </div>
+        <UploadTrackModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} />
+      </>
     );
   }
 

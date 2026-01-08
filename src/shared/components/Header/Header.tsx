@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { ThemeToggle } from './ThemeToggle';
+import { ThemeToggle } from '@shared/components/ThemeToggle/ThemeToggle';
 
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { layoutActions } from '@/app/slices/layoutSlice';

@@ -724,7 +724,7 @@ const MemberCard = ({ member, isOwner, onRemove, isConnected }: MemberCardProps)
               className="w-full h-full rounded-full object-cover"
             />
           ) : (
-            getInitials(member.name || member.guest_name)
+            getInitials(member.name || member.guest_name || '?')
           )}
           {isConnected && (
             <div className="w-3.5 h-3.5 rounded-full bg-green-500 absolute -bottom-0.5 -right-0.5 border-2 border-white dark:border-dark-hover"></div>
@@ -733,7 +733,7 @@ const MemberCard = ({ member, isOwner, onRemove, isConnected }: MemberCardProps)
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="font-medium text-light-text dark:text-dark-text truncate">
-              {member.display_name || member.name || member.guest_name || 'Guest'}
+              {member.display_name || member.name || member.guest_name || 'Unknown'}
             </p>
             {member.role === 'owner' && (
               <Crown size={14} className="text-primary-600 flex-shrink-0" fill="currentColor" />

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Music } from 'lucide-react';
-import { formatTime, msToSeconds } from '@shared/utils';
+import { cn, formatTime, msToSeconds } from '@shared/utils';
 import type { Audio } from '@/features/library/libraryApi';
 
 interface TrackListProps {
@@ -33,11 +33,15 @@ export function TrackList({ tracks, currentTrackId, onTrackClick }: TrackListPro
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               onClick={() => onTrackClick(track)}
-              className={`
+              className={cn(
+                `
                 flex items-center gap-4 p-3 rounded-lg 
                 transition-colors cursor-pointer
-                ${isCurrentTrack ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-light-surface dark:hover:bg-dark-surface'}
-              `}
+              `,
+                isCurrentTrack
+                  ? 'bg-primary-50 dark:bg-primary-900/20'
+                  : 'hover:bg-light-hover dark:hover:bg-dark-hover'
+              )}
             >
               <Music
                 size={20}

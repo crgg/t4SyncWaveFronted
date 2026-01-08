@@ -23,6 +23,7 @@ import { JoinGroupByCode } from './GroupsPage/components/JoinGroupByCode';
 import type { SortOption } from './GroupsPage/types';
 import { withAuth } from '@/shared/hoc/withAuth';
 import { paths } from '@/routes/paths';
+import ProfileStatus from '@/shared/components/ProfileStatus/ProfileStatus';
 
 const GroupsPage = () => {
   const activeTab = useAppSelector((state) => state.layout.activeTab);
@@ -130,6 +131,7 @@ const GroupsPage = () => {
     return (
       <>
         <div className="w-full">{!isMyGroups && <JoinGroupByCode userId={userId} />}</div>
+        <ProfileStatus />
         <EmptyGroupsState
           isMyGroups={isMyGroups}
           onCreateGroup={() => setIsCreateModalOpen(true)}
@@ -150,6 +152,8 @@ const GroupsPage = () => {
         />
 
         {!isMyGroups && <JoinGroupByCode userId={userId} />}
+
+        <ProfileStatus />
 
         <SearchAndSortControls
           searchQuery={searchQuery}
