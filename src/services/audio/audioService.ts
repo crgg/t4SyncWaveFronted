@@ -271,23 +271,29 @@ class AudioService {
       return;
     }
 
-    try {
-      (this.audioElement as any).__isUpdatingFromCode = true;
+    (this.audioElement as any).__isUpdatingFromCode = true;
 
-      await this.audioElement.play();
+    this.updateState({ isPlaying: true }, true);
 
-      setTimeout(() => {
+    const playPromise = this.audioElement.play();
+
+    playPromise
+      .then(() => {
+        setTimeout(() => {
+          if (this.audioElement) {
+            (this.audioElement as any).__isUpdatingFromCode = false;
+          }
+        }, 100);
+      })
+      .catch((error) => {
         if (this.audioElement) {
           (this.audioElement as any).__isUpdatingFromCode = false;
+          this.updateState({ isPlaying: false }, false);
         }
-      }, 100);
-    } catch (error) {
-      if (this.audioElement) {
-        (this.audioElement as any).__isUpdatingFromCode = false;
-      }
-      console.error('Error al reproducir:', error);
-      throw error;
-    }
+        console.error('Error al reproducir:', error);
+      });
+
+    return Promise.resolve();
   }
 
   pause(): void {
@@ -296,18 +302,17 @@ class AudioService {
       return;
     }
 
-    try {
-      (this.audioElement as any).__isUpdatingFromCode = true;
-      this.audioElement.pause();
+    (this.audioElement as any).__isUpdatingFromCode = true;
 
-      setTimeout(() => {
-        if (this.audioElement) {
-          (this.audioElement as any).__isUpdatingFromCode = false;
-        }
-      }, 100);
-    } catch (error) {
-      console.warn('Error al pausar audio:', error);
-    }
+    this.updateState({ isPlaying: false }, true);
+
+    this.audioElement.pause();
+
+    setTimeout(() => {
+      if (this.audioElement) {
+        (this.audioElement as any).__isUpdatingFromCode = false;
+      }
+    }, 100);
   }
 
   seek(position: number): void {
@@ -518,7 +523,10 @@ class AudioService {
     }
   }
 
-  private updateState(updates: Partial<AudioState & { error?: string }>): void {
+  private updateState(
+    updates: Partial<AudioState & { error?: string }>,
+    skipCallback = false
+  ): void {
     if (!this.currentState) {
       this.currentState = {
         isPlaying: false,
@@ -530,7 +538,6 @@ class AudioService {
         ...updates,
       } as AudioState;
     } else {
-      // Actualizar estado
       this.currentState = {
         ...this.currentState,
         ...updates,
@@ -539,6 +546,10 @@ class AudioService {
       if (updates.currentPosition !== undefined || updates.isPlaying !== undefined) {
         this.currentState.timestamp = Date.now();
       }
+    }
+
+    if (skipCallback) {
+      return;
     }
 
     if (this.onStateChange && this.currentState) {

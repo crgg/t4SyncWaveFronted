@@ -200,6 +200,7 @@ const LibraryPage = () => {
             tracks={displayedTracks}
             currentTrackId={audioState.trackId || null}
             onTrackClick={handleTrackClick}
+            isPlaying={audioState.isPlaying}
           />
         )}
       </div>

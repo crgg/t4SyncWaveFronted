@@ -518,13 +518,12 @@ export function useAudio() {
 
   const handlePause = useCallback(() => {
     if (role !== 'dj') return;
-
-    const timestamp = Date.now();
-    dispatch(pause({ timestamp }));
-
     if (audioServiceRef.current) {
       audioServiceRef.current.pause();
     }
+
+    const timestamp = Date.now();
+    dispatch(pause({ timestamp }));
 
     const wsService = getWebSocketService({ url: WS_URL });
     const currentState = audioServiceRef.current?.getState();

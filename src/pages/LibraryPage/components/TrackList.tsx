@@ -7,9 +7,10 @@ interface TrackListProps {
   tracks: Audio[];
   currentTrackId: string | null;
   onTrackClick: (track: Audio) => void;
+  isPlaying: boolean;
 }
 
-export function TrackList({ tracks, currentTrackId, onTrackClick }: TrackListProps) {
+export function TrackList({ tracks, currentTrackId, onTrackClick, isPlaying }: TrackListProps) {
   if (tracks.length === 0) {
     return null;
   }
@@ -43,20 +44,22 @@ export function TrackList({ tracks, currentTrackId, onTrackClick }: TrackListPro
                   : 'hover:bg-light-hover dark:hover:bg-dark-hover'
               )}
             >
-              <Music
-                size={20}
-                className={`flex-shrink-0 ${
-                  isCurrentTrack
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-light-text dark:text-dark-text'
-                }`}
-              />
+              {isCurrentTrack && isPlaying ? (
+                <CurrentTrackIndicator />
+              ) : isCurrentTrack ? (
+                <Music
+                  size={20}
+                  className={`flex-shrink-0 text-primary-600 dark:text-primary-400`}
+                />
+              ) : (
+                <Music size={20} className={`flex-shrink-0 text-light-text dark:text-zinc-400`} />
+              )}
               <div className="flex-1 min-w-0">
                 <div
                   className={`text-sm font-medium truncate ${
                     isCurrentTrack
                       ? 'text-primary-600 dark:text-primary-400'
-                      : 'text-light-text dark:text-dark-text'
+                      : 'text-light-text dark:text-zinc-400'
                   }`}
                 >
                   {displayText}
@@ -71,6 +74,21 @@ export function TrackList({ tracks, currentTrackId, onTrackClick }: TrackListPro
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function CurrentTrackIndicator() {
+  return (
+    <div className="flex items-end gap-0.5">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div key={index} className="h-4 rotate-180">
+          <div
+            className="current-track-indicator"
+            style={{ '--delay': `${index * 0.1}s` } as React.CSSProperties}
+          ></div>
+        </div>
+      ))}
     </div>
   );
 }

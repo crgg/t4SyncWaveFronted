@@ -103,9 +103,9 @@ export function useLocalAudioPlayer(
         isPlaying: false,
         currentPosition: 0,
       }));
-      // Auto-play siguiente track si existe
-      if (currentTrackIndex !== null && currentTrackIndex < tracks.length - 1) {
-        const nextIndex = currentTrackIndex + 1;
+      const match = currentTrackIndex !== null && currentTrackIndex <= tracks.length - 1;
+      if (match) {
+        const nextIndex = currentTrackIndex - 1;
         setCurrentTrackIndex(nextIndex);
         const nextTrack = tracks[nextIndex];
         if (nextTrack) {
@@ -276,7 +276,7 @@ export function useLocalAudioPlayer(
   );
 
   const skipBackward = useCallback(
-    (seconds: number = AUDIO_SECONDS.SKIP_BACKWARD) => {
+    (seconds: number = 10) => {
       if (!audioRef.current) return;
       const currentTime = audioRef.current.currentTime || 0;
       const newPosition = Math.max(currentTime - seconds, 0);
