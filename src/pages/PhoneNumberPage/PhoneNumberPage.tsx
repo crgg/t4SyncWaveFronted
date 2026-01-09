@@ -154,10 +154,10 @@ const PhoneNumberPage = () => {
           <p className="text-xs sm:text-sm font-extralight text-zinc-500 dark:text-zinc-400">
             Do you have an email?{' '}
             <Link
-              to={paths.AUTH}
+              to={paths.LOGIN}
               className="text-primary hover:text-primary-dark font-bold transition-colors underline underline-offset-2"
             >
-              Change method
+              Use email instead
             </Link>
           </p>
         </div>

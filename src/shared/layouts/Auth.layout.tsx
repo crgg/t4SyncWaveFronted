@@ -22,11 +22,11 @@ const AuthLayout = () => {
             {!isAuthPage && (
               <button
                 className="inline-flex items-center gap-2 text-xs sm:text-sm font-extralight underline underline-offset-8 text-zinc-600 dark:text-zinc-400 hover:text-zinc-500 dark:hover:text-zinc-300"
-                onClick={() => navigate(-1)}
+                onClick={() => navigate(paths.AUTH)}
                 type="button"
               >
                 <MoveLeft className="inline" size={16} />
-                Go Back
+                Go to home
               </button>
             )}
           </div>

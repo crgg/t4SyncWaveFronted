@@ -123,10 +123,10 @@ function LoginPage() {
             <p className="text-xs sm:text-sm font-extralight">
               Do you have a phone number?{' '}
               <Link
-                to={paths.AUTH}
+                to={paths.PHONE_NUMBER}
                 className="text-primary hover:text-primary-dark font-bold transition-colors underline ps-1"
               >
-                Change method
+                Use phone number instead
               </Link>
             </p>
           </div>
