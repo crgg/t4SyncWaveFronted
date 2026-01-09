@@ -27,5 +27,6 @@ declare global {
     phone?: string;
     avatar_url?: string;
     created_at?: string;
+    displayName: string;
   }
 }

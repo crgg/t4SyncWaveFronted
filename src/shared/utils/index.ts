@@ -213,3 +213,7 @@ export const formatDateHumanized = (dateString: string, period: 'ago' | 'on' = '
     ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
+
+export const extractCharacters = (text: string, count: number = 1): string => {
+  return text.split('').slice(count).join('');
+};

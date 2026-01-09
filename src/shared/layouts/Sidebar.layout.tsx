@@ -13,7 +13,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { clearAuthStorageKeys } from '@/features/auth/helpers';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { layoutActions } from '@/app/slices/layoutSlice';
-import { getInitials } from '../utils';
+import { extractCharacters, formatPhoneNumber, getInitials } from '../utils';
 import { paths } from '@/routes/paths';
 
 const SidebarLayout = () => {
@@ -91,16 +91,18 @@ const SidebarLayout = () => {
                   />
                 ) : (
                   <span className="text-white font-medium text-xs">
-                    {user?.name ? getInitials(user?.name) : '?'}
+                    {user?.displayName ? getInitials(user?.displayName) : '?'}
                   </span>
                 )}
               </div>
               <div className="min-w-0 flex-1 max-w-[230px] overflow-hidden">
                 <p className="font-bold text-xs text-ellipsis overflow-hidden whitespace-nowrap max-w-[230px] line-clamp-1 truncate pr-3 text-light-text dark:text-dark-text">
-                  {user?.name || 'Unknown'}
+                  {user?.displayName || 'Unknown'}
                 </p>
                 <p className="text-xs text-zinc-400 text-ellipsis overflow-hidden whitespace-nowrap">
-                  {user?.email || user?.phone || 'Unknown'}
+                  {user?.email ||
+                    (user?.phone && formatPhoneNumber(extractCharacters(user.phone, -10))) ||
+                    'Unknown'}
                 </p>
               </div>
             </div>
@@ -130,8 +132,8 @@ const SidebarLayout = () => {
             <LogOutIcon size={18} />
             <span className="text-sm font-medium">Logout</span>
           </button>
-          <div className="text-[10px] text-light-text-secondary dark:text-dark-text-secondary text-center mt-2">
-            Version V1.0.0
+          <div className="text-[10px] font-bold text-light-text-secondary dark:text-dark-text-secondary text-center mt-2">
+            Version V1.0
           </div>
         </div>
       </motion.aside>

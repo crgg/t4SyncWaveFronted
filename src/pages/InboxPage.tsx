@@ -1,10 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-
-import * as Page from '@/shared/components/Page/Page';
-
-import { inboxApi } from '@features/inbox/inboxApi';
-import { withAuth } from '@shared/hoc/withAuth';
 import {
   Check,
   CircleCheck,
@@ -15,6 +10,11 @@ import {
   Inbox,
   RefreshCw,
 } from 'lucide-react';
+
+import * as Page from '@/shared/components/Page/Page';
+
+import { inboxApi } from '@features/inbox/inboxApi';
+import { withAuth } from '@shared/hoc/withAuth';
 import { cn, extractWords } from '@/shared/utils';
 import { btnColors } from '@/shared/components/Button/Button';
 import { Button } from '@/shared/components/Button/Button';
@@ -29,12 +29,16 @@ const InboxPage = () => {
   });
 
   const invitations = data?.invitations || [];
+  const invitationCount = data?.count || 0;
 
-  // Loading State
   if (isLoading) {
     return (
       <Page.Wrapper>
-        <Page.Title title="Inbox" description="Manage your invitations to groups" />
+        <Page.Title
+          description="Manage your invitations to groups"
+          count={invitationCount}
+          title="Inbox"
+        />
         <Page.Content>
           <h3 className="font-semibold text-light-text dark:text-zinc-300 truncate text-sm sm:text-base mb-2">
             Group Invitation
@@ -77,7 +81,6 @@ const InboxPage = () => {
     );
   }
 
-  // Error State
   if (error) {
     return (
       <Page.Wrapper>
@@ -109,7 +112,6 @@ const InboxPage = () => {
     );
   }
 
-  // Empty State
   if (invitations.length === 0) {
     return (
       <Page.Wrapper>
@@ -140,7 +142,11 @@ const InboxPage = () => {
 
   return (
     <Page.Wrapper>
-      <Page.Title title="Inbox" description="Manage your invitations to groups" />
+      <Page.Title
+        description="Manage your invitations to groups"
+        count={invitationCount}
+        title="Inbox"
+      />
       <Page.Content>
         <h3 className="font-semibold text-light-text dark:text-zinc-300 truncate text-sm sm:text-base">
           Group Invitation

@@ -8,7 +8,6 @@ export interface ProfileResponse {
 }
 
 export interface UpdateProfileData {
-  name: string;
   nickname?: string;
 }
 
@@ -47,7 +46,7 @@ export interface UpdateEmailResponse {
 
 export const profileService = {
   getProfile: async (): Promise<ProfileResponse> => {
-    const response = await http.get<ProfileResponse>('/users/profile');
+    const response = await http.get<ProfileResponse>('/users/me');
     return response.data;
   },
 

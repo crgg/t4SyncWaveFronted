@@ -12,17 +12,22 @@ import {
   Lock,
   Phone,
   TriangleAlert,
+  ShieldCheck,
+  MailPlus,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-toastify';
 
+import * as Page from '@/shared/components/Page/Page';
 import { profileService } from '@services/profile';
 import { Input } from '@shared/components/Input/Input';
-import { Button } from '@shared/components/Button/Button';
+import { btnColors, Button } from '@shared/components/Button/Button';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { authActions } from '@/features/auth/authSlice';
 import {
   cn,
+  extractCharacters,
   formatPhoneNumber,
   getErrorMessage,
   getInitials,
@@ -31,17 +36,8 @@ import {
 import { STORAGE_KEYS } from '@/shared/constants';
 import { withAuth } from '@/shared/hoc/withAuth';
 import { paths } from '@/routes/paths';
-import { toast } from 'react-toastify';
 
 const schema = yup.object({
-  name: yup
-    .string()
-    .required('Name is required')
-    .min(2, 'Name must be at least 2 characters')
-    .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/, 'Name can only contain letters, spaces, and accents')
-    .test('no-double-spaces', 'Name cannot contain consecutive spaces', (value) => {
-      return value ? !/\s{2,}/.test(value) : true;
-    }),
   nickname: yup.string().optional(),
 });
 
@@ -89,24 +85,12 @@ function ProfilePage() {
     handleSubmit,
     formState: { errors },
     reset,
-    setValue,
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
-      name: user?.name || '',
       nickname: user?.nickname || '',
     },
   });
-
-  const handleNameInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
-    value = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
-    value = value.replace(/\s{2,}/g, ' ');
-
-    setValue('name', value, { shouldValidate: true });
-  };
-
-  const nameRegister = register('name');
 
   const {
     register: registerPassword,
@@ -136,10 +120,7 @@ function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      reset({
-        name: user.name || '',
-        nickname: user.nickname || '',
-      });
+      reset({ nickname: user.nickname || '' });
       resetEmail({
         email: user.email || '',
       });
@@ -284,6 +265,10 @@ function ProfilePage() {
 
   const hasEmail = !!user?.email;
 
+  const signedWithEmail = user?.authProviders[0] === 'email';
+
+  const enableActions = !isEditMode && !isChangePasswordMode && !isChangeEmailMode;
+
   if (isLoading && !user) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
@@ -293,35 +278,17 @@ function ProfilePage() {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto pb-24 px-4 sm:px-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="space-y-6"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl sm:text-3xl font-bold text-light-text dark:text-dark-text">
-            Profile
-          </h1>
-          <button
-            onClick={() => setIsEditMode(!isEditMode)}
-            className="p-2 rounded-lg hover:bg-light-hover dark:hover:bg-dark-hover transition-colors touch-manipulation active:scale-95"
-            aria-label="Edit profile"
-          >
-            <Edit2 size={20} className="text-primary dark:text-primary-light" />
-          </button>
-        </div>
-
+    <Page.Wrapper>
+      <Page.Title title="Profile" description="Manage your profile information" />
+      <div className="space-y-6">
         <div className="bg-light-card dark:bg-dark-card rounded-2xl p-4 sm:p-6 shadow-sm border border-light-hover/30 dark:border-dark-hover/30">
-          <div className="flex items-start gap-4 sm:gap-6">
+          <div className="flex items-center gap-4 sm:gap-6">
             <div className="relative flex-shrink-0">
-              <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full overflow-hidden bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
+              <div className="relative w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-full overflow-hidden bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
                 {avatarPreview ? (
                   <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="text-white text-2xl sm:text-3xl md:text-4xl font-bold">
+                  <div className="text-white text-2xl sm:text-3xl md:text-4xl font-bold w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 flex items-center justify-center">
                     {user?.name ? getInitials(user?.name) : '?'}
                   </div>
                 )}
@@ -335,7 +302,7 @@ function ProfilePage() {
               <button
                 onClick={handleAvatarClick}
                 disabled={isLoadingAvatar}
-                className="absolute bottom-0 right-0 w-8 h-8 sm:w-9 sm:h-9 bg-white dark:bg-dark-card rounded-full flex items-center justify-center shadow-lg border-2 border-light-bg dark:border-dark-bg hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+                className="absolute bottom-0 -right-2 w-7 h-7 sm:w-8 sm:h-8 bg-white dark:bg-dark-card rounded-full flex items-center justify-center shadow-lg border-2 border-light-bg dark:border-dark-bg hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                 aria-label="Change avatar"
               >
                 <Camera size={14} className="text-primary dark:text-primary-light" />
@@ -349,18 +316,19 @@ function ProfilePage() {
               />
             </div>
 
-            {/* User Details */}
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-light-text dark:text-dark-text mb-1">
+            <div className="flex-1 min-w-0 flex flex-col gap-0 justify-center">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-light-text dark:text-dark-text">
                 {user?.name || 'User'}
               </h2>
               {user?.nickname && (
-                <p className="text-sm sm:text-base text-light-text-secondary dark:text-dark-text-secondary mb-1">
+                <p className="text-sm sm:text-base text-light-text-secondary dark:text-dark-text-secondary">
                   @{user.nickname}
                 </p>
               )}
-              <p className="text-xs sm:text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                {user?.email}
+              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 dark:text-zinc-400">
+                {signedWithEmail
+                  ? 'Session started with email'
+                  : 'Signed in with phone verification'}
               </p>
             </div>
           </div>
@@ -388,131 +356,170 @@ function ProfilePage() {
         )}
 
         {/* Account Section */}
-        <div className="space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-light-text-secondary dark:text-dark-text-secondary">
+        <div className="space-y-1">
+          <h3 className="text-xs font-semibold tracking-wider text-zinc-500 dark:text-zinc-400">
             Account
           </h3>
           <div className="bg-light-card dark:bg-dark-card rounded-xl p-4 space-y-2 border border-light-hover/30 dark:border-dark-hover/30">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary-light/10">
-                <Mail size={18} className="text-primary dark:text-primary-light" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mb-0.5">
-                  Email
-                </p>
-                <p className="text-sm sm:text-base font-medium text-light-text dark:text-dark-text truncate">
-                  {user?.email ?? '-'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary-light/10">
-                <Phone size={18} className="text-primary dark:text-primary-light" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mb-0.5">
-                  Phone
-                </p>
-                <p className="text-sm sm:text-base font-medium text-light-text dark:text-dark-text truncate">
-                  {user?.phone ? formatPhoneNumber(user?.phone) : '-'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions Section */}
-        <div className="space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-light-text-secondary dark:text-dark-text-secondary">
-            Actions
-          </h3>
-          <div className="bg-light-card dark:bg-dark-card rounded-xl border border-light-hover/30 dark:border-dark-hover/30 overflow-hidden">
-            <button
-              onClick={() => setIsChangeEmailMode(!isChangeEmailMode)}
-              className="w-full flex items-center gap-3 p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98] border-b border-light-hover/30 dark:border-dark-hover/30"
-            >
-              <Mail size={20} className="text-primary dark:text-primary-light flex-shrink-0" />
-              <span className="text-sm sm:text-base font-medium text-primary dark:text-primary-light">
-                Edit Email
-              </span>
-            </button>
-
-            {/* Edit Profile */}
-            <button
-              onClick={() => setIsEditMode(!isEditMode)}
-              className="w-full flex items-center gap-3 p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98] border-b border-light-hover/30 dark:border-dark-hover/30"
-            >
-              <Edit2 size={20} className="text-primary dark:text-primary-light flex-shrink-0" />
-              <span className="text-sm sm:text-base font-medium text-primary dark:text-primary-light">
-                Edit Profile
-              </span>
-            </button>
-
-            {/* Change Avatar */}
-            <button
-              onClick={handleAvatarClick}
-              disabled={isLoadingAvatar}
-              className="w-full flex items-center gap-3 p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98] border-b border-light-hover/30 dark:border-dark-hover/30 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Camera size={20} className="text-primary dark:text-primary-light flex-shrink-0" />
-              <span className="text-sm sm:text-base font-medium text-primary dark:text-primary-light">
-                Change Avatar
-              </span>
-            </button>
-
-            {user?.hasPassword && (
-              <button
-                onClick={() => {
-                  if (!hasEmail) return;
-                  setIsChangePasswordMode(!isChangePasswordMode);
-                }}
-                disabled={!hasEmail}
-                className="disabled:cursor-not-allowed flex items-center gap-3 w-full p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98] border-b border-light-hover/30 dark:border-dark-hover/30"
-              >
-                {hasEmail ? (
-                  <Lock size={20} className="text-primary dark:text-primary-light flex-shrink-0" />
-                ) : (
-                  <TriangleAlert
-                    size={20}
-                    className="text-zinc-500 dark:text-zinc-400 flex-shrink-0"
-                  />
-                )}
-                <div>
-                  <div className="flex gap-3">
-                    <span
-                      className={cn(
-                        'text-sm sm:text-base font-medium',
-                        hasEmail
-                          ? 'text-primary dark:text-primary-light'
-                          : 'text-zinc-500 dark:text-zinc-400'
-                      )}
-                    >
-                      Change Password
-                    </span>
-                  </div>
-                  {!hasEmail && (
-                    <div className="text-xs text-start text-zinc-500 dark:text-zinc-400">
-                      <p>Do you want to change your password?</p>
-                      <p>You must set up an email address.</p>
-                    </div>
-                  )}
+            {user?.email ? (
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary-light/10">
+                  <Mail size={18} className="text-primary dark:text-primary-light" />
                 </div>
-              </button>
-            )}
-
-            {/* Logout */}
-            <button
-              onClick={() => handleLogout()}
-              className="w-full flex items-center gap-3 p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98]"
-            >
-              <ArrowLeftCircle size={20} className="text-red-600 dark:text-red-400 flex-shrink-0" />
-              <span className="text-sm sm:text-base font-medium text-red-600 dark:text-red-400">
-                Logout
-              </span>
-            </button>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mb-0.5">
+                    Email
+                  </p>
+                  <p className="text-sm sm:text-base font-medium text-light-text dark:text-dark-text truncate">
+                    {user.email}
+                  </p>
+                </div>
+              </div>
+            ) : user?.phone ? (
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary-light/10">
+                  <Phone size={18} className="text-primary dark:text-primary-light" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mb-0.5">
+                    Phone
+                  </p>
+                  <p className="text-sm sm:text-base font-medium text-light-text dark:text-dark-text truncate">
+                    {formatPhoneNumber(extractCharacters(user.phone, -10))}
+                  </p>
+                </div>
+                <div>
+                  <div
+                    className={cn(
+                      btnColors.emerald,
+                      'py-1 flex items-center justify-center gap-1 px-3 rounded-full pointer-events-none'
+                    )}
+                  >
+                    <ShieldCheck size={18} strokeWidth={3} className="mx-auto" />
+                    <span className="hidden sm:inline font-bold">Verified</span>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
+
+        {enableActions && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="space-y-1"
+          >
+            <h3 className="text-xs font-semibold tracking-wider text-zinc-500 dark:text-zinc-400">
+              Actions
+            </h3>
+            <div className="bg-light-card dark:bg-dark-card rounded-xl border border-light-hover/30 dark:border-dark-hover/30 overflow-hidden">
+              {/* Edit Profile */}
+              <button
+                onClick={() => setIsEditMode(!isEditMode)}
+                className="w-full flex items-center gap-3 p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98] border-b border-light-hover/30 dark:border-dark-hover/30"
+              >
+                <Edit2 size={20} className="text-primary dark:text-primary-light flex-shrink-0" />
+                <span className="text-sm sm:text-base font-medium text-primary dark:text-primary-light">
+                  Edit Profile
+                </span>
+              </button>
+
+              {/* Change Avatar */}
+              <button
+                onClick={handleAvatarClick}
+                disabled={isLoadingAvatar}
+                className="w-full flex items-center gap-3 p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98] border-b border-light-hover/30 dark:border-dark-hover/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Camera size={20} className="text-primary dark:text-primary-light flex-shrink-0" />
+                <span className="text-sm sm:text-base font-medium text-primary dark:text-primary-light">
+                  Change Avatar
+                </span>
+              </button>
+
+              {/* Add/Edit Email */}
+              {!hasEmail && hasEmail && (
+                <button
+                  onClick={() => setIsChangeEmailMode(!isChangeEmailMode)}
+                  className="w-full flex items-center gap-3 p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98] border-b border-light-hover/30 dark:border-dark-hover/30"
+                >
+                  {hasEmail ? (
+                    <Mail
+                      size={20}
+                      className="text-primary dark:text-primary-light flex-shrink-0"
+                    />
+                  ) : (
+                    <MailPlus
+                      size={20}
+                      className="text-primary dark:text-primary-light flex-shrink-0"
+                    />
+                  )}
+                  <span className="text-sm sm:text-base font-medium text-primary dark:text-primary-light">
+                    {hasEmail ? 'Edit' : 'Add'} Email
+                  </span>
+                </button>
+              )}
+
+              {user?.hasPassword && (
+                <button
+                  onClick={() => {
+                    if (!hasEmail) return;
+                    setIsChangePasswordMode(!isChangePasswordMode);
+                  }}
+                  disabled={!hasEmail}
+                  className="disabled:cursor-not-allowed flex items-center gap-3 w-full p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98] border-b border-light-hover/30 dark:border-dark-hover/30"
+                >
+                  {hasEmail ? (
+                    <Lock
+                      size={20}
+                      className="text-primary dark:text-primary-light flex-shrink-0"
+                    />
+                  ) : (
+                    <TriangleAlert
+                      size={20}
+                      className="text-zinc-500 dark:text-zinc-400 flex-shrink-0"
+                    />
+                  )}
+                  <div>
+                    <div className="flex gap-3">
+                      <span
+                        className={cn(
+                          'text-sm sm:text-base font-medium',
+                          hasEmail
+                            ? 'text-primary dark:text-primary-light'
+                            : 'text-zinc-500 dark:text-zinc-400'
+                        )}
+                      >
+                        Change Password
+                      </span>
+                    </div>
+                    {!hasEmail && (
+                      <div className="text-xs text-start text-zinc-500 dark:text-zinc-400">
+                        <p>Do you want to change your password?</p>
+                        <p>You must set up an email address.</p>
+                      </div>
+                    )}
+                  </div>
+                </button>
+              )}
+
+              {/* Logout */}
+              <button
+                onClick={() => handleLogout()}
+                className="w-full flex items-center gap-3 p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98]"
+              >
+                <ArrowLeftCircle
+                  size={20}
+                  className="text-red-600 dark:text-red-400 flex-shrink-0"
+                />
+                <span className="text-sm sm:text-base font-medium text-red-600 dark:text-red-400">
+                  Logout
+                </span>
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Edit Form Modal/Card */}
         {isEditMode && (
@@ -527,25 +534,14 @@ function ProfilePage() {
             </h3>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Input
-                label="Name"
+                label="Display Name"
+                description="This is the name that others will see in the groups."
                 type="text"
-                placeholder="Your full name"
-                {...nameRegister}
-                onChange={(e) => {
-                  nameRegister.onChange(e);
-                  handleNameInput(e);
-                }}
-                error={errors.name?.message}
-                maxLength={100}
-              />
-
-              <Input
-                label="Nickname (Optional)"
-                type="text"
-                placeholder="Your nickname"
+                placeholder=""
                 {...register('nickname')}
                 error={errors.nickname?.message}
                 maxLength={50}
+                autoFocus
               />
 
               <div className="flex gap-3">
@@ -635,9 +631,23 @@ function ProfilePage() {
             exit={{ opacity: 0, y: 20 }}
             className="bg-light-card dark:bg-dark-card rounded-2xl p-4 sm:p-6 shadow-sm border border-light-hover/30 dark:border-dark-hover/30"
           >
-            <h3 className="text-lg sm:text-xl font-bold text-light-text dark:text-dark-text mb-4">
-              Change Email
+            <h3 className="text-lg sm:text-xl font-bold text-light-text dark:text-dark-text mb-2">
+              {hasEmail ? 'Change' : 'Add'} Email
             </h3>
+            {!hasEmail && (
+              <div className="pb-4">
+                <h4 className="text-sm sm:text-base font-bold text-light-text-secondary dark:text-dark-text-secondary mb-2">
+                  Benefits of adding email:
+                </h4>
+                <ul className="list-disc list-inside text-xs sm:text-sm dark:text-zinc-300">
+                  <li>Password reset option.</li>
+                  <li>Receive group invitations.</li>
+                  <li>Enhanced account security.</li>
+                  <li>And more...</li>
+                </ul>
+              </div>
+            )}
+
             <form onSubmit={handleSubmitEmail(onSubmitEmail)} className="space-y-4">
               {hasEmail && (
                 <div className="p-3 bg-light-hover/20 dark:bg-dark-hover/30 rounded-lg mb-2">
@@ -657,6 +667,7 @@ function ProfilePage() {
                 {...registerEmail('email')}
                 error={emailErrors.email?.message}
                 autoComplete="email"
+                autoFocus
               />
 
               <div className="flex gap-3">
@@ -684,8 +695,8 @@ function ProfilePage() {
             </form>
           </motion.div>
         )}
-      </motion.div>
-    </div>
+      </div>
+    </Page.Wrapper>
   );
 }
 

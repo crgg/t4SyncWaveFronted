@@ -7,11 +7,21 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   buttonEnd?: React.ReactNode;
   classNameWrapper?: string;
   countCharacters?: boolean;
+  description?: string;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
-    { className, label, error, buttonEnd, classNameWrapper, countCharacters = false, ...props },
+    {
+      className,
+      label,
+      error,
+      buttonEnd,
+      classNameWrapper,
+      countCharacters = false,
+      description,
+      ...props
+    },
     ref
   ) => {
     const maxLength = (props.maxLength as number) || 0;
@@ -36,6 +46,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             />
             {buttonEnd}
           </div>
+          {description && (
+            <div className="text-sm italic text-zinc-400 dark:text-zinc-400">{description}</div>
+          )}
           {countCharacters && (
             <div className="flex items-center justify-end mt-1">
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
