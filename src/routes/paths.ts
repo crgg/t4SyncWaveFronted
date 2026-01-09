@@ -6,6 +6,7 @@ export const paths = {
   LISTENERS: (id: null | string = '/:groupId') => `/listeners${id || ''}`,
   LIBRARY: '/library',
   PROFILE: '/profile',
+  INBOX: '/inbox',
   // Auth
   AUTH,
   LOGIN: `${AUTH}/login`,

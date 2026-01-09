@@ -798,7 +798,7 @@ const MemberCard = ({
             <span className="text-xs text-zinc-400">Joined {formatDate(member.joined_at)}</span>
           </div> */}
         </div>
-        {isOwner && member.role !== 'dj' && (
+        {member.role !== 'dj' && !me && (
           <Button
             onClick={() => onRemove(member)}
             variant="ghost-danger"

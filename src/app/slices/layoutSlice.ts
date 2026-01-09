@@ -1,7 +1,7 @@
 import { paths } from '@/routes/paths';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-type ActiveTab = 'my-groups' | 'listeners' | 'library' | 'home' | 'profile';
+type ActiveTab = 'my-groups' | 'listeners' | 'library' | 'home' | 'profile' | 'inbox';
 
 export interface LayoutState {
   isSidebarOpen: boolean;

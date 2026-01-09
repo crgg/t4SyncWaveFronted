@@ -1,4 +1,12 @@
-import { HomeIcon, LogOutIcon, PanelRightOpen, UserIcon } from 'lucide-react';
+import {
+  Headphones,
+  HomeIcon,
+  LogOutIcon,
+  Music2,
+  PanelRightOpen,
+  UserIcon,
+  UsersRound,
+} from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -34,6 +42,21 @@ const SidebarLayout = () => {
       label: 'Profile',
       icon: <UserIcon size={18} />,
       href: paths.PROFILE,
+    },
+    {
+      label: 'Library',
+      icon: <Music2 size={18} />,
+      href: paths.LIBRARY,
+    },
+    {
+      label: 'Groups',
+      icon: <UsersRound size={18} />,
+      href: paths.GROUPS(null),
+    },
+    {
+      label: 'Listeners',
+      icon: <Headphones size={18} />,
+      href: paths.LISTENERS(null),
     },
   ];
 
@@ -83,26 +106,22 @@ const SidebarLayout = () => {
             </div>
           </Link>
         </div>
-        <AnimatePresence mode="wait">
-          <div className="flex flex-col gap-1 py-2">
-            {menuItems.map((item, index) => (
-              <motion.div
-                transition={{ duration: 0.2, delay: index * 0.1 }}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                key={item.label}
+        <div className="flex flex-col gap-1 py-2">
+          {menuItems.map((item) => (
+            <div key={item.label}>
+              <Link
+                to={item.href}
+                onClick={onCloseSidebar}
+                className="flex items-center gap-1.5 py-2 px-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all text-zinc-700 dark:text-zinc-300 group"
               >
-                <Link to={item.href} onClick={onCloseSidebar}>
-                  <div className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-light-hover/50 dark:hover:bg-dark-hover/50 transition-colors text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary-light">
-                    {item.icon}
-                    <span className="text-sm font-medium">{item.label}</span>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </AnimatePresence>
+                {item.icon}
+                <span className="text-sm font-medium group-hover:translate-x-1 duration-200">
+                  {item.label}
+                </span>
+              </Link>
+            </div>
+          ))}
+        </div>
         <div className="flex flex-col gap-1 pt-2 border-t border-light-hover/50 dark:border-dark-hover/50">
           <button
             className="flex items-center gap-3 py-2 px-2 rounded-lg transition-colors text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400"

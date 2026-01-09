@@ -1,4 +1,4 @@
-import { Headphones, User, UsersRound, Music2 } from 'lucide-react';
+import { Headphones, User, UsersRound, Music2, Inbox } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 import type { LayoutState } from '@/app/slices/layoutSlice';
@@ -35,6 +35,13 @@ export function MobileGroupsTabs({ onTabChange, className }: MobileGroupsTabsPro
       icon: Music2,
       iconSize: 20,
       getActivePath: () => pathname === paths.LIBRARY,
+    },
+    {
+      id: 'inbox' as const,
+      label: 'Inbox',
+      icon: Inbox,
+      iconSize: 20,
+      getActivePath: () => pathname === paths.INBOX,
     },
     {
       id: 'profile' as const,
@@ -82,7 +89,7 @@ export function MobileGroupsTabs({ onTabChange, className }: MobileGroupsTabsPro
               />
               <span
                 className={cn(
-                  'text-xs font-medium transition-all duration-200',
+                  'text-[10px] sm:text-xs font-medium transition-all duration-200',
                   isActive && 'font-semibold text-primary-600'
                 )}
               >

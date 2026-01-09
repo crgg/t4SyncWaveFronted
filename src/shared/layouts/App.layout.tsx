@@ -38,15 +38,22 @@ const AppLayout = () => {
 
   const onTabChange = (tab: LayoutState['activeTab']) => {
     dispatch(layoutActions.setActiveTab(tab));
-
-    if (tab === 'my-groups') {
-      navigate(paths.GROUPS(null));
-    } else if (tab === 'listeners') {
-      navigate(paths.LISTENERS(null));
-    } else if (tab === 'library') {
-      navigate(paths.LIBRARY);
-    } else {
-      navigate(paths.PROFILE);
+    switch (tab) {
+      case 'my-groups':
+        navigate(paths.GROUPS(null));
+        return;
+      case 'listeners':
+        navigate(paths.LISTENERS(null));
+        return;
+      case 'library':
+        navigate(paths.LIBRARY);
+        return;
+      case 'inbox':
+        navigate(paths.INBOX);
+        return;
+      default:
+        navigate(paths.PROFILE);
+        return;
     }
   };
 

@@ -17,6 +17,7 @@ const GroupsPage = lazy(() => import('@/pages/GroupsPage'));
 const GroupPage = lazy(() => import('@/pages/GroupPage'));
 const LibraryPage = lazy(() => import('@/pages/LibraryPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
+const InboxPage = lazy(() => import('@/pages/InboxPage'));
 
 const routes: RouteObject[] = [
   {
@@ -47,17 +48,13 @@ const routes: RouteObject[] = [
         path: paths.LIBRARY,
         element: <LibraryPage />,
       },
-      // {
-      //   path: '/host/:sessionId',
-      //   element: <HostPage />,
-      // },
-      // {
-      //   path: '/listener/:sessionId',
-      //   element: <ListenerPage />,
-      // },
       {
         path: paths.PROFILE,
         element: <ProfilePage />,
+      },
+      {
+        path: paths.INBOX,
+        element: <InboxPage />,
       },
     ],
   },
