@@ -192,3 +192,24 @@ export const unixTimestampToSeconds = (unixTimestamp: number | null): number => 
 export const formatPhoneNumber = (phone: string): string => {
   return phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
 };
+
+export const extractWords = (text: string, count: number = 2): string => {
+  return text.split(' ').slice(0, count).join(' ');
+};
+
+export const formatDateHumanized = (dateString: string, period: 'ago' | 'on' = 'ago') => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+  if (diffInDays === 0) return period === 'ago' ? 'Today' : 'Today';
+  if (diffInDays === 1) return period === 'ago' ? 'Yesterday' : 'Tomorrow';
+  if (diffInDays < 7) {
+    const integer = Math.abs(diffInDays);
+    return period === 'ago' ? `${integer} days ago` : `${integer} days from now`;
+  }
+  return period === 'ago'
+    ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};

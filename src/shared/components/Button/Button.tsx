@@ -1,7 +1,3 @@
-/**
- * Componente Button reutilizable
- */
-
 import { ButtonHTMLAttributes, forwardRef } from 'react';
 import { cn } from '@shared/utils';
 
@@ -83,3 +79,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 );
 
 Button.displayName = 'Button';
+
+export const btnColors = {
+  emerald:
+    'bg-emerald-500 dark:bg-emerald-600 text-white hover:bg-emerald-600 dark:hover:bg-emerald-700',
+  red: 'bg-red-500 dark:bg-red-600 text-white hover:bg-red-600 dark:hover:bg-red-700',
+  outlineRed:
+    'border border-red-500 dark:border-red-400 text-red-500 dark:text-red-400 hover:bg-red-400/10 dark:hover:bg-red-400/10 focus:ring-red-400/30',
+};
