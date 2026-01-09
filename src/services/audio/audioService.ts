@@ -11,7 +11,7 @@ class AudioService {
 
   init(audioUrl: string, onStateChange?: (state: AudioState) => void): void {
     if (!audioUrl || audioUrl.trim() === '') {
-      console.warn('Intento de inicializar audio con URL vacía');
+      console.warn('Attempt to initialize audio with empty URL');
       if (onStateChange) {
         onStateChange({
           isPlaying: false,
@@ -20,7 +20,7 @@ class AudioService {
           trackId: '',
           trackUrl: '',
           timestamp: Date.now(),
-          error: 'URL de audio vacía',
+          error: 'Empty audio URL',
         } as any);
       }
       return;
@@ -28,9 +28,9 @@ class AudioService {
 
     if (!isValidAudioUrl(audioUrl)) {
       console.warn(
-        'Intento de inicializar audio con URL inválida:',
+        'Attempt to initialize audio with invalid URL:',
         audioUrl,
-        'Debe ser un archivo de audio válido (ej: .mp3, .wav, etc.)'
+        'Must be a valid audio file (e.g. .mp3, .wav, etc.)'
       );
       if (onStateChange) {
         onStateChange({
@@ -40,8 +40,7 @@ class AudioService {
           trackId: '',
           trackUrl: '',
           timestamp: Date.now(),
-          error:
-            'URL de audio no válida. Debe ser un archivo de audio válido (ej: .mp3, .wav, .ogg, etc.)',
+          error: 'Invalid audio URL. Must be a valid audio file (e.g. .mp3, .wav, .ogg, etc.)',
         } as any);
       }
       return;

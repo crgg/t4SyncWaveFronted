@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { RefreshCw } from 'lucide-react';
 
 import * as Icon from '@/shared/icons/Icons';
 
@@ -13,7 +14,6 @@ import { groupsApi } from '@features/groups/groupsApi';
 import { STORAGE_KEYS } from '@/shared/constants';
 import { useAudio } from '@shared/hooks/useAudio';
 import { formatTime } from '@shared/utils';
-import { RefreshCw } from 'lucide-react';
 
 export function AudioPlayerHost() {
   const { audioState, play, pause, seek, setVolume, toggleMute, next, restart, stop } = useAudio();
@@ -70,17 +70,14 @@ export function AudioPlayerHost() {
       audioState.currentPosition >= audioState.trackDuration - 0.1
     ) {
       seek(0);
-
-      setTimeout(() => {
+      setTimeout(async () => {
         pause();
-        setTimeout(async () => {
-          try {
-            await groupsApi.pause({ groupId: groupId! });
-          } catch (error) {
-            console.error('Error pausing audio after track ended:', error);
-          }
-        }, 100);
-      }, 100);
+        try {
+          await groupsApi.pause({ groupId: groupId! });
+        } catch (error) {
+          console.error('Error pausing audio after track ended:', error);
+        }
+      }, 10);
     }
   }, [
     audioState.isPlaying,
