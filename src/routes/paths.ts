@@ -14,6 +14,6 @@ export const paths = {
   VERIFY_CODE: `${AUTH}/verify-code`,
   USERS_CHANGE_PASSWORD: `/users/change-password`,
   // Terms and Privacy
-  TERMS: `${AUTH}#terms`,
-  PRIVACY: `${AUTH}#privacy`,
+  TERMS: 'https://t4videocall.t4ever.com/legal/terms.html',
+  PRIVACY: 'https://t4videocall.t4ever.com/legal/privacy.html',
 } as const;

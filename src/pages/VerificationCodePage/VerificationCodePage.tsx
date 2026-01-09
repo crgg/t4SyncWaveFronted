@@ -4,6 +4,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { MessageCircle, Clock, Smartphone } from 'lucide-react';
 
 import { paths } from '@/routes/paths';
 import { withGuest } from '@/shared/hoc/withGuest';
@@ -13,6 +14,7 @@ import { getErrorMessage } from '@/shared/utils';
 import { STORAGE_KEYS } from '@/shared/constants';
 import { useAppDispatch } from '@/app/hooks';
 import { authActions } from '@/features/auth/authSlice';
+import { BottomSheet } from '@/shared/components/BottomSheet/BottomSheet';
 
 const schema = yup.object({
   code: yup
@@ -33,6 +35,7 @@ const VerificationCodePage = () => {
   const [resendCooldown, setResendCooldown] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [resendingCode, setResendingCode] = useState(false);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -227,15 +230,107 @@ const VerificationCodePage = () => {
           </div>
         </motion.div>
 
-        <div className="mt-8 text-center">
-          <Link
-            to={paths.PHONE_NUMBER}
-            className="text-xs sm:text-sm font-extralight text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary-light transition-colors underline underline-offset-2"
+        <div className="mt-8 text-center space-y-4">
+          <button
+            type="button"
+            onClick={() => setIsHelpModalOpen(true)}
+            className="text-xs sm:text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary-light transition-colors"
           >
-            Change phone number
-          </Link>
+            Need Help?
+          </button>
+          <div>
+            <Link
+              to={paths.PHONE_NUMBER}
+              className="text-xs sm:text-sm font-extralight text-light-text-secondary dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary-light transition-colors underline underline-offset-2"
+            >
+              Change phone number
+            </Link>
+          </div>
         </div>
       </div>
+
+      {/* Help Modal */}
+      <BottomSheet isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)}>
+        {/* Grab Handle - Only visible on mobile */}
+        <div className="flex justify-center pt-3 pb-2 sm:hidden">
+          <div className="w-12 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
+        </div>
+
+        {/* Header */}
+        <div className="px-6 pb-4 pt-4 sm:pt-6">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">
+              Verification Code Help
+            </h2>
+            <button
+              onClick={() => setIsHelpModalOpen(false)}
+              className="text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text dark:hover:text-dark-text transition-colors"
+            >
+              Done
+            </button>
+          </div>
+          <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+            Having trouble with your verification code?
+          </p>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-6">
+          {/* Section 1 */}
+          <div className="space-y-2">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-primary/10 dark:bg-primary-light/10 rounded-lg flex-shrink-0">
+                <MessageCircle className="text-primary dark:text-primary-light" size={20} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-light-text dark:text-dark-text mb-1">
+                  Didn't receive the code?
+                </h3>
+                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary leading-relaxed">
+                  Check your SMS inbox and spam folder. The code is sent automatically and should
+                  arrive within 30 seconds.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2 */}
+          <div className="space-y-2">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-primary/10 dark:bg-primary-light/10 rounded-lg flex-shrink-0">
+                <Clock className="text-primary dark:text-primary-light" size={20} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-light-text dark:text-dark-text mb-1">
+                  Code expired?
+                </h3>
+                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary leading-relaxed">
+                  Verification codes expire after 10 minutes. Use the 'Resend Code' button to get a
+                  new one.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3 */}
+          <div className="space-y-2">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-primary/10 dark:bg-primary-light/10 rounded-lg flex-shrink-0">
+                <Smartphone className="text-primary dark:text-primary-light" size={20} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-light-text dark:text-dark-text mb-1">
+                  Wrong device?
+                </h3>
+                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary leading-relaxed">
+                  Make sure you're entering the code on the same device where you requested it.
+                  Codes are device-specific.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </BottomSheet>
     </>
   );
 };
