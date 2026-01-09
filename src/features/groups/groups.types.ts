@@ -1,3 +1,5 @@
+import type { Invitation } from '../inbox/inbox.types';
+
 export interface Group {
   id: string;
   name: string;
@@ -64,6 +66,7 @@ export interface FormCreateGroup {
 export interface FormAddMemberToGroup {
   groupId: string;
   email?: string;
+  phone?: string;
   code?: string;
   role: string; // dj or member
 }
@@ -187,4 +190,14 @@ export type IPayloadDjConnecDisconnect = {
 export interface IGroupUsers {
   dj: Member | null;
   members: Member[];
+}
+
+export interface IPayloadAddMemberToGroupByPhone {
+  groupId: string;
+  inviteePhone: string;
+}
+
+export interface IResponseInvitation extends ResponseBase {
+  msg: string;
+  invitation: Invitation;
 }

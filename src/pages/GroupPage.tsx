@@ -626,17 +626,13 @@ const GroupPage = () => {
             </div>
           </div>
         </motion.div>
-
-        {/* Add Member Modal */}
       </div>
       {groupId && (
         <AddMemberModal
-          isOpen={isAddMemberModalOpen}
+          onSuccess={(message) => toast.success(message)}
           onClose={() => setIsAddMemberModalOpen(false)}
+          isOpen={isAddMemberModalOpen}
           groupId={groupId}
-          onSuccess={() => {
-            toast.success('Member added successfully');
-          }}
         />
       )}
       <DeleteDialog

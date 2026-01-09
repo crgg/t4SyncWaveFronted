@@ -8,6 +8,7 @@ import type {
   GroupResponse,
   GroupsResponse,
   GroupStateResponse,
+  // IInvitationResponse,
   IPayloadDeleteGroup,
   IPayloadDjConnecDisconnect,
   IPayloadLeaveGroup,
@@ -15,6 +16,8 @@ import type {
   IPayloadPlay,
   IPayloadRemoveMember,
   IPayloadUpdateGroup,
+  IPayloadAddMemberToGroupByPhone,
+  IResponseInvitation,
 } from './groups.types';
 
 class GroupsApi {
@@ -44,6 +47,15 @@ class GroupsApi {
   }
   async addMemberToGroup(data: FormAddMemberToGroup): Promise<AddMemberToGroupResponse> {
     const response = await http.post<AddMemberToGroupResponse>('/groups/add-member', data);
+    return response.data;
+  }
+  async addMemberToGroupByPhone(
+    data: IPayloadAddMemberToGroupByPhone
+  ): Promise<IResponseInvitation> {
+    const response = await http.post<IResponseInvitation>(
+      `/groups/${data.groupId}/invitations`,
+      data
+    );
     return response.data;
   }
   async removeMemberFromGroup(data: IPayloadRemoveMember): Promise<AddMemberToGroupResponse> {
