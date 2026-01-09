@@ -1,4 +1,4 @@
-import { Users, Copy, MoreVertical, Edit2, Trash2 } from 'lucide-react';
+import { Copy, MoreVertical, Edit2, Trash2, Disc3 } from 'lucide-react';
 
 import type { Group } from '@/features/groups/groups.types';
 
@@ -40,7 +40,7 @@ export function GroupCard({
       )}
       onClick={handleClick}
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary-light/10 flex items-center justify-center">
             <span className="text-primary dark:text-primary-light font-semibold text-base">
@@ -52,17 +52,6 @@ export function GroupCard({
             <h3 className="font-semibold text-light-text dark:text-dark-text truncate text-base">
               {group.name}
             </h3>
-            {!isMyGroups && (
-              <div className="items-center gap-1.5 mt-1 hidden">
-                <Users
-                  size={13}
-                  className="text-light-text-secondary dark:text-dark-text-secondary"
-                />
-                <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary truncate">
-                  {group.created_by_name || 'Unknown'}
-                </p>
-              </div>
-            )}
             {group.code && (
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 flex-1 min-w-0">
@@ -73,6 +62,14 @@ export function GroupCard({
                     {group.code}
                   </code>
                 </div>
+              </div>
+            )}
+            {!isMyGroups && (
+              <div className="flex items-center gap-1 mt-1">
+                <Disc3 size={13} className="text-zinc-400 dark:text-zinc-500" />
+                <p className="text-xs text-zinc-400 dark:text-zinc-500 truncate">
+                  {group.created_by_name || 'Unknown'}
+                </p>
               </div>
             )}
           </div>

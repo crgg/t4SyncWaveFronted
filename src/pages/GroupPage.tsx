@@ -514,8 +514,8 @@ const GroupPage = () => {
         )}
 
         <div className="flex justify-between mt-4">
-          <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2">
-            <Users size={20} />
+          <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2 mb-2">
+            <Users size={18} />
             Members ({groupUsers.members.length})
           </h2>
           {isOwner && groupId && (
@@ -551,7 +551,7 @@ const GroupPage = () => {
               <div>
                 <div className="mb-2">
                   <div className="col-span-2 sticky top-0 z-10">
-                    <h3 className="text-xs text-zinc-400 mb-1 select-none">
+                    <h3 className="text-xs text-zinc-400 mb-1 select-none font-semibold">
                       Online <span className="mx-1.5">&#822;</span> {onlineMembers.length}
                     </h3>
                   </div>
@@ -563,6 +563,7 @@ const GroupPage = () => {
                           member={member}
                           onRemove={handleRemoveMember}
                           isConnected={!!connectionUsers[member.user_id]}
+                          me={member.user_id === user?.id}
                         />
                       ))}
                     </div>
@@ -575,7 +576,7 @@ const GroupPage = () => {
                   )}
                 >
                   <div className="col-span-2 sticky top-0 z-10">
-                    <h3 className="text-xs text-zinc-400 mb-1 select-none">
+                    <h3 className="text-xs text-zinc-400 mb-1 select-none font-semibold">
                       Offline <span className="mx-1.5">&#822;</span> {offlineMembers.length}{' '}
                     </h3>
                     {offlineMembers.length !== 0 && (
@@ -586,6 +587,7 @@ const GroupPage = () => {
                             member={member}
                             onRemove={handleRemoveMember}
                             isConnected={!!connectionUsers[member.user_id]}
+                            me={member.user_id === user?.id}
                           />
                         ))}
                       </div>
@@ -610,13 +612,17 @@ const GroupPage = () => {
           <div className="flex items-center gap-2 justify-between">
             <p className="text-sm text-zinc-400 mb-1">Name</p>
             <div className="flex items-center gap-2">
-              <code className="font-mono text-sm text-zinc-400 font-semibold">{group.name}</code>
+              <code className="font-mono text-sm text-zinc-600 dark:text-zinc-400 font-semibold">
+                {group.name}
+              </code>
             </div>
           </div>
           <div className="flex items-center gap-2 justify-between">
             <p className="text-sm text-zinc-400 mb-1">Code</p>
             <div className="flex items-center gap-2">
-              <code className="font-mono text-sm text-zinc-400">{group.code}</code>
+              <code className="font-mono text-sm text-zinc-600 dark:text-zinc-400">
+                {group.code}
+              </code>
             </div>
           </div>
         </motion.div>
@@ -668,9 +674,16 @@ interface MemberCardProps {
   isOwner?: boolean;
   onRemove: (member: Member) => void;
   isConnected: boolean;
+  me?: boolean;
 }
 
-const MemberCard = ({ member, isOwner = false, onRemove, isConnected }: MemberCardProps) => {
+const MemberCard = ({
+  member,
+  isOwner = false,
+  onRemove,
+  isConnected,
+  me = false,
+}: MemberCardProps) => {
   const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false);
 
   const getInitials = (name?: string) => {
@@ -703,7 +716,7 @@ const MemberCard = ({ member, isOwner = false, onRemove, isConnected }: MemberCa
       <div
         className={cn(
           'flex items-center last:mb-0 gap-3 hover:border-primary-600/30 transition-colors',
-          !isConnected ? 'opacity-50' : ''
+          !isConnected ? 'dark:opacity-30 opacity-40' : ''
         )}
       >
         <div
@@ -765,9 +778,16 @@ const MemberCard = ({ member, isOwner = false, onRemove, isConnected }: MemberCa
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-medium text-light-text dark:text-dark-text truncate">
-              {member.display_name || member.name || member.guest_name || 'Unknown'}
-            </p>
+            <div className="flex justify-between w-full gap-2">
+              <p className="font-medium text-light-text dark:text-dark-text truncate">
+                {member.display_name || member.name || member.guest_name || 'Unknown'}
+              </p>
+              {me && (
+                <div className="bg-emerald-500 dark:bg-emerald-700 text-white font-semibold px-2 py-1 rounded-full text-center text-[10px] w-10">
+                  YOU
+                </div>
+              )}
+            </div>
             {member.role === 'owner' && (
               <Crown size={14} className="text-primary-600 flex-shrink-0" fill="currentColor" />
             )}
@@ -789,7 +809,7 @@ const MemberCard = ({ member, isOwner = false, onRemove, isConnected }: MemberCa
           </Button>
         )}
         {isOwner && (
-          <div className="bg-primary-600 text-white text-xs font-semibold px-2 py-1 rounded-full">
+          <div className="bg-primary-600 text-white text-xs font-semibold px-2 py-1 rounded-full text-[10px] w-10 text-center">
             DJ
           </div>
         )}
