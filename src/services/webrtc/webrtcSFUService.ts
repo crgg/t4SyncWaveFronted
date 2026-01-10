@@ -607,7 +607,7 @@ class WebRTCSFUService {
       this.role = 'dj';
       this.sendSignalingMessage({
         room: name,
-        userName: user.name,
+        userName: user.displayName,
         userId: user.id,
         type: 'join',
       });
@@ -626,7 +626,7 @@ class WebRTCSFUService {
         type: 'join',
         room: sessionIdToJoin,
         userId: user.id,
-        userName: user.name,
+        userName: user.displayName,
       });
     } catch (error) {
       console.error('Error al unirse a sesión:', error);

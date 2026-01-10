@@ -373,6 +373,9 @@ function ProfilePage() {
                   <p className="text-sm sm:text-base font-medium text-light-text dark:text-dark-text truncate">
                     {user.email}
                   </p>
+                  <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
+                    Not editable
+                  </p>
                 </div>
               </div>
             ) : user?.phone ? (
@@ -386,6 +389,9 @@ function ProfilePage() {
                   </p>
                   <p className="text-sm sm:text-base font-medium text-light-text dark:text-dark-text truncate">
                     {formatPhoneNumber(extractCharacters(user.phone, -10))}
+                  </p>
+                  <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
+                    Not editable
                   </p>
                 </div>
                 <div>

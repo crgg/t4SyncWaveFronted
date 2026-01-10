@@ -636,7 +636,7 @@ const GroupPage = () => {
         />
       )}
       <DeleteDialog
-        modelNameValue={selectedMember?.name || 'Unknown'}
+        modelNameValue={selectedMember?.display_name || 'Unknown'}
         mutationFn={groupsApi.removeMemberFromGroup}
         onClose={() => setIsDeleteMember(false)}
         queryKeys={[['group', groupId!]]}

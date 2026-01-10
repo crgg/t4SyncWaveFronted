@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@app/hooks';
 import { useQueryClient } from '@tanstack/react-query';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import { connecting, connected, disconnected } from '@features/connection/connectionSlice';
 import {
@@ -27,6 +27,8 @@ import { isValidAudioUrl } from '@shared/utils';
 import { store } from '@app/store';
 import { IRoomUser, IRoomUsers } from '@/features/groups/groups.types';
 import { groupsApi } from '@/features/groups/groupsApi';
+import { toast } from 'react-toastify';
+import { paths } from '@/routes/paths';
 
 export function useWebSocket() {
   const dispatch = useAppDispatch();
@@ -37,7 +39,7 @@ export function useWebSocket() {
   const user = useAppSelector((state) => state.auth?.user);
   const socketServiceRef = useRef<ReturnType<typeof getWebSocketService> | null>(null);
   const { groupId } = useParams();
-
+  const navigate = useNavigate();
   const audioStateRef = useRef(store.getState().audio);
   const connectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isConnectingRef = useRef(false);
@@ -338,7 +340,9 @@ export function useWebSocket() {
       dispatch(handleKicked({ reason: data.reason }));
       const listenersPath = '/listeners';
       if (window.location.pathname !== listenersPath) {
-        window.location.href = listenersPath;
+        navigate(paths.LISTENERS(null));
+        queryClient.invalidateQueries({ queryKey: ['others-groups', { userId: user?.id }] });
+        toast.warning('You have been removed from the group', { autoClose: 3000 });
       }
       console.warn('Usuario removido del grupo:', data.reason);
     };

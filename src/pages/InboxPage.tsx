@@ -256,11 +256,11 @@ const InboxPage = () => {
                   </div>
                 </div>
                 {!isExpired ? (
-                  <div className="flex gap-1 self-end">
+                  <div className="flex gap-1 self-end sm:self-center">
                     <button
                       className={cn(
                         btnColors.emerald,
-                        'py-1 sm:py-1.5 rounded-full font-semibold text-[10px] w-20 flex items-center justify-center gap-1'
+                        'py-1 sm:py-0.5 rounded-full font-semibold text-[10px] w-20 flex items-center justify-center gap-1'
                       )}
                       onClick={() => acceptInvitationHandleClick(invitation)}
                     >
@@ -270,7 +270,7 @@ const InboxPage = () => {
                     <button
                       className={cn(
                         btnColors.outlineRed,
-                        'py-1 sm:py-1.5 rounded-full font-semibold text-[10px] w-20 flex items-center justify-center gap-1'
+                        'py-1 sm:py-0.5 rounded-full font-semibold text-[10px] w-20 flex items-center justify-center gap-1'
                       )}
                       onClick={() => declineInvitationHandleClick(invitation)}
                     >
