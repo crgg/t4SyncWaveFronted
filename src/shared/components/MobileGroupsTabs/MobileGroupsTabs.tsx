@@ -9,9 +9,14 @@ interface MobileGroupsTabsProps {
   activeTab?: LayoutState['activeTab'];
   onTabChange?: (tab: LayoutState['activeTab']) => void;
   className?: string;
+  countInvitations?: number;
 }
 
-export function MobileGroupsTabs({ onTabChange, className }: MobileGroupsTabsProps) {
+export function MobileGroupsTabs({
+  onTabChange,
+  className,
+  countInvitations,
+}: MobileGroupsTabsProps) {
   const { pathname } = useLocation();
 
   const tabs = [
@@ -79,14 +84,23 @@ export function MobileGroupsTabs({ onTabChange, className }: MobileGroupsTabsPro
                 isActive && 'text-light-text dark:text-dark-text'
               )}
             >
-              <Icon
-                size={tab.iconSize}
-                className={cn(
-                  'transition-all duration-200',
-                  isActive && 'scale-110 text-primary-600'
+              <div className="relative">
+                <Icon
+                  size={tab.iconSize}
+                  className={cn(
+                    'transition-all duration-200',
+                    isActive && 'scale-110 text-primary-600'
+                  )}
+                  strokeWidth={isActive ? 2.5 : 2}
+                />
+
+                {tab.id === 'inbox' && !!countInvitations && countInvitations > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 text-[9px] bg-emerald-500 dark:bg-emerald-600 text-white rounded-full w-4 h-4 flex items-center justify-center sm:text-xs font-bold transition-all duration-200">
+                    {countInvitations}
+                  </span>
                 )}
-                strokeWidth={isActive ? 2.5 : 2}
-              />
+              </div>
+
               <span
                 className={cn(
                   'text-[10px] sm:text-xs font-medium transition-all duration-200',

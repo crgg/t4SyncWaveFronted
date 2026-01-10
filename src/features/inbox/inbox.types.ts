@@ -20,3 +20,9 @@ export interface Invitation {
   invited_by_name: string;
   invited_by_email: string;
 }
+
+export interface IDialog {
+  type: 'accept-invitation' | 'reject-invitation' | null;
+  variant: TDialogVariant;
+  open: boolean;
+}

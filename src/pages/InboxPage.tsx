@@ -1,26 +1,29 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+
+import { Check, ClockAlert, UserPlus, X, Inbox, RefreshCw } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import {
-  Check,
-  CircleCheck,
-  CircleX,
-  ClockAlert,
-  UserPlus,
-  X,
-  Inbox,
-  RefreshCw,
-} from 'lucide-react';
+import { toast } from 'react-toastify';
 
 import * as Page from '@/shared/components/Page/Page';
+import * as Types from '@features/inbox/inbox.types';
 
+import AlertDialog from '@shared/components/AlertDialog/AlertDialog';
+import { Button, btnColors } from '@shared/components/Button/Button';
+import { Skeleton } from '@shared/components/Skeleton/Skeleton';
+
+import { initialDialogState } from '@features/inbox/inbox.state';
 import { inboxApi } from '@features/inbox/inboxApi';
+import { cn, extractWords, getErrorMessage } from '@shared/utils';
 import { withAuth } from '@shared/hoc/withAuth';
-import { cn, extractWords } from '@/shared/utils';
-import { btnColors } from '@/shared/components/Button/Button';
-import { Button } from '@/shared/components/Button/Button';
-import { Skeleton } from '@/shared/components/Skeleton/Skeleton';
+import { useAppSelector } from '@/app/hooks';
 
 const InboxPage = () => {
+  const userId = useAppSelector((state) => state.auth.user?.id);
+  const [dialog, setDialog] = useState<Types.IDialog>(initialDialogState);
+  const [selectedInvitation, setSelectedInvitation] = useState<Types.Invitation | null>(null);
+  const queryClient = useQueryClient();
+
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['inbox'],
     queryFn: inboxApi.getInvitations,
@@ -28,8 +31,66 @@ const InboxPage = () => {
     gcTime: 1000 * 60 * 2,
   });
 
+  const { mutate: acceptInvitation } = useMutation({
+    mutationFn: inboxApi.acceptInvitation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inbox'] });
+      queryClient.invalidateQueries({ queryKey: ['others-groups', { userId }] });
+      onCloseInvitation();
+      toast.success('Invitation accepted successfully');
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+
+  const { mutate: rejectInvitation } = useMutation({
+    mutationFn: inboxApi.rejectInvitation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inbox'] });
+      queryClient.invalidateQueries({ queryKey: ['others-groups', { userId }] });
+      onCloseInvitation();
+      toast.success('Invitation rejected successfully');
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+
   const invitations = data?.invitations || [];
   const invitationCount = data?.count || 0;
+
+  const acceptInvitationHandleClick = (selected: Types.Invitation) => {
+    setSelectedInvitation(selected);
+    setDialog({
+      type: 'accept-invitation',
+      variant: 'emerald',
+      open: true,
+    });
+  };
+
+  const declineInvitationHandleClick = (selected: Types.Invitation) => {
+    setSelectedInvitation(selected);
+    setDialog({
+      type: 'reject-invitation',
+      variant: 'red',
+      open: true,
+    });
+  };
+
+  const onCloseInvitation = () => {
+    setDialog(initialDialogState);
+  };
+
+  const onAcceptInvitation = () => {
+    if (!selectedInvitation) return;
+    acceptInvitation(selectedInvitation.id);
+  };
+
+  const onDeclineInvitation = () => {
+    if (!selectedInvitation) return;
+    rejectInvitation(selectedInvitation.id);
+  };
 
   if (isLoading) {
     return (
@@ -141,107 +202,112 @@ const InboxPage = () => {
   }
 
   return (
-    <Page.Wrapper>
-      <Page.Title
-        description="Manage your invitations to groups"
-        count={invitationCount}
-        title="Inbox"
-      />
-      <Page.Content>
-        <h3 className="font-semibold text-light-text dark:text-zinc-300 truncate text-sm sm:text-base">
-          Group Invitation
-        </h3>
-        {invitations.map((invitation) => {
-          const isExpired = new Date(invitation.expires_at) < new Date();
-          return (
-            <div
-              key={invitation.id}
-              className={cn(
-                'border rounded-lg bg-light-card dark:bg-dark-card dark:border-dark-hover relative p-2 sm:p-3 flex items-center justify-between gap-3',
-                isExpired ? 'cursor-not-allowed' : ''
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    'flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary-light/10 flex items-center justify-center',
-                    isExpired
-                      ? 'bg-zinc-500/10 dark:bg-zinc-400/10'
-                      : 'bg-primary/10 dark:bg-primary-light/10'
-                  )}
-                >
-                  <span
+    <>
+      <Page.Wrapper>
+        <Page.Title
+          description="Manage your invitations to groups"
+          count={invitationCount}
+          title="Inbox"
+        />
+        <Page.Content>
+          <h3 className="font-semibold text-light-text dark:text-zinc-300 truncate text-sm sm:text-base">
+            Group Invitation
+          </h3>
+          {invitations.map((invitation) => {
+            const isExpired = new Date(invitation.expires_at) < new Date();
+            return (
+              <div
+                key={invitation.id}
+                className={cn(
+                  'border rounded-lg bg-light-card dark:bg-dark-card dark:border-dark-hover relative p-2 sm:p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-3',
+                  isExpired ? 'cursor-not-allowed' : ''
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <div
                     className={cn(
-                      ' font-semibold text-base',
+                      'flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary-light/10 flex items-center justify-center',
                       isExpired
-                        ? 'text-zinc-500 dark:text-zinc-400'
-                        : 'text-primary dark:text-primary-light'
+                        ? 'bg-zinc-500/10 dark:bg-zinc-400/10'
+                        : 'bg-primary/10 dark:bg-primary-light/10'
                     )}
                   >
-                    {isExpired ? <ClockAlert size={16} /> : <UserPlus size={16} />}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-zinc-700 dark:text-zinc-300">
-                    You've been invited to <strong>"{invitation.group_name}"</strong>
-                  </p>
-                  <div className="text-zinc-400 dark:text-zinc-400 text-[11px]">
-                    By {extractWords(invitation.invited_by_name)}
-                    <span className="ms-1">
-                      ({invitation.invited_by_email || invitation.invitee_phone})
+                    <span
+                      className={cn(
+                        ' font-semibold text-base',
+                        isExpired
+                          ? 'text-zinc-500 dark:text-zinc-400'
+                          : 'text-primary dark:text-primary-light'
+                      )}
+                    >
+                      {isExpired ? <ClockAlert size={16} /> : <UserPlus size={16} />}
                     </span>
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-zinc-700 dark:text-zinc-300">
+                      You've been invited to <strong>"{invitation.group_name}"</strong>
+                    </p>
+                    <div className="text-zinc-400 dark:text-zinc-400 text-[11px]">
+                      By {extractWords(invitation.invited_by_name)}
+                      <span className="ms-1">
+                        ({invitation.invited_by_email || invitation.invitee_phone})
+                      </span>
+                    </div>
+                  </div>
                 </div>
+                {!isExpired ? (
+                  <div className="flex gap-1 self-end">
+                    <button
+                      className={cn(
+                        btnColors.emerald,
+                        'py-1 sm:py-1.5 rounded-full font-semibold text-[10px] w-20 flex items-center justify-center gap-1'
+                      )}
+                      onClick={() => acceptInvitationHandleClick(invitation)}
+                    >
+                      <Check size={14} strokeWidth={3} />
+                      Accept
+                    </button>
+                    <button
+                      className={cn(
+                        btnColors.outlineRed,
+                        'py-1 sm:py-1.5 rounded-full font-semibold text-[10px] w-20 flex items-center justify-center gap-1'
+                      )}
+                      onClick={() => declineInvitationHandleClick(invitation)}
+                    >
+                      <X size={14} strokeWidth={3} />
+                      Decline
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-1">
+                    <p className="py-2 rounded-full font-semibold text-xs w-16 block text-zinc-500 dark:text-zinc-400">
+                      Expired
+                    </p>
+                  </div>
+                )}
               </div>
-              {!isExpired ? (
-                <div className="flex gap-1">
-                  <button
-                    className={cn(
-                      btnColors.emerald,
-                      'py-1.5 rounded-full font-semibold text-[10px] w-20 hidden sm:flex items-center justify-center gap-1'
-                    )}
-                  >
-                    <Check size={14} strokeWidth={3} />
-                    Accept
-                  </button>
-                  <button
-                    className={cn(
-                      btnColors.outlineRed,
-                      'py-1.5 rounded-full font-semibold text-[10px] w-20 hidden sm:flex items-center justify-center gap-1'
-                    )}
-                  >
-                    <X size={14} strokeWidth={3} />
-                    Reject
-                  </button>
-                  <button
-                    className={cn(
-                      btnColors.emerald,
-                      'py-2 rounded-full font-semibold text-xs w-8 block sm:hidden'
-                    )}
-                  >
-                    <CircleCheck size={16} strokeWidth={3} className="mx-auto" />
-                  </button>
-                  <button
-                    className={cn(
-                      btnColors.outlineRed,
-                      'py-2 rounded-full font-semibold text-xs w-8 block sm:hidden'
-                    )}
-                  >
-                    <CircleX size={16} strokeWidth={3} className="mx-auto" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-1">
-                  <p className="py-2 rounded-full font-semibold text-xs w-16 hidden sm:block text-zinc-500 dark:text-zinc-400">
-                    Expired
-                  </p>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </Page.Content>
-    </Page.Wrapper>
+            );
+          })}
+        </Page.Content>
+      </Page.Wrapper>
+      {/* Accept Invitation */}
+      <AlertDialog
+        message={
+          dialog.type === 'accept-invitation'
+            ? 'Are you sure you want to accept this invitation?'
+            : 'Are you sure you want to decline this invitation?'
+        }
+        onRejection={onCloseInvitation}
+        hasAutoConfirmation={false}
+        onConfirmation={
+          dialog.type === 'accept-invitation' ? onAcceptInvitation : onDeclineInvitation
+        }
+        variant={dialog.variant}
+        title="Are you sure?"
+        open={dialog.open}
+        confirmButtonText={dialog.type === 'accept-invitation' ? 'Accept' : 'Yes, Decline'}
+      />
+    </>
   );
 };
 

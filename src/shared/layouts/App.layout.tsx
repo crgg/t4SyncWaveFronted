@@ -11,11 +11,22 @@ import { profileService } from '@/services/profile';
 import { authActions } from '@/features/auth/authSlice';
 import { STORAGE_KEYS } from '@/shared/constants';
 import { getErrorMessage } from '@/shared/utils';
+import { inboxApi } from '@/features/inbox/inboxApi';
+import { useQuery } from '@tanstack/react-query';
 
 const AppLayout = () => {
   const activeTab = useAppSelector((state) => state.layout.activeTab);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+
+  const { data } = useQuery({
+    queryKey: ['inbox'],
+    queryFn: inboxApi.getInvitations,
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 2,
+  });
+
+  const countInvitations = data?.count || 0;
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -66,7 +77,11 @@ const AppLayout = () => {
           <Outlet />
         </div>
       </div>
-      <MobileGroupsTabs activeTab={activeTab} onTabChange={onTabChange} />
+      <MobileGroupsTabs
+        countInvitations={countInvitations}
+        onTabChange={onTabChange}
+        activeTab={activeTab}
+      />
     </>
   );
 };

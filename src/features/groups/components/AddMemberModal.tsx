@@ -312,7 +312,7 @@ export function AddMemberModal({ isOpen, onClose, groupId, onSuccess }: AddMembe
             disabled={mutation.isPending}
             className="flex-1"
           >
-            Add Member
+            {inviteType === 'email' ? 'Add Member' : 'Send Invite'}
           </Button>
         </div>
       </form>

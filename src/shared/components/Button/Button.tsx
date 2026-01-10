@@ -7,7 +7,9 @@ type ButtonVariant =
   | 'outline'
   | 'ghost'
   | 'ghost-danger'
-  | 'outline-primary';
+  | 'outline-primary'
+  | 'emerald'
+  | 'danger';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -35,6 +37,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       'ghost-danger': 'text-red-600 dark:text-red-400 hover:bg-red-500/10 focus:ring-red-500/30',
       'outline-primary':
         'border border-primary text-primary dark:text-primary-light hover:bg-primary/10 dark:hover:bg-primary-light/10 focus:ring-primary/30',
+      emerald:
+        'bg-emerald-500 dark:bg-emerald-600 text-white hover:bg-emerald-600 dark:hover:bg-emerald-700 focus:ring-emerald-500/30',
+      danger:
+        'bg-red-500 dark:bg-red-600 text-white hover:bg-red-600 dark:hover:bg-red-700 focus:ring-red-500/30',
     };
 
     const sizes = {

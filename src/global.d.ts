@@ -29,4 +29,6 @@ declare global {
     created_at?: string;
     displayName: string;
   }
+
+  type TDialogVariant = 'red' | 'emerald';
 }

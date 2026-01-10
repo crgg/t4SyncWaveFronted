@@ -1,9 +1,10 @@
-import { AlertTriangle, Clock } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { AlertTriangle, CircleQuestionMark, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-import { Modal } from '@shared/components/Modal/Modal';
 import { Button } from '@shared/components/Button/Button';
-import { useEffect, useRef, useState } from 'react';
+import { Modal } from '@shared/components/Modal/Modal';
+import { cn } from '@/shared/utils';
 
 interface AlertDialogProps {
   open: boolean;
@@ -11,9 +12,32 @@ interface AlertDialogProps {
   message?: string;
   onConfirmation: () => void;
   onRejection: () => void;
+  hasAutoConfirmation?: boolean;
+  variant?: TDialogVariant;
+  confirmButtonText?: string;
+  cancelButtonText?: string;
 }
 
 const MAX_SECONDS = 7;
+
+interface Variant {
+  Icon: React.ElementType;
+  iconWave: string;
+  iconBackground: string;
+}
+
+const variants: Record<TDialogVariant, Variant> = {
+  red: {
+    Icon: AlertTriangle,
+    iconWave: 'bg-red-500/20',
+    iconBackground: 'from-red-600 via-red-500 to-red-400 ring-red-500/20',
+  },
+  emerald: {
+    Icon: CircleQuestionMark,
+    iconWave: 'bg-emerald-500/20',
+    iconBackground: 'from-emerald-600 via-emerald-500 to-emerald-400 ring-emerald-500/20',
+  },
+};
 
 function AlertDialogChild({
   open,
@@ -21,6 +45,10 @@ function AlertDialogChild({
   title = 'Alert',
   onConfirmation,
   onRejection,
+  hasAutoConfirmation = true,
+  variant = 'red',
+  confirmButtonText = 'Confirm Now',
+  cancelButtonText = 'Cancel',
 }: AlertDialogProps) {
   const [seconds, setSeconds] = useState(MAX_SECONDS);
   const [progress, setProgress] = useState(100);
@@ -30,6 +58,8 @@ function AlertDialogChild({
 
   const onConfirmationRef = useRef(onConfirmation);
   const onRejectionRef = useRef(onRejection);
+
+  const selectedVariant = variants[variant];
 
   useEffect(() => {
     onConfirmationRef.current = onConfirmation;
@@ -73,7 +103,9 @@ function AlertDialogChild({
       }
     };
 
-    animationFrameRef.current = requestAnimationFrame(updateProgress);
+    if (hasAutoConfirmation) {
+      animationFrameRef.current = requestAnimationFrame(updateProgress);
+    }
 
     return () => {
       if (animationFrameRef.current) {
@@ -81,7 +113,7 @@ function AlertDialogChild({
         animationFrameRef.current = null;
       }
     };
-  }, [open]);
+  }, [open, hasAutoConfirmation]);
 
   const handleConfirmation = () => {
     if (animationFrameRef.current) {
@@ -105,22 +137,23 @@ function AlertDialogChild({
 
   return (
     <Modal
-      isOpen={open}
+      footer={hasAutoConfirmation && <AlertDialogFooter progress={progress} seconds={seconds} />}
+      clickOutsideToClose={false}
       onClose={handleClose}
+      isOpen={open}
       size="md"
-      footer={<AlertDialogFooter progress={progress} seconds={seconds} />}
     >
       <div className="space-y-6">
         {/* Icon with pulse animation */}
         <motion.div
-          className="flex justify-center mb-4"
+          className="flex justify-center mb-4 mt-10"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 200, damping: 15 }}
         >
           <div className="relative">
             <motion.div
-              className="absolute inset-0 rounded-full bg-red-500/20"
+              className={cn('absolute inset-0 rounded-full', selectedVariant.iconWave)}
               animate={{
                 scale: [1, 1.3, 1],
                 opacity: [0.5, 0, 0.5],
@@ -131,8 +164,13 @@ function AlertDialogChild({
                 ease: 'easeInOut',
               }}
             />
-            <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-red-600 via-red-500 to-red-400 flex items-center justify-center shadow-xl ring-4 ring-red-500/20">
-              <AlertTriangle size={36} className="text-white" strokeWidth={2.5} />
+            <div
+              className={cn(
+                'relative w-20 h-20 rounded-full bg-gradient-to-br flex items-center justify-center shadow-xl ring-4 ',
+                selectedVariant.iconBackground
+              )}
+            >
+              <selectedVariant.Icon size={36} className="text-white" strokeWidth={2.5} />
             </div>
           </div>
         </motion.div>
@@ -145,24 +183,24 @@ function AlertDialogChild({
           transition={{ delay: 0.1 }}
         >
           <h3 className="text-xl font-bold text-light-text dark:text-dark-text">{title}</h3>
-          <p className="text-sm leading-relaxed text-light-text-secondary dark:text-dark-text-secondary px-2">
-            {message}
-          </p>
+          <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400 px-2">{message}</p>
         </motion.div>
 
         {/* Timer display */}
-        <motion.div
-          className="flex items-center justify-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Clock size={16} className="text-red-600 dark:text-red-400" />
-          <span className="text-sm font-semibold text-red-700 dark:text-red-300">
-            Auto-confirming in <span className="text-lg font-bold tabular-nums">{seconds}</span>{' '}
-            {seconds === 1 ? 'second' : 'seconds'}
-          </span>
-        </motion.div>
+        {hasAutoConfirmation && (
+          <motion.div
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Clock size={16} className="text-red-600 dark:text-red-400" />
+            <span className="text-sm font-semibold text-red-700 dark:text-red-300">
+              Auto-confirming in <span className="text-lg font-bold tabular-nums">{seconds}</span>{' '}
+              {seconds === 1 ? 'second' : 'seconds'}
+            </span>
+          </motion.div>
+        )}
 
         {/* Action buttons */}
         <motion.div
@@ -177,15 +215,15 @@ function AlertDialogChild({
             onClick={handleRejection}
             className="flex-1 min-w-0 font-medium"
           >
-            Cancel
+            {cancelButtonText}
           </Button>
           <Button
             type="button"
-            variant="primary"
+            variant={variant === 'emerald' ? 'emerald' : 'danger'}
             onClick={handleConfirmation}
             className="flex-1 min-w-0 font-medium shadow-md hover:shadow-lg transition-shadow"
           >
-            Confirm Now
+            {confirmButtonText}
           </Button>
         </motion.div>
       </div>

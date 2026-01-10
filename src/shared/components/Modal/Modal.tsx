@@ -15,6 +15,7 @@ interface ModalProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   footer?: React.ReactNode;
+  clickOutsideToClose?: boolean;
 }
 
 export function Modal({
@@ -25,6 +26,7 @@ export function Modal({
   className,
   size = 'md',
   footer,
+  clickOutsideToClose = true,
 }: ModalProps) {
   // Cerrar con ESC
   useEffect(() => {
@@ -66,7 +68,7 @@ export function Modal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={clickOutsideToClose ? onClose : undefined}
             className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
           />
 
