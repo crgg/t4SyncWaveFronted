@@ -4,7 +4,7 @@ import { Button } from '@shared/components/Button/Button';
 
 interface LibraryPageHeaderProps {
   tracksCount: number;
-  onAddTrack: () => void;
+  onAddTrack?: () => void;
 }
 
 export function LibraryPageHeader({ tracksCount, onAddTrack }: LibraryPageHeaderProps) {
@@ -23,14 +23,16 @@ export function LibraryPageHeader({ tracksCount, onAddTrack }: LibraryPageHeader
           <span className="text-sm text-zinc-400 dark:text-zinc-300 hidden sm:inline">
             {tracksCount} {tracksCount === 1 ? 'track' : 'tracks'}
           </span>
-          <Button
-            onClick={onAddTrack}
-            variant="outline-primary"
-            className="flex items-center gap-2"
-          >
-            <Plus size={16} strokeWidth={2} />
-            <span className="hidden sm:inline">Add</span>
-          </Button>
+          {!!onAddTrack && (
+            <Button
+              onClick={onAddTrack}
+              variant="outline-primary"
+              className="flex items-center gap-2"
+            >
+              <Plus size={16} strokeWidth={2} />
+              <span className="hidden sm:inline">Add</span>
+            </Button>
+          )}
         </div>
       </div>
     </motion.div>

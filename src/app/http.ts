@@ -25,6 +25,7 @@ const PATHS_TO_SKIP_AUTH = [
   paths.VERIFY_CODE,
   paths.PROFILE,
   paths.USERS_CHANGE_PASSWORD,
+  '/api/auth/otp/verify',
 ];
 
 http.interceptors.response.use(

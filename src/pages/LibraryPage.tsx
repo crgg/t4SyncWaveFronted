@@ -109,6 +109,8 @@ const LibraryPage = () => {
     setIsUploadModalOpen(true);
   };
 
+  const hasTracks = allTracks.length !== 0;
+
   if (isLoading) {
     return <LibraryPageSkeleton />;
   }
@@ -117,7 +119,7 @@ const LibraryPage = () => {
     return (
       <>
         <div className="w-full max-w-4xl mx-auto pb-24">
-          <LibraryPageHeader tracksCount={0} onAddTrack={handleAddTrack} />
+          <LibraryPageHeader tracksCount={0} onAddTrack={hasTracks ? handleAddTrack : undefined} />
         </div>
         <ErrorState error={error} onRetry={() => refetch()} />
       </>
@@ -128,7 +130,7 @@ const LibraryPage = () => {
     return (
       <>
         <div className="w-full max-w-4xl mx-auto pb-24">
-          <LibraryPageHeader tracksCount={0} onAddTrack={handleAddTrack} />
+          <LibraryPageHeader tracksCount={0} onAddTrack={hasTracks ? handleAddTrack : undefined} />
           <ProfileStatus />
           <EmptyLibraryState onAddTrack={handleAddTrack} />
         </div>
@@ -140,7 +142,10 @@ const LibraryPage = () => {
   return (
     <>
       <div className="w-full max-w-4xl mx-auto pb-24 space-y-5">
-        <LibraryPageHeader tracksCount={displayedTracks.length} onAddTrack={handleAddTrack} />
+        <LibraryPageHeader
+          tracksCount={displayedTracks.length}
+          onAddTrack={hasTracks ? handleAddTrack : undefined}
+        />
 
         {/* Audio Player */}
         {audioState.trackId && (

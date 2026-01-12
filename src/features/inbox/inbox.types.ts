@@ -26,3 +26,22 @@ export interface IDialog {
   variant: TDialogVariant;
   open: boolean;
 }
+
+export interface IClassifiedInvitations {
+  [EInvitationStatus.PENDING]: IClassifiedInvitation;
+  [EInvitationStatus.ACCEPTED]: IClassifiedInvitation;
+  [EInvitationStatus.EXPIRED]: IClassifiedInvitation;
+  [EInvitationStatus.REVOKED]: IClassifiedInvitation;
+}
+
+export interface IClassifiedInvitation {
+  label: string;
+  items: Invitation[];
+}
+
+export enum EInvitationStatus {
+  PENDING = 'pending',
+  ACCEPTED = 'accepted',
+  EXPIRED = 'expired',
+  REVOKED = 'revoked',
+}

@@ -47,7 +47,7 @@ export function Header() {
                     <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
                     <div className="text-white text-sm font-bold w-8 h-8 flex items-center justify-center">
-                      {user?.name ? getInitials(user?.name) : '?'}
+                      {getInitials(user?.displayName || '?')}
                     </div>
                   )}
                   {isLoadingAvatar && (
@@ -67,7 +67,7 @@ export function Header() {
           isOpen={isAvatarPreviewOpen}
           onClose={() => setIsAvatarPreviewOpen(false)}
           imageUrl={user.avatar_url}
-          name={user.name || 'Unknown'}
+          name={user.displayName || 'Unknown'}
         />
       )}
     </>

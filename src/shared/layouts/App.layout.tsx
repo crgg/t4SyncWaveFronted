@@ -26,7 +26,11 @@ const AppLayout = () => {
     gcTime: 1000 * 60 * 2,
   });
 
-  const countInvitations = data?.count || 0;
+  const invitations = data?.invitations ?? [];
+  const countInvitations = invitations.reduce(
+    (acc, invitation) => acc + (invitation.status === 'pending' ? 1 : 0),
+    0
+  );
 
   useEffect(() => {
     const loadProfile = async () => {

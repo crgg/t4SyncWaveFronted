@@ -38,7 +38,10 @@ import { withAuth } from '@/shared/hoc/withAuth';
 import { paths } from '@/routes/paths';
 
 const schema = yup.object({
-  nickname: yup.string().optional(),
+  nickname: yup
+    .string()
+    .required('Display name is required')
+    .max(50, 'Display name must be less than 50 characters'),
 });
 
 type ProfileFormData = yup.InferType<typeof schema>;
@@ -286,10 +289,14 @@ function ProfilePage() {
             <div className="relative flex-shrink-0">
               <div className="relative w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-full overflow-hidden bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
                 {avatarPreview ? (
-                  <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                  <img
+                    src={avatarPreview}
+                    alt={`Avatar of ${user?.displayName}`}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <div className="text-white text-2xl sm:text-3xl md:text-4xl font-bold w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 flex items-center justify-center">
-                    {user?.name ? getInitials(user?.name) : '?'}
+                    {getInitials(user?.displayName || '?')}
                   </div>
                 )}
                 {isLoadingAvatar && (
@@ -317,15 +324,17 @@ function ProfilePage() {
             </div>
 
             <div className="flex-1 min-w-0 flex flex-col gap-0 justify-center">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-light-text dark:text-dark-text">
-                {user?.name || 'User'}
-              </h2>
+              {user?.name && (
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-light-text dark:text-dark-text">
+                  {user?.name || 'User'}
+                </h2>
+              )}
               {user?.nickname && (
                 <p className="text-sm sm:text-base text-light-text-secondary dark:text-dark-text-secondary">
                   @{user.nickname}
                 </p>
               )}
-              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 dark:text-zinc-400">
+              <p className="text-xs text-zinc-400 mt-1 dark:text-zinc-400">
                 {signedWithEmail
                   ? 'Session started with email'
                   : 'Signed in with phone verification'}
@@ -394,16 +403,14 @@ function ProfilePage() {
                     Not editable
                   </p>
                 </div>
-                <div>
-                  <div
-                    className={cn(
-                      btnColors.emerald,
-                      'py-1 flex items-center justify-center gap-1 px-3 rounded-full pointer-events-none'
-                    )}
-                  >
-                    <ShieldCheck size={18} strokeWidth={3} className="mx-auto" />
-                    <span className="hidden sm:inline font-bold">Verified</span>
-                  </div>
+                <div
+                  className={cn(
+                    btnColors.emerald,
+                    'py-1 flex items-center justify-center gap-1 px-3 rounded-full pointer-events-none'
+                  )}
+                >
+                  <ShieldCheck size={18} className="mx-auto" />
+                  <span className="hidden sm:inline text-sm leading-3">Verified</span>
                 </div>
               </div>
             ) : null}
@@ -445,7 +452,7 @@ function ProfilePage() {
               </button>
 
               {/* Add/Edit Email */}
-              {!hasEmail && hasEmail && (
+              {!hasEmail && (
                 <button
                   onClick={() => setIsChangeEmailMode(!isChangeEmailMode)}
                   className="w-full flex items-center gap-3 p-4 hover:bg-light-hover/10 dark:hover:bg-dark-hover/50 transition-colors touch-manipulation active:scale-[0.98] border-b border-light-hover/30 dark:border-dark-hover/30"
@@ -554,12 +561,17 @@ function ProfilePage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="flex-1"
+                  className="w-28 text-sm"
                   onClick={() => setIsEditMode(false)}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" variant="primary" className="flex-1" isLoading={isLoading}>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="flex-1 text-sm max-w-56"
+                  isLoading={isLoading}
+                >
                   Save Changes
                 </Button>
               </div>
@@ -582,32 +594,31 @@ function ProfilePage() {
               <Input
                 label="Current Password"
                 type="password"
-                placeholder="Enter your current password"
                 {...registerPassword('currentPassword')}
                 error={passwordErrors.currentPassword?.message}
               />
 
-              <Input
-                label="New Password"
-                type="password"
-                placeholder="Enter your new password"
-                {...registerPassword('newPassword')}
-                error={passwordErrors.newPassword?.message}
-              />
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Input
+                  label="New Password"
+                  type="password"
+                  {...registerPassword('newPassword')}
+                  error={passwordErrors.newPassword?.message}
+                />
 
-              <Input
-                label="Confirm New Password"
-                type="password"
-                placeholder="Confirm your new password"
-                {...registerPassword('confirmPassword')}
-                error={passwordErrors.confirmPassword?.message}
-              />
+                <Input
+                  label="Confirm New Password"
+                  type="password"
+                  {...registerPassword('confirmPassword')}
+                  error={passwordErrors.confirmPassword?.message}
+                />
+              </div>
 
               <div className="flex gap-3">
                 <Button
                   type="button"
                   variant="outline"
-                  className="flex-1"
+                  className="w-28 text-sm"
                   onClick={() => {
                     setIsChangePasswordMode(false);
                     resetPassword();
@@ -619,7 +630,7 @@ function ProfilePage() {
                 <Button
                   type="submit"
                   variant="primary"
-                  className="flex-1"
+                  className="flex-1 text-sm max-w-56"
                   isLoading={isLoadingPassword}
                 >
                   Change Password
@@ -637,21 +648,26 @@ function ProfilePage() {
             exit={{ opacity: 0, y: 20 }}
             className="bg-light-card dark:bg-dark-card rounded-2xl p-4 sm:p-6 shadow-sm border border-light-hover/30 dark:border-dark-hover/30"
           >
-            <h3 className="text-lg sm:text-xl font-bold text-light-text dark:text-dark-text mb-2">
-              {hasEmail ? 'Change' : 'Add'} Email
+            <h3 className="text-lg sm:text-xl font-bold text-light-text dark:text-dark-text">
+              {hasEmail ? 'Change' : 'Add'} Email Address
             </h3>
             {!hasEmail && (
-              <div className="pb-4">
-                <h4 className="text-sm sm:text-base font-bold text-light-text-secondary dark:text-dark-text-secondary mb-2">
-                  Benefits of adding email:
-                </h4>
-                <ul className="list-disc list-inside text-xs sm:text-sm dark:text-zinc-300">
-                  <li>Password reset option.</li>
-                  <li>Receive group invitations.</li>
-                  <li>Enhanced account security.</li>
-                  <li>And more...</li>
-                </ul>
-              </div>
+              <>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3 mt-1">
+                  Adding and email gives you more options like password reset, group invitations.
+                </p>
+                <div className="pb-4 ms-4">
+                  <h4 className="text-sm sm:text-base text-light-text-secondary dark:text-dark-text-secondary mb-2">
+                    Benefits of adding email:
+                  </h4>
+                  <ul className="list-disc list-inside text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
+                    <li>Password reset option.</li>
+                    <li>Receive group invitations.</li>
+                    <li>Enhanced account security.</li>
+                    <li>And more...</li>
+                  </ul>
+                </div>
+              </>
             )}
 
             <form onSubmit={handleSubmitEmail(onSubmitEmail)} className="space-y-4">
@@ -669,7 +685,7 @@ function ProfilePage() {
               <Input
                 label="New Email"
                 type="email"
-                placeholder="Enter your new email address"
+                placeholder="Enter your email"
                 {...registerEmail('email')}
                 error={emailErrors.email?.message}
                 autoComplete="email"
@@ -680,7 +696,7 @@ function ProfilePage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="flex-1"
+                  className="w-28 text-sm"
                   onClick={() => {
                     setIsChangeEmailMode(false);
                     resetEmail({ email: user?.email || '' });
@@ -692,10 +708,10 @@ function ProfilePage() {
                 <Button
                   type="submit"
                   variant="primary"
-                  className="flex-1"
+                  className="flex-1 text-sm max-w-56"
                   isLoading={isLoadingEmail}
                 >
-                  Update Email
+                  {!hasEmail ? 'Add' : 'Update'} Email
                 </Button>
               </div>
             </form>

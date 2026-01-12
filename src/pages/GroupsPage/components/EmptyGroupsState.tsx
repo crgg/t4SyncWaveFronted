@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { Headphones, Plus, UsersRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@shared/components/Button/Button';
 import { CreateGroupModal } from '@/features/groups/components/CreateGroupModal';
@@ -31,20 +31,32 @@ export function EmptyGroupsState({
           animate={{ opacity: 1, y: 0 }}
           className="text-center space-y-4"
         >
-          <div className="text-6xl">🎵</div>
+          <div className="text-6xl">
+            {!isMyGroups ? (
+              <Headphones
+                className="text-light-text-secondary dark:text-dark-text-secondary mx-auto"
+                size={64}
+              />
+            ) : (
+              <UsersRound
+                className="text-light-text-secondary dark:text-dark-text-secondary mx-auto"
+                size={64}
+              />
+            )}
+          </div>
           <h3 className="text-xl font-semibold text-light-text dark:text-dark-text">
-            {isMyGroups ? "You haven't created any groups yet" : 'No groups available'}
+            No Groups Yet
           </h3>
           <p className="text-light-text-secondary dark:text-dark-text-secondary max-w-md">
             {isMyGroups
-              ? 'Create your first group to start syncing music with friends!'
-              : 'Be the first to create a group and start sharing music!'}
+              ? 'Create your first DJ group and start syncing music'
+              : 'jin a group with a code to start listening with friends!'}
           </p>
           {isMyGroups ? (
             <Button
               onClick={onCreateGroup}
               variant="primary"
-              className="mt-4 flex items-center gap-2 mx-auto"
+              className="mt-4 flex items-center gap-2 mx-auto text-sm"
             >
               <Plus size={18} />
               Create Your First Group
@@ -53,6 +65,7 @@ export function EmptyGroupsState({
             <div className="mt-4 inline-flex items-center gap-2 mx-auto">
               <Button
                 variant="primary"
+                className="text-sm"
                 onClick={() => {
                   navigate(paths.GROUPS(null));
                   dispatch(layoutActions.setActiveTab('my-groups'));

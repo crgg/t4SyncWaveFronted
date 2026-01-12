@@ -194,7 +194,7 @@ export const formatPhoneNumber = (phone: string): string => {
 };
 
 export const extractWords = (text: string, count: number = 2): string => {
-  return text.split(' ').slice(0, count).join(' ');
+  return (text ?? '').split(' ').slice(0, count).join(' ');
 };
 
 export const formatDateHumanized = (dateString: string, period: 'ago' | 'on' = 'ago') => {
@@ -215,5 +215,5 @@ export const formatDateHumanized = (dateString: string, period: 'ago' | 'on' = '
 };
 
 export const extractCharacters = (text: string, count: number = 1): string => {
-  return text.split('').slice(count).join('');
+  return (text ?? '').split('').slice(count).join('');
 };

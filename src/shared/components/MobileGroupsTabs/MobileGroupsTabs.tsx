@@ -77,7 +77,7 @@ export function MobileGroupsTabs({
               key={tab.id}
               onClick={() => onTabChange?.(tab.id)}
               className={cn(
-                'relative flex flex-col items-center justify-center gap-1',
+                'relative flex flex-col items-center justify-center gap-0 mt-2',
                 'flex-1 h-full',
                 'transition-colors duration-200',
                 'text-zinc-400 dark:text-zinc-400',

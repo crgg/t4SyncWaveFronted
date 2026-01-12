@@ -30,7 +30,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       <>
         <div className="w-full">
           {label && (
-            <label className="block text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-1">
+            <label className="block text-sm font-semibold text-zinc-500 dark:text-zinc-400 mb-0.5">
               {label}
             </label>
           )}
@@ -47,7 +47,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {buttonEnd}
           </div>
           {description && (
-            <div className="text-sm italic text-zinc-400 dark:text-zinc-400">{description}</div>
+            <div className="text-xs text-zinc-400 dark:text-zinc-400">{description}</div>
           )}
           {countCharacters && (
             <div className="flex items-center justify-end mt-1">
