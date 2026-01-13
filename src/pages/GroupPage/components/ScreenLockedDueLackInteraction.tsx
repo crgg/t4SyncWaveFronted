@@ -90,7 +90,7 @@ export const ScreenLockedDueLackInteraction = ({
                 <span className="text-sm font-medium">Click here</span>
               </motion.div>
 
-              {audioState.trackTitle ||
+              {/* {audioState.trackTitle ||
                 (audioState.trackUrl && (
                   <div className="pt-4 border-t border-light-hover dark:border-dark-hover">
                     <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
@@ -100,7 +100,7 @@ export const ScreenLockedDueLackInteraction = ({
                       {audioState.trackTitle || audioState.trackUrl}
                     </p>
                   </div>
-                ))}
+                ))} */}
             </div>
           </motion.div>
         </motion.div>

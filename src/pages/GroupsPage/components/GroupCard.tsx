@@ -42,7 +42,7 @@ export function GroupCard({
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary-light/10 flex items-center justify-center">
+          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 dark:bg-primary-light/10 flex items-center justify-center">
             <span className="text-primary dark:text-primary-light font-semibold text-base">
               {group.name.charAt(0).toUpperCase()}
             </span>
