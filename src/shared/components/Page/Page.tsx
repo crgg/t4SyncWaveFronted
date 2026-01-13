@@ -4,7 +4,7 @@ interface Props {
   count?: number;
 }
 
-export const Title = ({ title, description, count }: Props) => {
+export const Title = ({ title, count }: Props) => {
   return (
     <div className="flex items-center justify-between mb-3 sm:mb-6">
       <div>
@@ -16,7 +16,7 @@ export const Title = ({ title, description, count }: Props) => {
             </span>
           ) : null}
         </h1>
-        <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">{description}</p>
+        {/* <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">{description}</p> */}
       </div>
     </div>
   );

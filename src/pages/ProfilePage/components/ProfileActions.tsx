@@ -97,12 +97,6 @@ export function ProfileActions({
                   {user?.hasPassword ? 'Change' : 'Create'} Password
                 </span>
               </div>
-              {!user?.hasPassword && (
-                <div className="text-xs text-start text-zinc-500 dark:text-zinc-400">
-                  <p>Do you want to create your password?</p>
-                  <p>You must set up an email address.</p>
-                </div>
-              )}
             </div>
           </button>
         )}

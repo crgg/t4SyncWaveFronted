@@ -32,7 +32,7 @@ export default {
         // Colores de soporte para fondos y superficies
         surface: {
           light: '#f2f2f6', // Background principal
-          dark: '#120F0A',  // Casi negro, pero con tono cálido
+          dark: '#120F0A', // Casi negro, pero con tono cálido
         },
         dark: {
           bg: '#120F0A',

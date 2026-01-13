@@ -1,6 +1,6 @@
-import { Mail, Phone, ShieldCheck } from 'lucide-react';
-import { cn, extractCharacters, formatPhoneNumber } from '@/shared/utils';
-import { btnColors } from '@shared/components/Button/Button';
+import { Mail, Phone } from 'lucide-react';
+
+import { cn } from '@/shared/utils';
 
 interface AccountInfoProps {
   user: IUserData | null;
@@ -18,15 +18,12 @@ export function AccountInfo({ user }: AccountInfoProps) {
             <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary-light/10">
               <Mail size={18} className="text-primary dark:text-primary-light" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mb-0.5">
+            <div className="flex-1 flex justify-between min-w-0">
+              <p className="text-sm sm:text-base text-light-text-secondary dark:text-dark-text-secondary">
                 Email
               </p>
               <p className="text-sm sm:text-base font-medium text-light-text dark:text-dark-text truncate">
                 {user.email}
-              </p>
-              <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
-                Not editable
               </p>
             </div>
           </div>
@@ -36,24 +33,17 @@ export function AccountInfo({ user }: AccountInfoProps) {
               <Phone size={18} className="text-primary dark:text-primary-light" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mb-0.5">
+              <p className="text-sm sm:text-base text-light-text-secondary dark:text-dark-text-secondary">
                 Phone
               </p>
-              <p className="text-sm sm:text-base font-medium text-light-text dark:text-dark-text truncate">
-                {formatPhoneNumber(extractCharacters(user.phone, -10))}
-              </p>
-              <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
-                Not editable
-              </p>
             </div>
-            <div
-              className={cn(
-                btnColors.emerald,
-                'py-1 flex items-center justify-center gap-1 px-3 rounded-full pointer-events-none'
-              )}
-            >
-              <ShieldCheck size={18} className="mx-auto" />
-              <span className="hidden sm:inline text-sm leading-3">Verified</span>
+            <div className={cn('py-1 px-3 rounded-full pointer-events-none text-end')}>
+              <p className="text-sm sm:text-base font-medium text-light-text dark:text-dark-text truncate leading-none">
+                {user.phone}
+              </p>
+              <p className="text-sm text-zinc-400 dark:text-zinc-400 leading-none">
+                Phone verification
+              </p>
             </div>
           </div>
         ) : null}
