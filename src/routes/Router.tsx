@@ -16,7 +16,7 @@ import { paths } from './paths';
 const GroupsPage = lazy(() => import('@/pages/GroupsPage'));
 const GroupPage = lazy(() => import('@/pages/GroupPage'));
 const LibraryPage = lazy(() => import('@/pages/LibraryPage'));
-const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
+const ProfilePage = lazy(() => import('@/pages/ProfilePage/ProfilePage'));
 const InboxPage = lazy(() => import('@/pages/InboxPage'));
 
 const routes: RouteObject[] = [
@@ -67,19 +67,19 @@ const routes: RouteObject[] = [
         element: <AuthPage />,
       },
       {
-        path: 'phone-number',
+        path: paths.PHONE_NUMBER,
         element: <PhoneNumberPage />,
       },
       {
-        path: 'verify-code',
+        path: paths.VERIFY_CODE,
         element: <VerificationCodePage />,
       },
       {
-        path: 'login',
+        path: paths.LOGIN,
         element: <LoginPage />,
       },
       {
-        path: 'register',
+        path: paths.REGISTER,
         element: <RegisterPage />,
       },
     ],

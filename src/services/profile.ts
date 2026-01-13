@@ -44,6 +44,14 @@ export interface UpdateEmailResponse {
   user: IUserData;
 }
 
+export interface CreatePasswordData {
+  newPassword: string;
+}
+
+export interface CreatePasswordResponse {
+  status: boolean;
+  message: string;
+}
 export const profileService = {
   getProfile: async (): Promise<ProfileResponse> => {
     const response = await http.get<ProfileResponse>('/users/me');
@@ -70,6 +78,11 @@ export const profileService = {
 
   changePassword: async (data: ChangePasswordData): Promise<ChangePasswordResponse> => {
     const response = await http.put<ChangePasswordResponse>('/users/change-password', data);
+    return response.data;
+  },
+
+  createPassword: async (data: CreatePasswordData): Promise<CreatePasswordResponse> => {
+    const response = await http.put<CreatePasswordResponse>('/users/create-password', data);
     return response.data;
   },
 
