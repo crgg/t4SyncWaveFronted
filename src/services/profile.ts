@@ -9,6 +9,7 @@ export interface ProfileResponse {
 
 export interface UpdateProfileData {
   nickname?: string;
+  name: string;
 }
 
 export interface UpdateProfileResponse {

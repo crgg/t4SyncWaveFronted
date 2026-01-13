@@ -25,6 +25,7 @@ import { CreatePasswordForm } from './components/CreatePasswordForm';
 
 type ProfileFormData = {
   nickname: string;
+  name?: string;
 };
 
 type ChangePasswordFormData = {
@@ -134,7 +135,10 @@ function ProfilePage() {
     setSuccess(null);
 
     try {
-      const response = await profileService.updateProfile(data);
+      const response = await profileService.updateProfile({
+        ...data,
+        name: user?.name || user?.displayName || '',
+      });
       dispatch(authActions.updateUser(response.user));
       setSuccess('Profile updated successfully');
       setIsEditMode(false);
