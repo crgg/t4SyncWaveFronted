@@ -110,12 +110,15 @@ export function AudioPlayerHost() {
 
   const handleSkipForward = () => {
     if (!audioState.trackDuration) return;
-    const newPosition = Math.min(audioState.currentPosition + 10, audioState.trackDuration);
+    const newPosition = Math.min(
+      audioState.currentPosition + AUDIO_SECONDS.SKIP_FORWARD,
+      audioState.trackDuration
+    );
     seek(newPosition);
   };
 
   const handleSkipBackward = () => {
-    const newPosition = Math.max(audioState.currentPosition - 10, 0);
+    const newPosition = Math.max(audioState.currentPosition - AUDIO_SECONDS.SKIP_BACKWARD, 0);
     seek(newPosition);
   };
 
@@ -193,9 +196,9 @@ export function AudioPlayerHost() {
           <input
             type="range"
             min="0"
-            max={audioState.trackDuration || 100}
+            max={audioState.trackDuration ?? 100}
             step="0.1"
-            value={audioState.currentPosition || 0}
+            value={audioState.currentPosition ?? 0}
             onChange={handleSeek}
             onMouseDown={handleSeekStart}
             onMouseUp={handleSeekEnd}
@@ -208,7 +211,7 @@ export function AudioPlayerHost() {
         </div>
         <div className="flex justify-between text-xs text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200">
           <span>{formatTime(audioState.currentPosition)}</span>
-          <span>{formatTime(audioState.trackDuration || 0)}</span>
+          <span>{formatTime(audioState.trackDuration ?? 0)}</span>
         </div>
       </div>
 
@@ -217,14 +220,14 @@ export function AudioPlayerHost() {
           <div className="flex items-center gap-3 w-full max-w-[160px]">
             <div className="w-5 h-5 flex items-center justify-center">
               <AudioButtonToggleMuted
-                volume={audioState.volume || 100}
+                volume={audioState.volume ?? 100}
                 isMuted={audioState.isMuted}
                 toggleMute={toggleMute}
               />
             </div>
             <div className="flex items-center gap-3 w-full">
               <VolumeSlider
-                value={audioState.isMuted ? 0 : audioState.volume || 100}
+                value={audioState.isMuted ? 0 : (audioState.volume ?? 100)}
                 onChange={handleVolumeChange}
               />
             </div>
@@ -283,7 +286,7 @@ export function AudioPlayerHost() {
               >
                 <Icon.Fordward className="sm:w-6 sm:h-6 w-4 h-4" />
                 <span className="text-xs absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200">
-                  {AUDIO_SECONDS.SKIP_BACKWARD}s
+                  {AUDIO_SECONDS.SKIP_FORWARD}s
                 </span>
               </motion.button>
               <motion.button
