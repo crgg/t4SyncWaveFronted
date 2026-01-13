@@ -11,6 +11,8 @@ import AuthLayout from '@/shared/layouts/Auth.layout';
 import AuthPage from '@/pages/AuthPage';
 import PhoneNumberPage from '@/pages/PhoneNumberPage/PhoneNumberPage';
 import VerificationCodePage from '@/pages/VerificationCodePage/VerificationCodePage';
+import TermsPage from '@/pages/TermsPage';
+import PrivacyPage from '@/pages/PrivacyPage';
 import { paths } from './paths';
 
 const GroupsPage = lazy(() => import('@/pages/GroupsPage'));
@@ -81,6 +83,19 @@ const routes: RouteObject[] = [
       {
         path: paths.REGISTER,
         element: <RegisterPage />,
+      },
+    ],
+  },
+  {
+    path: '/legal',
+    children: [
+      {
+        path: 'terms',
+        element: <TermsPage />,
+      },
+      {
+        path: 'privacy',
+        element: <PrivacyPage />,
       },
     ],
   },

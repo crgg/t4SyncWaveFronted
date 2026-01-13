@@ -1,5 +1,5 @@
 import { Mail, Phone } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 import { Button } from '@/shared/components/Button/Button';
 import { withGuest } from '@/shared/hoc/withGuest';
@@ -35,23 +35,19 @@ const AuthPage = () => {
       <div className="text-center mt-8">
         <p className="text-xs sm:text-sm font-extralight">
           By continuing, you agree to our <br />
-          <a
-            href={paths.TERMS}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to={paths.TERMS}
             className="text-primary hover:text-primary-dark font-bold transition-colors underline underline-offset-8 ps-1"
           >
             Terms of Service
-          </a>{' '}
-          and
-          <a
-            href={paths.PRIVACY}
-            target="_blank"
-            rel="noopener noreferrer"
+          </Link>{' '}
+          and{' '}
+          <Link
+            to={paths.PRIVACY}
             className="text-primary hover:text-primary-dark font-bold transition-colors underline underline-offset-8 ps-1"
           >
             Privacy Policy
-          </a>
+          </Link>
         </p>
       </div>
     </>

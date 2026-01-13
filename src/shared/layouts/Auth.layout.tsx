@@ -8,7 +8,7 @@ import { withGuest } from '@/shared/hoc/withGuest';
 import logo from '@/app/assets/logo.png';
 import { paths } from '@/routes/paths';
 
-const AuthLayout = () => {
+export const AuthLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
