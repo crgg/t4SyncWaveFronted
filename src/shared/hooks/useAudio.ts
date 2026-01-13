@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@app/hooks';
 import {
   play,
@@ -25,6 +25,7 @@ export function useAudio() {
   const { role } = useAppSelector((state) => state.session);
   const { tracks, currentTrackIndex } = useAppSelector((state) => state.playlist);
   const audioServiceRef = useRef<ReturnType<typeof getAudioService> | null>(null);
+  const [needsInteraction, setNeedsInteraction] = useState(false);
   const lastSyncRef = useRef({
     position: 0,
     timestamp: 0,
@@ -83,6 +84,7 @@ export function useAudio() {
     }
 
     const audioService = getAudioService();
+    audioService.setHandleInteraction(() => setNeedsInteraction(true));
     const audioServiceState = audioService.getState();
     const currentServiceUrl = audioServiceState?.trackUrl || '';
 
@@ -764,5 +766,7 @@ export function useAudio() {
     stop: handleStop,
     handleSelect,
     emitSeek,
+    setNeedsInteraction,
+    needsInteraction,
   };
 }

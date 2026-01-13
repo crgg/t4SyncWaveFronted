@@ -8,6 +8,11 @@ class AudioService {
   private currentState: AudioState | null = null;
   private latency = 0;
   private eventListeners: Map<string, EventListener> = new Map();
+  public handleInteraction: ((reason: any) => void) | null = null;
+
+  setHandleInteraction(handleInteraction: (reason: any) => void): void {
+    this.handleInteraction = handleInteraction;
+  }
 
   init(audioUrl: string, onStateChange?: (state: AudioState) => void): void {
     if (!audioUrl || audioUrl.trim() === '') {
@@ -289,7 +294,10 @@ class AudioService {
           (this.audioElement as any).__isUpdatingFromCode = false;
           this.updateState({ isPlaying: false }, false);
         }
-        console.error('Error al reproducir:', error);
+        if (this.handleInteraction) {
+          this.handleInteraction(error);
+        }
+        // console.error('Error al reproducir:', error);
       });
 
     return Promise.resolve();

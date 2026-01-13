@@ -1,8 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Users, Music, ArrowLeft, Crown, UserPlus, UserMinus } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+
+import { Users, Music, ArrowLeft, Crown, UserPlus, UserMinus } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 
 import { groupsApi } from '@/features/groups/groupsApi';
@@ -33,6 +34,7 @@ import { cn, orderBy } from '@/shared/utils';
 import { AvatarPreview } from '@/shared/components/AvatarPreview/AvatarPreview';
 import { withAuth } from '@/shared/hoc/withAuth';
 import AlertDialog from '@/shared/components/AlertDialog/AlertDialog';
+import { ScreenLockedDueLackInteraction } from './GroupPage/components/ScreenLockedDueLackInteraction';
 
 const GroupPage = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -52,8 +54,9 @@ const GroupPage = () => {
   const processedGroupIdRef = useRef<string | null>(null);
   const createdByRef = useRef<string | null>(null);
   const listenerAudioInitializedRef = useRef<string | null>(null);
-  const { play } = useAudio();
+  const { play, needsInteraction, setNeedsInteraction } = useAudio();
   const [dialogOpen, setDialogOpen] = useState<DialogType>(null);
+  // const role = useAppSelector((state) => state.session.role);
 
   const isConnected = useAppSelector((state) => state.connection.isConnected);
   const audioState = useAppSelector((state) => state.audio);
@@ -451,8 +454,23 @@ const GroupPage = () => {
     }
   };
 
+  const handleAudioInteraction = async () => {
+    try {
+      const audioService = getAudioService();
+      await audioService.play();
+      setNeedsInteraction(false);
+    } catch (error) {
+      console.log('Error playing audio after interaction:', error);
+    }
+  };
+
   return (
     <>
+      <ScreenLockedDueLackInteraction
+        handleAudioInteraction={handleAudioInteraction}
+        needsInteraction={needsInteraction}
+        audioState={audioState}
+      />
       <AlertDialog
         onConfirmation={onConfirmLeaveGroup}
         open={dialogOpen === 'leave-group'}

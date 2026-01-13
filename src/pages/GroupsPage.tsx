@@ -5,16 +5,16 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search } from 'lucide-react';
 
-import type { Group } from '@/features/groups/groups.types';
+import type { Group } from '@features/groups/groups.types';
 import type { SortOption } from './GroupsPage/types';
 
-import { groupsApi } from '@/features/groups/groupsApi';
-import { useAppSelector } from '@/app/hooks';
-import { CreateGroupModal } from '@/features/groups/components/CreateGroupModal';
-import { DeleteGroupModal } from '@/features/groups/components/DeleteGroupModal';
-import { EditGroupModal } from '@/features/groups/components/EditGroupModal';
-import ProfileStatus from '@/shared/components/ProfileStatus/ProfileStatus';
-import DeleteDialog from '@/shared/components/DeleteDialog/DeleteDialog';
+import { groupsApi } from '@features/groups/groupsApi';
+import { useAppSelector } from '@app/hooks';
+import { CreateGroupModal } from '@features/groups/components/CreateGroupModal';
+import { DeleteGroupModal } from '@features/groups/components/DeleteGroupModal';
+import { EditGroupModal } from '@features/groups/components/EditGroupModal';
+import ProfileStatus from '@shared/components/ProfileStatus/ProfileStatus';
+import DeleteDialog from '@shared/components/DeleteDialog/DeleteDialog';
 
 import { SearchAndSortControls } from './GroupsPage/components/SearchAndSortControls';
 import { GroupsPageSkeleton } from './GroupsPage/components/GroupsPageSkeleton';
@@ -23,7 +23,7 @@ import { EmptyGroupsState } from './GroupsPage/components/EmptyGroupsState';
 import { JoinGroupByCode } from './GroupsPage/components/JoinGroupByCode';
 import { ErrorState } from './GroupsPage/components/ErrorState';
 import { GroupCard } from './GroupsPage/components/GroupCard';
-import { withAuth } from '@/shared/hoc/withAuth';
+import { withAuth } from '@shared/hoc/withAuth';
 import { paths } from '@/routes/paths';
 
 const GroupsPage = () => {

@@ -1,11 +1,8 @@
 import { motion } from 'framer-motion';
 import { Headphones, Plus, UsersRound } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
+import { CreateGroupModal } from '@features/groups/components/CreateGroupModal';
 import { Button } from '@shared/components/Button/Button';
-import { CreateGroupModal } from '@/features/groups/components/CreateGroupModal';
-import { layoutActions } from '@/app/slices/layoutSlice';
-import { useAppDispatch } from '@/app/hooks';
-import { paths } from '@/routes/paths';
 
 interface EmptyGroupsStateProps {
   isMyGroups: boolean;
@@ -20,9 +17,6 @@ export function EmptyGroupsState({
   isCreateModalOpen,
   onCloseCreateModal,
 }: EmptyGroupsStateProps) {
-  const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-
   return (
     <div className="w-full max-w-4xl mx-auto pb-24">
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -50,9 +44,9 @@ export function EmptyGroupsState({
           <p className="text-light-text-secondary dark:text-dark-text-secondary max-w-md">
             {isMyGroups
               ? 'Create your first DJ group and start syncing music'
-              : 'jin a group with a code to start listening with friends!'}
+              : 'Join a group with a code to start listening with friends!'}
           </p>
-          {isMyGroups ? (
+          {isMyGroups && (
             <Button
               onClick={onCreateGroup}
               variant="primary"
@@ -61,19 +55,6 @@ export function EmptyGroupsState({
               <Plus size={18} />
               Create Your First Group
             </Button>
-          ) : (
-            <div className="mt-4 inline-flex items-center gap-2 mx-auto">
-              <Button
-                variant="primary"
-                className="text-sm"
-                onClick={() => {
-                  navigate(paths.GROUPS(null));
-                  dispatch(layoutActions.setActiveTab('my-groups'));
-                }}
-              >
-                Go to my groups
-              </Button>
-            </div>
           )}
         </motion.div>
       </div>
