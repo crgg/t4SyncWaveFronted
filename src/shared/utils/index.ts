@@ -217,3 +217,13 @@ export const formatDateHumanized = (dateString: string, period: 'ago' | 'on' = '
 export const extractCharacters = (text: string, count: number = 1): string => {
   return (text ?? '').split('').slice(count).join('');
 };
+
+export const loadScript = (src: string) => {
+  return new Promise<void>((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = () => resolve();
+    script.onerror = () => reject();
+    document.head.appendChild(script);
+  });
+};

@@ -6,6 +6,7 @@
 export const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3005';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+export const API_KEY_YOUTUBE: string = import.meta.env.VITE_API_KEY_YOUTUBE || '';
 
 // Eventos Socket.IO
 export const SOCKET_EVENTS = {

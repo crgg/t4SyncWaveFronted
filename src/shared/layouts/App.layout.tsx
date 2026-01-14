@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 
 import { Header } from '@shared/components/Header/Header';
 import SidebarLayout from './Sidebar.layout';
@@ -9,10 +10,9 @@ import { layoutActions, LayoutState } from '@/app/slices/layoutSlice';
 import { paths } from '@/routes/paths';
 import { profileService } from '@/services/profile';
 import { authActions } from '@/features/auth/authSlice';
-import { STORAGE_KEYS } from '@/shared/constants';
-import { getErrorMessage } from '@/shared/utils';
-import { inboxApi } from '@/features/inbox/inboxApi';
-import { useQuery } from '@tanstack/react-query';
+import { STORAGE_KEYS } from '@shared/constants';
+import { getErrorMessage, loadScript } from '@shared/utils';
+import { inboxApi } from '@features/inbox/inboxApi';
 
 const AppLayout = () => {
   const activeTab = useAppSelector((state) => state.layout.activeTab);
@@ -50,6 +50,15 @@ const AppLayout = () => {
 
     loadProfile();
   }, [dispatch]);
+
+  useEffect(() => {
+    loadScript('https://www.youtube.com/iframe_api').then(() => {
+      console.log('YouTube iframe API loaded');
+      window.YT.ready(() => {
+        console.log('YouTube iframe API ready');
+      });
+    });
+  }, []);
 
   const onTabChange = (tab: LayoutState['activeTab']) => {
     dispatch(layoutActions.setActiveTab(tab));
