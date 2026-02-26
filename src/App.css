@@ -455,6 +455,32 @@ input[type='range']::-moz-range-track {
   color: #fff !important;
 }
 
+/* Control bar buttons - light mode contrast */
+.light .lk-control-bar .button:not(.lk-disconnect-button) {
+  color: #1a150e !important;
+  background-color: #f2f2f6 !important;
+  border: 1px solid rgba(26, 21, 14, 0.1);
+}
+
+.light .lk-control-bar .button:not(.lk-disconnect-button):not(:disabled):hover {
+  background-color: #e8e4dc !important;
+}
+
+.light .lk-control-bar .button[aria-pressed='true'] {
+  background-color: #e2c285 !important;
+  color: #1a150e !important;
+}
+
+.light .lk-control-bar .button[aria-pressed='true']:hover {
+  background-color: #d4b870 !important;
+}
+
+/* Screen share active - accent in light mode */
+.light .lk-control-bar .button[data-source='screen_share'][data-enabled='true'] {
+  background-color: #c5a059 !important;
+  color: #fff !important;
+}
+
 /* Audio conference stage - grid layout */
 .light .lk-audio-conference-stage {
   background: #f2f2f6;
