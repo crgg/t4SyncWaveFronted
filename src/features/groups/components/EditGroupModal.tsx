@@ -62,7 +62,7 @@ export function EditGroupModal({
   });
 
   const onSubmit = (data: EditGroupFormData) => {
-    mutation.mutate({ id: groupId, name: data.name });
+    mutation.mutate({ id: groupId, name: String(data.name).trim() });
   };
 
   const handleClose = () => {

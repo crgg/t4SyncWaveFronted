@@ -51,7 +51,7 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess }: CreateGroupModa
   });
 
   const onSubmit = (data: CreateGroupFormData) => {
-    mutation.mutate({ name: data.name });
+    mutation.mutate({ name: String(data.name).trim() });
   };
 
   const handleClose = () => {
