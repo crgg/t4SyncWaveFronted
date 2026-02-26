@@ -140,9 +140,11 @@ export const MediaSessionSection = ({
     );
   }
 
-  const startingWord = isOwner ? 'Start' : 'Join';
-  const disabledBtnVideo = !(sessionType === 'video') && !isOwner;
-  const disabledBtnAudio = !(sessionType === 'audio') && !isOwner;
+  const startingWord = isActive ? 'Join' : isOwner ? 'Start' : 'Join';
+  const disabledBtnVideo =
+    (isActive && sessionType !== 'video') || (!(sessionType === 'video') && !isOwner);
+  const disabledBtnAudio =
+    (isActive && sessionType !== 'audio') || (!(sessionType === 'audio') && !isOwner);
 
   return (
     <>
@@ -166,7 +168,6 @@ export const MediaSessionSection = ({
         className="bg-light-card dark:bg-dark-card rounded-xl border border-light-hover dark:border-dark-hover"
       >
         <div className="text-sm text-primary flex flex-col">
-          {/* sessionType */}
           <button
             className="p-3.5 enabled:hover:bg-primary-50 dark:enabled:hover:bg-dark-hover rounded-xl rounded-b-none flex items-center justify-between gap-2 disabled:cursor-not-allowed"
             onClick={() => (isActive ? joinMutation.mutate() : startMutation.mutate('video'))}
@@ -181,7 +182,10 @@ export const MediaSessionSection = ({
               <span>{!disabledBtnVideo ? startingWord : ''} Video Call</span>
             </div>
             {sessionType === 'video' && (
-              <span className="text-emerald-600 font-semibold text-xs">Active</span>
+              <span className="text-emerald-500 font-semibold text-[10px] inline-flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Enabled
+              </span>
             )}
           </button>
           <button
@@ -200,7 +204,7 @@ export const MediaSessionSection = ({
             {sessionType === 'audio' && (
               <span className="text-emerald-500 font-semibold text-[10px] inline-flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Active
+                Enabled
               </span>
             )}
           </button>
