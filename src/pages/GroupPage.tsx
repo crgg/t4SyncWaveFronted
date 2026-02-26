@@ -625,6 +625,8 @@ const GroupPage = () => {
             groupId={groupId!}
             isOwner={isOwner}
             userName={user?.displayName || user?.name || user?.nickname}
+            currentUserId={user?.id}
+            members={members}
           />
         </div>
 

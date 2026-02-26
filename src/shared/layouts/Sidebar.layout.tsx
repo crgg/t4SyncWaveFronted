@@ -15,6 +15,7 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { layoutActions } from '@/app/slices/layoutSlice';
 import { extractCharacters, formatPhoneNumber, getInitials } from '../utils';
 import { paths } from '@/routes/paths';
+import { APP_VERSION } from '../constants';
 
 const SidebarLayout = () => {
   const user = useAppSelector((state) => state.auth.user);
@@ -133,7 +134,7 @@ const SidebarLayout = () => {
             <span className="text-sm font-medium">Logout</span>
           </button>
           <div className="text-[10px] font-bold text-light-text-secondary dark:text-dark-text-secondary text-center mt-2">
-            Version V1.0
+            Version V{APP_VERSION}
           </div>
         </div>
       </motion.aside>

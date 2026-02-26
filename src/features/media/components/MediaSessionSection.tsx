@@ -11,7 +11,13 @@ import { groupsApi } from '@/features/groups/groupsApi';
 import { MediaSessionRoom } from './MediaSessionRoom';
 import { cn } from '@/shared/utils';
 
-export const MediaSessionSection = ({ groupId, isOwner, userName }: MediaSessionSectionProps) => {
+export const MediaSessionSection = ({
+  groupId,
+  isOwner,
+  userName,
+  currentUserId,
+  members,
+}: MediaSessionSectionProps) => {
   const queryClient = useQueryClient();
   const [inCallCredentials, setInCallCredentials] = useState<InCallCredentials | null>(null);
 
@@ -126,6 +132,9 @@ export const MediaSessionSection = ({ groupId, isOwner, userName }: MediaSession
           token={inCallCredentials.token}
           sessionType={inCallCredentials.type}
           onLeave={handleLeave}
+          members={members}
+          currentUserId={currentUserId}
+          currentUserName={userName}
         />
       </motion.div>
     );

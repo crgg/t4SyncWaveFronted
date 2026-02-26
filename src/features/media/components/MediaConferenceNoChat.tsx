@@ -19,9 +19,32 @@ import {
   useTracks,
 } from '@livekit/components-react';
 
-interface VideoConferenceNoChatProps extends React.HTMLAttributes<HTMLDivElement> {}
+import { ParticipantNameMapProvider } from './ParticipantNameContext';
+import {
+  VideoParticipantTileContent,
+  AudioParticipantTileContent,
+} from './ParticipantTileWithCustomName';
+import type { Member } from '@/features/groups/groups.types';
 
-function VideoConferenceNoChat(props: VideoConferenceNoChatProps) {
+export function buildIdentityToNameMap(
+  members: Member[] = [],
+  currentUserName?: string,
+  currentUserId?: string
+): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const m of members) {
+    const name = m.display_name || m.name || m.guest_name;
+    if (m.user_id && name) map[m.user_id] = String(name);
+  }
+  if (currentUserId && currentUserName) map[currentUserId] = currentUserName;
+  return map;
+}
+
+interface VideoConferenceNoChatProps extends React.HTMLAttributes<HTMLDivElement> {
+  identityToName?: Record<string, string>;
+}
+
+function VideoConferenceNoChat({ identityToName = {}, ...props }: VideoConferenceNoChatProps) {
   const layoutContext = useCreateLayoutContext();
   const lastAutoFocusedScreenShareTrack = React.useRef<TrackReferenceOrPlaceholder | null>(null);
 
@@ -77,52 +100,70 @@ function VideoConferenceNoChat(props: VideoConferenceNoChatProps) {
   ]);
 
   return (
-    <div className="lk-video-conference" {...props}>
-      {isWeb() && (
-        <LayoutContextProvider value={layoutContext}>
-          <div className="lk-video-conference-inner">
-            {!focusTrack ? (
-              <div className="lk-grid-layout-wrapper">
-                <GridLayout tracks={tracks}>
-                  <ParticipantTile />
-                </GridLayout>
-              </div>
-            ) : (
-              <div className="lk-focus-layout-wrapper">
-                <FocusLayoutContainer>
-                  <CarouselLayout tracks={carouselTracks}>
-                    <ParticipantTile />
-                  </CarouselLayout>
-                  {focusTrack && <FocusLayout trackRef={focusTrack} />}
-                </FocusLayoutContainer>
-              </div>
-            )}
-            <ControlBar controls={{ chat: false, settings: false }} />
-          </div>
-        </LayoutContextProvider>
-      )}
-      <RoomAudioRenderer />
-      <ConnectionStateToast />
-    </div>
+    <ParticipantNameMapProvider identityToName={identityToName}>
+      <div className="lk-video-conference" {...props}>
+        {isWeb() && (
+          <LayoutContextProvider value={layoutContext}>
+            <div className="lk-video-conference-inner">
+              {!focusTrack ? (
+                <div className="lk-grid-layout-wrapper">
+                  <GridLayout tracks={tracks}>
+                    <ParticipantTile>
+                      <VideoParticipantTileContent />
+                    </ParticipantTile>
+                  </GridLayout>
+                </div>
+              ) : (
+                <div className="lk-focus-layout-wrapper">
+                  <FocusLayoutContainer>
+                    <CarouselLayout tracks={carouselTracks}>
+                      <ParticipantTile>
+                        <VideoParticipantTileContent />
+                      </ParticipantTile>
+                    </CarouselLayout>
+                    {focusTrack && (
+                      <FocusLayout trackRef={focusTrack}>
+                        <VideoParticipantTileContent />
+                      </FocusLayout>
+                    )}
+                  </FocusLayoutContainer>
+                </div>
+              )}
+              <ControlBar controls={{ chat: false, settings: false }} />
+            </div>
+          </LayoutContextProvider>
+        )}
+        <RoomAudioRenderer />
+        <ConnectionStateToast />
+      </div>
+    </ParticipantNameMapProvider>
   );
 }
 
-function AudioConferenceNoChat(props: React.HTMLAttributes<HTMLDivElement>) {
+interface AudioConferenceNoChatProps extends React.HTMLAttributes<HTMLDivElement> {
+  identityToName?: Record<string, string>;
+}
+
+function AudioConferenceNoChat({ identityToName = {}, ...props }: AudioConferenceNoChatProps) {
   const audioTracks = useTracks([Track.Source.Microphone]);
 
   return (
-    <LayoutContextProvider>
-      <div className="lk-audio-conference" {...props}>
-        <div className="lk-audio-conference-stage">
-          <TrackLoop tracks={audioTracks}>
-            <ParticipantAudioTile />
-          </TrackLoop>
+    <ParticipantNameMapProvider identityToName={identityToName}>
+      <LayoutContextProvider>
+        <div className="lk-audio-conference" {...props}>
+          <div className="lk-audio-conference-stage">
+            <TrackLoop tracks={audioTracks}>
+              <ParticipantAudioTile>
+                <AudioParticipantTileContent />
+              </ParticipantAudioTile>
+            </TrackLoop>
+          </div>
+          <ControlBar
+            controls={{ microphone: true, screenShare: false, camera: false, chat: false }}
+          />
         </div>
-        <ControlBar
-          controls={{ microphone: true, screenShare: false, camera: false, chat: false }}
-        />
-      </div>
-    </LayoutContextProvider>
+      </LayoutContextProvider>
+    </ParticipantNameMapProvider>
   );
 }
 
