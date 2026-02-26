@@ -642,8 +642,9 @@ export function useAudio() {
       const track = tracks.find((t) => t.id === trackId);
       if (!track) return;
 
-      const nextIndex = currentTrackIndex !== null ? (currentTrackIndex + 1) % tracks.length : 0;
-      dispatch(setCurrentTrackIndex({ index: nextIndex }));
+      const index = tracks.findIndex((t) => t.id === trackId);
+      if (index === -1) return;
+      dispatch(setCurrentTrackIndex({ index }));
 
       dispatch(
         setTrack({

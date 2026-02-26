@@ -15,7 +15,7 @@ import { STORAGE_KEYS } from '@/shared/constants';
 import { useAudio } from '@shared/hooks/useAudio';
 import { formatTime } from '@shared/utils';
 
-export function AudioPlayerHost() {
+export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number }) {
   const { audioState, play, pause, seek, setVolume, toggleMute, next, restart, stop } = useAudio();
   const [isDragging, setIsDragging] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
@@ -289,16 +289,18 @@ export function AudioPlayerHost() {
                   {AUDIO_SECONDS.SKIP_FORWARD}s
                 </span>
               </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={next}
-                disabled={!audioState.trackUrl}
-                className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 hidden"
-                title="Next"
-              >
-                <Icon.Next className="sm:w-5 sm:h-5 w-3 h-3" />
-              </motion.button>
+              {playlistCount > 0 && (
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={next}
+                  disabled={!audioState.trackUrl}
+                  className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50"
+                  title="Next"
+                >
+                  <Icon.Next className="sm:w-5 sm:h-5 w-3 h-3" />
+                </motion.button>
+              )}
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}

@@ -13,6 +13,7 @@ import { Button } from '@shared/components/Button/Button';
 import { AddMemberModal } from '@/features/groups/components/AddMemberModal';
 import type { DialogType, IGroupUsers, Member } from '@/features/groups/groups.types';
 import { PlaylistHost } from '@/features/playlist/components/PlaylistHost';
+import { PlaylistCompact } from '@/features/playlist/components/PlaylistCompact';
 import {
   playListSelectors,
   setCurrentTrackIndex,
@@ -509,7 +510,7 @@ const GroupPage = () => {
           </motion.div>
         ) : (
           <>
-            {isHostRef.current && <AudioPlayerHost />}
+            {isHostRef.current && <AudioPlayerHost playlistCount={playlist?.length ?? 0} />}
             {!isHostRef.current && (
               <AudioPlayerListener name={tracks?.[0]?.title} artist={tracks?.[0]?.artist} />
             )}
@@ -531,6 +532,10 @@ const GroupPage = () => {
             </div>
           </div>
         )}
+
+        <div className="mt-4">
+          <PlaylistCompact />
+        </div>
 
         <div className="flex justify-between mt-4">
           <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2 mb-2">
