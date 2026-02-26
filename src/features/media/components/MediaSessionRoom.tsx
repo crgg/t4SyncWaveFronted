@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { LiveKitRoom } from '@livekit/components-react';
-import { Maximize2, Minimize2 } from 'lucide-react';
 import type { MediaSessionType } from '@/features/groups/groups.types';
 import type { Member } from '@/features/groups/groups.types';
 import { cn } from '@/shared/utils';
