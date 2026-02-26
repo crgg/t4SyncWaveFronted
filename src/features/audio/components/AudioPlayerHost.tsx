@@ -289,7 +289,7 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
                   {AUDIO_SECONDS.SKIP_FORWARD}s
                 </span>
               </motion.button>
-              {playlistCount > 0 && (
+              {playlistCount > 1 && (
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}

@@ -18,6 +18,7 @@ import {
   usePinnedTracks,
   useTracks,
 } from '@livekit/components-react';
+import { Maximize2, Minimize2 } from 'lucide-react';
 
 import { ParticipantNameMapProvider } from './ParticipantNameContext';
 import {
@@ -42,9 +43,16 @@ export function buildIdentityToNameMap(
 
 interface VideoConferenceNoChatProps extends React.HTMLAttributes<HTMLDivElement> {
   identityToName?: Record<string, string>;
+  onFullscreenToggle?: () => void;
+  isFullscreen?: boolean;
 }
 
-function VideoConferenceNoChat({ identityToName = {}, ...props }: VideoConferenceNoChatProps) {
+function VideoConferenceNoChat({
+  identityToName = {},
+  onFullscreenToggle,
+  isFullscreen = false,
+  ...props
+}: VideoConferenceNoChatProps) {
   const layoutContext = useCreateLayoutContext();
   const lastAutoFocusedScreenShareTrack = React.useRef<TrackReferenceOrPlaceholder | null>(null);
 
@@ -129,7 +137,19 @@ function VideoConferenceNoChat({ identityToName = {}, ...props }: VideoConferenc
                   </FocusLayoutContainer>
                 </div>
               )}
-              <ControlBar controls={{ chat: false, settings: false }} />
+              <div className="lk-video-conference-controls">
+                <ControlBar controls={{ chat: false, settings: false }} />
+                {onFullscreenToggle && (
+                  <button
+                    type="button"
+                    onClick={onFullscreenToggle}
+                    className="media-session-room__fullscreen-btn"
+                    aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+                  >
+                    {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                  </button>
+                )}
+              </div>
             </div>
           </LayoutContextProvider>
         )}
@@ -142,9 +162,16 @@ function VideoConferenceNoChat({ identityToName = {}, ...props }: VideoConferenc
 
 interface AudioConferenceNoChatProps extends React.HTMLAttributes<HTMLDivElement> {
   identityToName?: Record<string, string>;
+  onFullscreenToggle?: () => void;
+  isFullscreen?: boolean;
 }
 
-function AudioConferenceNoChat({ identityToName = {}, ...props }: AudioConferenceNoChatProps) {
+function AudioConferenceNoChat({
+  identityToName = {},
+  onFullscreenToggle,
+  isFullscreen = false,
+  ...props
+}: AudioConferenceNoChatProps) {
   const audioTracks = useTracks([Track.Source.Microphone]);
 
   return (
@@ -158,9 +185,21 @@ function AudioConferenceNoChat({ identityToName = {}, ...props }: AudioConferenc
               </ParticipantAudioTile>
             </TrackLoop>
           </div>
-          <ControlBar
-            controls={{ microphone: true, screenShare: false, camera: false, chat: false }}
-          />
+          <div className="lk-audio-conference-controls">
+            <ControlBar
+              controls={{ microphone: true, screenShare: false, camera: false, chat: false }}
+            />
+            {onFullscreenToggle && (
+              <button
+                type="button"
+                onClick={onFullscreenToggle}
+                className="media-session-room__fullscreen-btn"
+                aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+              >
+                {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+              </button>
+            )}
+          </div>
         </div>
       </LayoutContextProvider>
     </ParticipantNameMapProvider>

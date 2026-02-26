@@ -32,6 +32,9 @@ export const MediaSessionRoom = ({
   currentUserName,
   className,
 }: MediaSessionRoomProps) => {
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
   const identityToName = React.useMemo(
     () => buildIdentityToNameMap(members, currentUserName, currentUserId),
     [members, currentUserName, currentUserId]
@@ -43,11 +46,40 @@ export const MediaSessionRoom = ({
     onDisconnected?.();
   };
 
+  const toggleFullscreen = () => {
+    if (!containerRef.current) return;
+    if (isFullscreen) {
+      document.exitFullscreen?.();
+      setIsFullscreen(false);
+    } else {
+      containerRef.current.requestFullscreen?.();
+      setIsFullscreen(true);
+    }
+  };
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
+
   return (
     <div
+      ref={containerRef}
       className={cn(
-        'rounded-xl overflow-hidden border border-light-hover dark:border-dark-hover',
+        'media-session-room',
+        'w-full min-w-0 rounded-xl overflow-hidden border border-light-hover dark:border-dark-hover',
         'bg-light-card dark:bg-dark-card',
+        'relative',
+        /* Video: 16:9 aspect ratio, min 200px; Audio: min 200px */
+        sessionType === 'video'
+          ? 'aspect-video min-h-[200px] sm:min-h-[240px]'
+          : 'min-h-[200px] sm:min-h-[240px]',
+        isFullscreen && 'media-session-room--fullscreen aspect-auto min-h-0 rounded-none border-0',
         className
       )}
     >
@@ -58,17 +90,21 @@ export const MediaSessionRoom = ({
         audio={canPublish}
         video={sessionType === 'video'}
         onDisconnected={handleDisconnected}
-        className="min-h-[320px] w-full [&_.lk-room-container]:rounded-xl [&_.lk-video-conference]:rounded-xl [&_.lk-audio-conference]:rounded-xl"
+        className="media-session-room__livekit w-full h-full min-h-0"
       >
         {sessionType === 'video' ? (
           <VideoConferenceNoChat
             identityToName={identityToName}
+            onFullscreenToggle={toggleFullscreen}
+            isFullscreen={isFullscreen}
             className="[&_.lk-grid-layout-wrapper]:bg-transparent [&_.lk-focus-layout-wrapper]:bg-transparent"
             style={{ '--lk-bg': 'transparent' } as React.CSSProperties}
           />
         ) : (
           <AudioConferenceNoChat
             identityToName={identityToName}
+            onFullscreenToggle={toggleFullscreen}
+            isFullscreen={isFullscreen}
             className="[&_.lk-audio-conference-stage]:p-4"
           />
         )}

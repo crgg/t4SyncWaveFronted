@@ -175,7 +175,7 @@ export const MediaSessionSection = ({
           >
             <div className={cn('space-x-2', disabledBtnVideo && 'text-zinc-400')}>
               {startMutation.isPending ? (
-                <Loader2 size={17} strokeWidth={2} className="animate-spin" />
+                <Loader2 size={17} strokeWidth={2} className="animate-spin inline-block" />
               ) : (
                 <Video size={17} strokeWidth={2} className="inline-block" />
               )}{' '}
@@ -195,7 +195,7 @@ export const MediaSessionSection = ({
           >
             <div className={cn('space-x-2', disabledBtnAudio && 'text-zinc-400')}>
               {startMutation.isPending ? (
-                <Loader2 size={17} strokeWidth={2} className="animate-spin" />
+                <Loader2 size={17} strokeWidth={2} className="animate-spin inline-block" />
               ) : (
                 <Phone size={17} strokeWidth={2} className="inline-block" />
               )}{' '}
