@@ -79,7 +79,15 @@ function VideoParticipantTileContent() {
         </div>
         <ConnectionQualityIndicator className="lk-participant-metadata-item" />
       </div>
-      <FocusToggle trackRef={trackReference} />
+      <span
+        title={
+          trackReference.source === Track.Source.ScreenShare
+            ? 'Desfijar pantalla (volver a cuadrícula)'
+            : 'Fijar / Desfijar en vista principal'
+        }
+      >
+        <FocusToggle trackRef={trackReference} />
+      </span>
     </>
   );
 }
