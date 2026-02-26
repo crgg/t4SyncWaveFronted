@@ -30,6 +30,7 @@ import { useAudio } from '@/shared/hooks/useAudio';
 import { getAudioService } from '@services/audio/audioService';
 import DeleteDialog from '@/shared/components/DeleteDialog/DeleteDialog';
 import { GroupPageSkeleton } from './GroupPage/components/GroupPageSkeleton';
+import { MediaSessionSection } from '@/features/media/components/MediaSessionSection';
 import { cn, orderBy } from '@/shared/utils';
 import { AvatarPreview } from '@/shared/components/AvatarPreview/AvatarPreview';
 import { withAuth } from '@/shared/hoc/withAuth';
@@ -567,13 +568,13 @@ const GroupPage = () => {
               </div>
             ) : (
               <div>
-                <div className="mb-2">
-                  <div className="col-span-2 sticky top-0 z-10">
-                    <h3 className="text-xs text-zinc-400 mb-1 select-none font-semibold">
-                      Online <span className="mx-1.5">&#822;</span> {onlineMembers.length}
-                    </h3>
-                  </div>
-                  {onlineMembers.length > 0 && (
+                {onlineMembers.length > 0 && (
+                  <div className="mb-2">
+                    <div className="col-span-2 sticky top-0 z-10">
+                      <h3 className="text-xs text-zinc-400 mb-1 select-none font-semibold">
+                        Online <span className="mx-1.5">&#822;</span> {onlineMembers.length}
+                      </h3>
+                    </div>
                     <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover max-h-[420px] overflow-y-auto [overscroll-behavior:contain]">
                       {onlineMembers.map((member) => (
                         <MemberCard
@@ -585,36 +586,46 @@ const GroupPage = () => {
                         />
                       ))}
                     </div>
-                  )}
-                </div>
-                <div
-                  className={cn(
-                    'mb-2',
-                    isOwner ? 'sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2' : ''
-                  )}
-                >
-                  <div className="col-span-2 sticky top-0 z-10">
-                    <h3 className="text-xs text-zinc-400 mb-1 select-none font-semibold">
-                      Offline <span className="mx-1.5">&#822;</span> {offlineMembers.length}{' '}
-                    </h3>
-                    {offlineMembers.length !== 0 && (
-                      <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover  max-h-[420px] overflow-y-auto [overscroll-behavior:contain]">
-                        {offlineMembers.map((member) => (
-                          <MemberCard
-                            key={member.id}
-                            member={member}
-                            onRemove={handleRemoveMember}
-                            isConnected={!!connectionUsers[member.user_id]}
-                            me={member.user_id === user?.id}
-                          />
-                        ))}
-                      </div>
-                    )}
                   </div>
-                </div>
+                )}
+                {offlineMembers.length > 0 && (
+                  <div
+                    className={cn(
+                      'mb-2',
+                      isOwner ? 'sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2' : ''
+                    )}
+                  >
+                    <div className="col-span-2 sticky top-0 z-10">
+                      <h3 className="text-xs text-zinc-400 mb-1 select-none font-semibold">
+                        Offline <span className="mx-1.5">&#822;</span> {offlineMembers.length}{' '}
+                      </h3>
+                      {offlineMembers.length !== 0 && (
+                        <div className="flex flex-col gap-2 bg-light-card dark:bg-dark-card rounded-lg p-4 border border-light-hover dark:border-dark-hover  max-h-[420px] overflow-y-auto [overscroll-behavior:contain]">
+                          {offlineMembers.map((member) => (
+                            <MemberCard
+                              key={member.id}
+                              member={member}
+                              onRemove={handleRemoveMember}
+                              isConnected={!!connectionUsers[member.user_id]}
+                              me={member.user_id === user?.id}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </motion.div>
+        </div>
+
+        <div className="mt-4">
+          <MediaSessionSection
+            groupId={groupId!}
+            isOwner={isOwner}
+            userName={user?.displayName || user?.name || user?.nickname}
+          />
         </div>
 
         <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2 mt-4">

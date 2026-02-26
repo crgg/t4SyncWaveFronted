@@ -77,3 +77,5 @@ export const STORAGE_KEYS = Object.freeze({
   IS_MUTED: `${STORAGE_PREFIX}:isMuted`,
   PREVIOUS_VOLUME: `${STORAGE_PREFIX}:previousVolume`,
 } as const);
+
+export const APP_VERSION = '1.0.0';

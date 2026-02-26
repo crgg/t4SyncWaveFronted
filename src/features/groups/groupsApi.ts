@@ -18,6 +18,10 @@ import type {
   IPayloadUpdateGroup,
   IPayloadAddMemberToGroupByPhone,
   IResponseInvitation,
+  MediaSessionJoinResponse,
+  MediaSessionStartResponse,
+  MediaSessionStatusResponse,
+  MediaSessionType,
 } from './groups.types';
 
 class GroupsApi {
@@ -112,6 +116,43 @@ class GroupsApi {
   }
   async validateControl(groupId: string): Promise<GroupStateResponse> {
     const response = await http.post<GroupStateResponse>(`/groups/validate-control`, { groupId });
+    return response.data;
+  }
+
+  // Media Sessions (LiveKit)
+  async startMediaSession(
+    groupId: string,
+    type: MediaSessionType
+  ): Promise<MediaSessionStartResponse> {
+    const response = await http.post<MediaSessionStartResponse>(`/groups/${groupId}/media/start`, {
+      type,
+    });
+    return response.data;
+  }
+
+  async joinMediaSession(
+    groupId: string,
+    options?: { displayName?: string }
+  ): Promise<MediaSessionJoinResponse> {
+    const response = await http.post<MediaSessionJoinResponse>(
+      `/groups/${groupId}/media/join`,
+      options
+    );
+    return response.data;
+  }
+
+  async endMediaSession(groupId: string): Promise<{ status: boolean; msg?: string }> {
+    const response = await http.post(`/groups/${groupId}/media/end`);
+    return response.data;
+  }
+
+  async leaveMediaSession(groupId: string): Promise<{ status: boolean; msg?: string }> {
+    const response = await http.post(`/groups/${groupId}/media/leave`);
+    return response.data;
+  }
+
+  async getMediaSessionStatus(groupId: string): Promise<MediaSessionStatusResponse> {
+    const response = await http.get<MediaSessionStatusResponse>(`/groups/${groupId}/media/status`);
     return response.data;
   }
 }

@@ -135,3 +135,154 @@ input[type='range']::-moz-range-track {
     height: 20px;
   }
 }
+
+/* LiveKit Media Session - project palette & light/dark mode */
+.light .lk-room-container,
+.light [data-lk-theme] {
+  --lk-bg: #f2f2f6;
+  --lk-bg2: #ffffff;
+  --lk-bg3: #e8e4dc;
+  --lk-bg4: #e2c285;
+  --lk-bg5: #d4b870;
+  --lk-fg: #1a150e;
+  --lk-fg2: #2a2516;
+  --lk-fg3: #3d3628;
+  --lk-fg4: #6b5123;
+  --lk-fg5: #8b6b2f;
+  --lk-border-color: rgba(26, 21, 14, 0.12);
+  --lk-accent-fg: #fff;
+  --lk-accent-bg: #c5a059;
+  --lk-accent2: #a6823e;
+  --lk-accent3: #8b6b2f;
+  --lk-accent4: #6b5123;
+  --lk-control-bg: #ffffff;
+  --lk-control-hover-bg: #e2c285;
+  --lk-control-active-bg: #d4b870;
+  --lk-control-active-hover-bg: #c5a059;
+  --lk-control-fg: #1a150e;
+  --lk-danger: #dc2626;
+  --lk-danger-fg: #fff;
+  --lk-success: #16a34a;
+  --lk-va-bar-bg: rgba(197, 160, 89, 0.25);
+  color-scheme: light;
+}
+
+.dark .lk-room-container,
+.dark [data-lk-theme] {
+  --lk-bg: #120f0a;
+  --lk-bg2: #1a150e;
+  --lk-bg3: #2a2516;
+  --lk-bg4: #3d3628;
+  --lk-bg5: #4a4232;
+  --lk-fg: #f9f7f2;
+  --lk-fg2: #e2c285;
+  --lk-fg3: #d4b870;
+  --lk-fg4: #c5a059;
+  --lk-fg5: #a6823e;
+  --lk-border-color: rgba(226, 194, 133, 0.15);
+  --lk-accent-fg: #1a150e;
+  --lk-accent-bg: #c5a059;
+  --lk-accent2: #d4b870;
+  --lk-accent3: #e2c285;
+  --lk-accent4: #a6823e;
+  --lk-control-bg: #1a150e;
+  --lk-control-hover-bg: #2a2516;
+  --lk-control-active-bg: #3d3628;
+  --lk-control-active-hover-bg: #4a4232;
+  --lk-control-fg: #f9f7f2;
+  --lk-danger: #ef4444;
+  --lk-danger-fg: #fff;
+  --lk-success: #22c55e;
+  --lk-va-bar-bg: rgba(197, 160, 89, 0.3);
+  color-scheme: dark;
+}
+
+/* Participant tiles - rounded corners, subtle borders */
+.lk-participant-tile,
+.lk-focus-layout-wrapper,
+.lk-grid-layout-wrapper {
+  border-radius: 0.75rem;
+}
+
+.light .lk-participant-tile {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(26, 21, 14, 0.08);
+}
+
+.dark .lk-participant-tile {
+  background: #1a150e;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Control bar - blend with card background */
+.light .lk-control-bar {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-color: rgba(26, 21, 14, 0.08) !important;
+}
+
+.dark .lk-control-bar {
+  background: rgba(26, 21, 14, 0.98) !important;
+  border-color: rgba(226, 194, 133, 0.12) !important;
+}
+
+/* Audio conference stage - grid layout */
+.light .lk-audio-conference-stage {
+  background: #f2f2f6;
+}
+
+.dark .lk-audio-conference-stage {
+  background: #120f0a;
+}
+
+/* Disconnect/Leave button - primary accent */
+.lk-disconnect-button {
+  color: var(--lk-accent-bg) !important;
+  border-color: var(--lk-accent-bg) !important;
+}
+
+.lk-disconnect-button:not(:disabled):hover {
+  background-color: var(--lk-accent-bg) !important;
+  color: var(--lk-accent-fg) !important;
+}
+
+/* Connection toast */
+.light .lk-toast {
+  background: #ffffff;
+  border-color: rgba(26, 21, 14, 0.12);
+}
+
+.dark .lk-toast {
+  background: #1a150e;
+  border-color: rgba(226, 194, 133, 0.2);
+}
+
+/* Participant metadata overlay */
+.light .lk-participant-metadata-item {
+  background: rgba(255, 255, 255, 0.9);
+  color: #1a150e;
+}
+
+.dark .lk-participant-metadata-item {
+  background: rgba(26, 21, 14, 0.85);
+  color: #f9f7f2;
+}
+
+/* Audio bar visualizer - primary when speaking */
+.light .lk-audio-bar-visualizer .lk-audio-bar.lk-highlighted,
+.light .lk-audio-bar-visualizer[data-lk-va-state='speaking'] .lk-audio-bar {
+  background-color: #c5a059 !important;
+}
+
+.dark .lk-audio-bar-visualizer .lk-audio-bar.lk-highlighted,
+.dark .lk-audio-bar-visualizer[data-lk-va-state='speaking'] .lk-audio-bar {
+  background-color: #e2c285 !important;
+}
+
+/* Focus layout - primary border when speaking */
+.light .lk-participant-tile[data-lk-speaking='true']::after {
+  border-color: #c5a059;
+}
+
+.dark .lk-participant-tile[data-lk-speaking='true']::after {
+  border-color: #e2c285;
+}

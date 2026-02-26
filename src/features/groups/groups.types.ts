@@ -201,3 +201,36 @@ export interface IResponseInvitation extends ResponseBase {
   msg: string;
   invitation: Invitation;
 }
+
+// Media Sessions (LiveKit)
+export type MediaSessionType = 'audio' | 'video';
+
+export interface MediaSessionStartResponse extends ResponseBase {
+  msg?: string;
+  session?: {
+    id: string;
+    type: MediaSessionType;
+    startedAt: string;
+  };
+}
+
+export interface MediaSessionJoinResponse extends ResponseBase {
+  sessionId?: string;
+  livekitUrl?: string;
+  roomName?: string;
+  token?: string;
+  role?: 'host' | 'moderator' | 'speaker' | 'listener';
+  type?: MediaSessionType;
+  msg?: string;
+}
+
+export interface MediaSessionStatusResponse extends ResponseBase {
+  active?: boolean;
+  session?: {
+    id: string;
+    type: MediaSessionType;
+    startedAt: string;
+    startedBy?: string;
+  };
+  participantCount?: number;
+}

@@ -7,6 +7,7 @@ import { ThemeToggle } from '@shared/components/ThemeToggle/ThemeToggle';
 
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { layoutActions } from '@/app/slices/layoutSlice';
+import { APP_VERSION } from '@/shared/constants';
 import { getInitials } from '@/shared/utils';
 
 export function Header() {
@@ -37,6 +38,7 @@ export function Header() {
               className="text-xl sm:text-2xl font-semibold text-primary dark:text-primary-light transition-colors hover:text-primary-dark dark:hover:text-primary"
             >
               T4SyncWave
+              <sub className="text-[9px] ms-1 inline-block">V {APP_VERSION}</sub>
             </Link>
 
             <div className="flex items-center gap-3">
