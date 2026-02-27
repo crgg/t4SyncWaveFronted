@@ -148,7 +148,7 @@ export const MediaSessionSection = ({
 
   return (
     <>
-      <div className="flex items-center justify-between mb-1">
+      <div className="hidden md:flex items-center justify-between mb-1">
         <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2">
           <AudioLines size={18} />
           {/* Media Session (LiveKit) */}
@@ -165,7 +165,7 @@ export const MediaSessionSection = ({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="bg-light-card dark:bg-dark-card rounded-xl border border-light-hover dark:border-dark-hover"
+        className="hidden md:block bg-light-card dark:bg-dark-card rounded-xl border border-light-hover dark:border-dark-hover"
       >
         <div className="text-sm text-primary flex flex-col">
           <button
