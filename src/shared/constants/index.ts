@@ -78,4 +78,4 @@ export const STORAGE_KEYS = Object.freeze({
   PREVIOUS_VOLUME: `${STORAGE_PREFIX}:previousVolume`,
 } as const);
 
-export const APP_VERSION = '1.0';
+export const APP_VERSION = '1.0.0';
