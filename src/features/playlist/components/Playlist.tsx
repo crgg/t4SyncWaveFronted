@@ -47,6 +47,8 @@ export function Playlist() {
         trackUrl: track.url,
         trackTitle: track.title,
         trackArtist: track.artist,
+        trackSource: track.source,
+        spotifyId: track.spotifyId,
       })
     );
 

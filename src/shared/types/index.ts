@@ -2,6 +2,8 @@
  * Tipos compartidos de la aplicación
  */
 
+export type TrackSource = 'file' | 'spotify';
+
 export interface AudioState {
   isPlaying: boolean;
   currentPosition: number; // Posición en segundos
@@ -12,6 +14,8 @@ export interface AudioState {
   trackArtist?: string;
   trackDuration?: number;
   timestamp: number; // Timestamp del servidor
+  trackSource?: TrackSource; // 'file' = HTMLAudioElement, 'spotify' = Web Playback SDK (no sync)
+  spotifyId?: string; // Spotify track ID when source is 'spotify'
   // new fields
   truckUrl?: string;
 }
@@ -48,11 +52,13 @@ export interface Participant {
 
 export interface Track {
   id: string;
-  url: string;
+  url: string; // file_url for file tracks; empty or spotify:track:xxx for Spotify
   title: string;
   artist: string;
   duration?: number; // Duración en segundos
   addedAt: number; // Timestamp cuando se agregó
+  source?: TrackSource; // 'file' | 'spotify'
+  spotifyId?: string; // Spotify track ID when source is 'spotify'
 }
 
 export interface Auth {

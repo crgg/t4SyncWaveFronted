@@ -17,4 +17,6 @@ export const paths = {
   // Terms and Privacy
   TERMS: '/legal/terms',
   PRIVACY: '/legal/privacy',
+  // Spotify OAuth callback
+  SPOTIFY_CALLBACK: '/spotify-callback',
 } as const;

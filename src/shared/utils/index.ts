@@ -217,3 +217,10 @@ export const formatDateHumanized = (dateString: string, period: 'ago' | 'on' = '
 export const extractCharacters = (text: string, count: number = 1): string => {
   return (text ?? '').split('').slice(count).join('');
 };
+
+/**
+ * Check if the current track is a Spotify track (uses Web Playback SDK, no sync)
+ */
+export function isSpotifyTrack(state: { trackSource?: string; spotifyId?: string }): boolean {
+  return state.trackSource === 'spotify' || !!state.spotifyId;
+}

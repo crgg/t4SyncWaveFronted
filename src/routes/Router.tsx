@@ -13,6 +13,7 @@ import PhoneNumberPage from '@/pages/PhoneNumberPage/PhoneNumberPage';
 import VerificationCodePage from '@/pages/VerificationCodePage/VerificationCodePage';
 import TermsPage from '@/pages/TermsPage';
 import PrivacyPage from '@/pages/PrivacyPage';
+import SpotifyCallbackPage from '@/pages/SpotifyCallbackPage';
 import { paths } from './paths';
 
 const GroupsPage = lazy(() => import('@/pages/GroupsPage'));
@@ -85,6 +86,10 @@ const routes: RouteObject[] = [
         element: <RegisterPage />,
       },
     ],
+  },
+  {
+    path: paths.SPOTIFY_CALLBACK,
+    element: <SpotifyCallbackPage />,
   },
   {
     path: '/legal',

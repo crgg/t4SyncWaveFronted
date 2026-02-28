@@ -14,9 +14,17 @@ import {
 import { setCurrentTrackIndex, updateTrackDuration } from '@features/playlist/playlistSlice';
 import { getAudioService } from '@services/audio/audioService';
 import { getWebSocketService } from '@services/websocket/websocketService';
+import {
+  initSpotifyPlayer,
+  playSpotifyTrack,
+  pauseSpotifyPlayer,
+  resumeSpotifyPlayer,
+  seekSpotifyPlayer,
+  setSpotifyVolume,
+} from '@features/spotify/spotifyPlayerService';
 import { WS_URL, STORAGE_KEYS } from '@shared/constants';
 import type { AudioState } from '@shared/types';
-import { isValidAudioUrl } from '@shared/utils';
+import { isValidAudioUrl, isSpotifyTrack } from '@shared/utils';
 import { store } from '@app/store';
 
 export function useAudio() {
@@ -60,6 +68,45 @@ export function useAudio() {
   }, [audioState.volume, audioState.isMuted]);
 
   useEffect(() => {
+    const isSpotify = isSpotifyTrack(audioState);
+
+    // Spotify: use Web Playback SDK (no sync)
+    if (isSpotify && audioState.spotifyId) {
+      if (audioServiceRef.current) {
+        audioServiceRef.current.cleanup();
+        audioServiceRef.current = null;
+      }
+      dispatch(setLoading({ isLoading: true }));
+      dispatch(setError({ error: '' }));
+      initSpotifyPlayer((state) => {
+        dispatch(
+          setAudioState({
+            ...store.getState().audio,
+            isPlaying: state.isPlaying,
+            currentPosition: state.currentPosition,
+            trackDuration: state.trackDuration,
+            trackTitle: state.trackTitle ?? audioState.trackTitle,
+            trackArtist: state.trackArtist ?? audioState.trackArtist,
+          })
+        );
+      })
+        .then((ok) => {
+          if (ok && role === 'dj') {
+            playSpotifyTrack(audioState.spotifyId!).then(() => {
+              dispatch(setLoading({ isLoading: false }));
+            });
+          } else {
+            dispatch(setLoading({ isLoading: false }));
+          }
+        })
+        .catch((err) => {
+          dispatch(setError({ error: err?.message || 'Spotify playback failed' }));
+          dispatch(setLoading({ isLoading: false }));
+        });
+      return () => {};
+    }
+
+    // File track: require valid URL
     if (!audioState.trackUrl || audioState.trackUrl.trim() === '') {
       if (audioServiceRef.current) {
         audioServiceRef.current.cleanup();
@@ -245,6 +292,8 @@ export function useAudio() {
     return () => {};
   }, [
     audioState.trackUrl,
+    audioState.spotifyId,
+    audioState.trackSource,
     role,
     dispatch,
     audioState.trackId,
@@ -425,18 +474,22 @@ export function useAudio() {
               trackUrl: nextTrack.url,
               trackTitle: nextTrack.title,
               trackArtist: nextTrack.artist,
+              trackSource: nextTrack.source,
+              spotifyId: nextTrack.spotifyId,
             })
           );
 
           const timestamp = Date.now();
-          const wsService = getWebSocketService({ url: WS_URL });
-          wsService.emit('audio:track-change', {
-            trackId: nextTrack.id,
-            trackUrl: nextTrack.url,
-            trackTitle: nextTrack.title,
-            trackArtist: nextTrack.artist,
-            timestamp,
-          });
+          if (!isSpotifyTrack(nextTrack)) {
+            const wsService = getWebSocketService({ url: WS_URL });
+            wsService.emit('audio:track-change', {
+              trackId: nextTrack.id,
+              trackUrl: nextTrack.url,
+              trackTitle: nextTrack.title,
+              trackArtist: nextTrack.artist,
+              timestamp,
+            });
+          }
         }
       }
     };
@@ -456,6 +509,17 @@ export function useAudio() {
   const handlePlay = useCallback(() => {
     if (role !== 'dj') return;
 
+    const isSpotify = isSpotifyTrack(audioState);
+    if (isSpotify && audioState.spotifyId) {
+      const timestamp = Date.now();
+      dispatch(play({ timestamp }));
+      resumeSpotifyPlayer().catch((err) => {
+        console.error('Spotify resume failed:', err);
+        dispatch(pause({ timestamp: Date.now() }));
+      });
+      return;
+    }
+
     if (!audioState.trackUrl) {
       console.warn('There is no track loaded to play');
       return;
@@ -467,7 +531,6 @@ export function useAudio() {
     }
 
     const timestamp = Date.now();
-
     dispatch(play({ timestamp }));
 
     audioServiceRef.current
@@ -488,10 +551,16 @@ export function useAudio() {
         console.error('Error playing audio:', error);
         dispatch(pause({ timestamp: Date.now() }));
       });
-  }, [role, dispatch, audioState.trackUrl]);
+  }, [role, dispatch, audioState.trackUrl, audioState.spotifyId, audioState.trackSource]);
 
   const handlePause = useCallback(() => {
     if (role !== 'dj') return;
+    if (isSpotifyTrack(audioState) && audioState.spotifyId) {
+      const timestamp = Date.now();
+      dispatch(pause({ timestamp }));
+      pauseSpotifyPlayer();
+      return;
+    }
     if (audioServiceRef.current) {
       audioServiceRef.current.pause();
     }
@@ -503,7 +572,14 @@ export function useAudio() {
     const currentState = audioServiceRef.current?.getState();
     const position = currentState?.currentPosition ?? audioState.currentPosition ?? 0;
     wsService.pauseAudio(timestamp, position, audioState.trackUrl);
-  }, [role, dispatch, audioState.trackUrl, audioState.currentPosition]);
+  }, [
+    role,
+    dispatch,
+    audioState.trackUrl,
+    audioState.currentPosition,
+    audioState.spotifyId,
+    audioState.trackSource,
+  ]);
 
   const handleSeek = useCallback(
     (position: number) => {
@@ -512,6 +588,11 @@ export function useAudio() {
       const timestamp = Date.now();
       dispatch(seek({ position, timestamp }));
 
+      if (isSpotifyTrack(audioState) && audioState.spotifyId) {
+        seekSpotifyPlayer(position);
+        return;
+      }
+
       if (audioServiceRef.current) {
         audioServiceRef.current.seek(position);
       }
@@ -519,7 +600,14 @@ export function useAudio() {
       const wsService = getWebSocketService({ url: WS_URL });
       wsService.seekAudio(position, timestamp, audioState.trackUrl, audioState.isPlaying);
     },
-    [role, dispatch, audioState.trackUrl, audioState.isPlaying]
+    [
+      role,
+      dispatch,
+      audioState.trackUrl,
+      audioState.isPlaying,
+      audioState.spotifyId,
+      audioState.trackSource,
+    ]
   );
 
   const emitSeek = useCallback(
@@ -544,35 +632,35 @@ export function useAudio() {
 
       dispatch(setVolumeAction({ volume: clampedVolume }));
 
-      // Guardar volumen en localStorage (incluso si es 0)
       localStorage.setItem(STORAGE_KEYS.VOLUME, clampedVolume.toString());
 
-      if (audioServiceRef.current) {
+      const volumeToSet = audioState.isMuted ? 0 : clampedVolume;
+      if (isSpotifyTrack(audioState)) {
+        setSpotifyVolume(volumeToSet);
+      } else if (audioServiceRef.current) {
         try {
-          // Si está muted, mantener el volumen en 0
-          const volumeToSet = audioState.isMuted ? 0 : clampedVolume;
           audioServiceRef.current.setVolume(volumeToSet);
         } catch (error) {
           console.error('Error al cambiar volumen:', error);
         }
       }
     },
-    [dispatch, audioState.volume, audioState.isMuted]
+    [dispatch, audioState.volume, audioState.isMuted, audioState.trackSource, audioState.spotifyId]
   );
 
   const handleToggleMute = useCallback(() => {
     dispatch(toggleMuteAction());
 
-    if (audioServiceRef.current) {
-      try {
-        const currentState = store.getState().audio;
-        // Asegurar que si está muted, el volumen sea 0
-        const volumeToSet = currentState.isMuted ? 0 : currentState.volume;
-        audioServiceRef.current.setVolume(volumeToSet);
+    const currentState = store.getState().audio;
+    const volumeToSet = currentState.isMuted ? 0 : currentState.volume;
+    localStorage.setItem(STORAGE_KEYS.IS_MUTED, currentState.isMuted.toString());
+    localStorage.setItem(STORAGE_KEYS.PREVIOUS_VOLUME, currentState.previousVolume.toString());
 
-        // Guardar estado de muted en localStorage
-        localStorage.setItem(STORAGE_KEYS.IS_MUTED, currentState.isMuted.toString());
-        localStorage.setItem(STORAGE_KEYS.PREVIOUS_VOLUME, currentState.previousVolume.toString());
+    if (isSpotifyTrack(currentState)) {
+      setSpotifyVolume(volumeToSet);
+    } else if (audioServiceRef.current) {
+      try {
+        audioServiceRef.current.setVolume(volumeToSet);
       } catch (error) {
         console.error('Error al cambiar mute:', error);
       }
@@ -596,20 +684,27 @@ export function useAudio() {
           trackUrl: nextTrack.url,
           trackTitle: nextTrack.title,
           trackArtist: nextTrack.artist,
+          trackSource: nextTrack.source,
+          spotifyId: nextTrack.spotifyId,
         })
       );
 
       const timestamp = Date.now();
-      const wsService = getWebSocketService({ url: WS_URL });
-      wsService.emit('audio:track-change', {
-        trackId: nextTrack.id,
-        trackUrl: nextTrack.url,
-        trackTitle: nextTrack.title,
-        trackArtist: nextTrack.artist,
-        timestamp,
-      });
+      if (!isSpotifyTrack(nextTrack)) {
+        const wsService = getWebSocketService({ url: WS_URL });
+        wsService.emit('audio:track-change', {
+          trackId: nextTrack.id,
+          trackUrl: nextTrack.url,
+          trackTitle: nextTrack.title,
+          trackArtist: nextTrack.artist,
+          timestamp,
+        });
+      }
 
       setTimeout(() => {
+        if (isSpotifyTrack(nextTrack)) {
+          return;
+        }
         if (audioServiceRef.current) {
           audioServiceRef.current.play();
         }
@@ -619,6 +714,13 @@ export function useAudio() {
 
   const handleStop = useCallback(() => {
     if (role !== 'dj') return;
+
+    if (isSpotifyTrack(audioState)) {
+      dispatch(seek({ position: 0, timestamp: Date.now() }));
+      dispatch(pause({ timestamp: Date.now() }));
+      pauseSpotifyPlayer();
+      return;
+    }
 
     const wsService = getWebSocketService({ url: WS_URL });
     const timestamp = Date.now();
@@ -631,7 +733,7 @@ export function useAudio() {
 
     audioServiceRef.current?.seek(0);
     audioServiceRef.current?.pause();
-  }, [role, audioState.trackUrl, dispatch]);
+  }, [role, audioState.trackUrl, audioState.spotifyId, audioState.trackSource, dispatch]);
 
   const handleSelect = useCallback(
     (trackId: string) => {
@@ -652,19 +754,26 @@ export function useAudio() {
           trackUrl: track.url,
           trackTitle: track.title,
           trackArtist: track.artist,
+          trackSource: track.source,
+          spotifyId: track.spotifyId,
         })
       );
       const timestamp = Date.now();
-      const wsService = getWebSocketService({ url: WS_URL });
-      wsService.emit('audio:track-change', {
-        trackId: track.id,
-        trackUrl: track.url,
-        trackTitle: track.title,
-        trackArtist: track.artist,
-        timestamp,
-      });
+      if (!isSpotifyTrack(track)) {
+        const wsService = getWebSocketService({ url: WS_URL });
+        wsService.emit('audio:track-change', {
+          trackId: track.id,
+          trackUrl: track.url,
+          trackTitle: track.title,
+          trackArtist: track.artist,
+          timestamp,
+        });
+      }
 
       setTimeout(() => {
+        if (isSpotifyTrack(track)) {
+          return;
+        }
         if (audioServiceRef.current) {
           audioServiceRef.current.play();
         }
@@ -689,33 +798,50 @@ export function useAudio() {
             trackUrl: prevTrack.url,
             trackTitle: prevTrack.title,
             trackArtist: prevTrack.artist,
+            trackSource: prevTrack.source,
+            spotifyId: prevTrack.spotifyId,
           })
         );
 
         const timestamp = Date.now();
-        const wsService = getWebSocketService({ url: WS_URL });
-        wsService.emit('audio:track-change', {
-          trackId: prevTrack.id,
-          trackUrl: prevTrack.url,
-          trackTitle: prevTrack.title,
-          trackArtist: prevTrack.artist,
-          timestamp,
-        });
+        if (!isSpotifyTrack(prevTrack)) {
+          const wsService = getWebSocketService({ url: WS_URL });
+          wsService.emit('audio:track-change', {
+            trackId: prevTrack.id,
+            trackUrl: prevTrack.url,
+            trackTitle: prevTrack.title,
+            trackArtist: prevTrack.artist,
+            timestamp,
+          });
+        }
         return;
       }
     }
 
     const newPosition = audioState.currentPosition < 3 ? 0 : audioState.currentPosition - 10;
+    const seekPos = Math.max(0, newPosition);
     const timestamp = Date.now();
-    dispatch(seek({ position: Math.max(0, newPosition), timestamp }));
+    dispatch(seek({ position: seekPos, timestamp }));
 
-    if (audioServiceRef.current) {
-      audioServiceRef.current.seek(Math.max(0, newPosition));
+    if (isSpotifyTrack(audioState)) {
+      seekSpotifyPlayer(seekPos);
+    } else if (audioServiceRef.current) {
+      audioServiceRef.current.seek(seekPos);
     }
 
-    const wsService = getWebSocketService({ url: WS_URL });
-    wsService.seekAudio(Math.max(0, newPosition), timestamp);
-  }, [role, dispatch, audioState.currentPosition, tracks, currentTrackIndex]);
+    if (!isSpotifyTrack(audioState)) {
+      const wsService = getWebSocketService({ url: WS_URL });
+      wsService.seekAudio(seekPos, timestamp);
+    }
+  }, [
+    role,
+    dispatch,
+    audioState.currentPosition,
+    audioState.spotifyId,
+    audioState.trackSource,
+    tracks,
+    currentTrackIndex,
+  ]);
 
   const handleRestart = useCallback(() => {
     if (role !== 'dj') return;

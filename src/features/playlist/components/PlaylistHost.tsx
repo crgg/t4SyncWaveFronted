@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Plus, Music2 } from 'lucide-react';
+import { Upload, Plus, Music2, Music } from 'lucide-react';
 import { useState } from 'react';
 
 import { removeTrack } from '@features/playlist/playlistSlice';
@@ -17,6 +17,7 @@ interface PlaylistHostProps {
 export function PlaylistHost({ groupId }: PlaylistHostProps) {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isAddTrackModalOpen, setIsAddTrackModalOpen] = useState(false);
+  const [addTrackModalTab, setAddTrackModalTab] = useState<'library' | 'spotify'>('library');
   const { handleSelect } = useAudio();
 
   const dispatch = useAppDispatch();
@@ -62,14 +63,28 @@ export function PlaylistHost({ groupId }: PlaylistHostProps) {
           <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-6">
             Upload your first track or add one from your library
           </p>
-          <div className="flex items-center gap-3 justify-center">
+          <div className="flex flex-wrap items-center gap-3 justify-center">
             <Button
-              onClick={() => setIsAddTrackModalOpen(true)}
+              onClick={() => {
+                setAddTrackModalTab('library');
+                setIsAddTrackModalOpen(true);
+              }}
               variant="primary"
               className="flex items-center gap-2 text-xs"
             >
               <Music2 size={18} />
               Add from Library
+            </Button>
+            <Button
+              onClick={() => {
+                setAddTrackModalTab('spotify');
+                setIsAddTrackModalOpen(true);
+              }}
+              variant="outline"
+              className="flex items-center gap-2 text-xs border-[#1DB954] text-[#1DB954] hover:bg-[#1DB954]/10"
+            >
+              <Music size={18} />
+              Add from Spotify
             </Button>
             <Button
               onClick={() => setIsUploadModalOpen(true)}
@@ -91,6 +106,7 @@ export function PlaylistHost({ groupId }: PlaylistHostProps) {
             isOpen={isAddTrackModalOpen}
             onClose={() => setIsAddTrackModalOpen(false)}
             groupId={groupId}
+            initialTab={addTrackModalTab}
           />
         )}
       </>
@@ -99,15 +115,30 @@ export function PlaylistHost({ groupId }: PlaylistHostProps) {
 
   return (
     <>
-      <div className="mb-4 flex justify-end gap-2">
+      <div className="mb-4 flex flex-wrap justify-end gap-2">
         <Button
-          onClick={() => setIsAddTrackModalOpen(true)}
+          onClick={() => {
+            setAddTrackModalTab('library');
+            setIsAddTrackModalOpen(true);
+          }}
           variant="primary"
           size="sm"
           className="flex items-center gap-2"
         >
           <Music2 size={16} />
           Add from Library
+        </Button>
+        <Button
+          onClick={() => {
+            setAddTrackModalTab('spotify');
+            setIsAddTrackModalOpen(true);
+          }}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2 border-[#1DB954] text-[#1DB954] hover:bg-[#1DB954]/10"
+        >
+          <Music size={16} />
+          Add from Spotify
         </Button>
         <Button
           onClick={() => setIsUploadModalOpen(true)}
@@ -212,6 +243,7 @@ export function PlaylistHost({ groupId }: PlaylistHostProps) {
           isOpen={isAddTrackModalOpen}
           onClose={() => setIsAddTrackModalOpen(false)}
           groupId={groupId}
+          initialTab={addTrackModalTab}
         />
       )}
     </>

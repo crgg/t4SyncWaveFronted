@@ -73,16 +73,18 @@ const audioSlice = createSlice({
         trackUrl: string;
         trackTitle?: string;
         trackArtist?: string;
+        trackSource?: 'file' | 'spotify';
+        spotifyId?: string;
       }>
     ) => {
-      // Validar que trackUrl sea válida antes de guardar
-      if (!isValidAudioUrl(action.payload.trackUrl)) {
+      const isSpotify = action.payload.trackSource === 'spotify' || !!action.payload.spotifyId;
+      // Validar URL solo para tracks de archivo
+      if (!isSpotify && !isValidAudioUrl(action.payload.trackUrl)) {
         console.error(
           'Error: Intento de guardar una URL inválida como trackUrl:',
           action.payload.trackUrl,
           'Debe ser una URL de archivo de audio válida (ej: .mp3, .wav, etc.)'
         );
-        // No actualizar si la URL es inválida
         state.error = 'URL de audio no válida. Debe ser un archivo de audio (ej: .mp3, .wav, etc.)';
         return;
       }
@@ -91,24 +93,26 @@ const audioSlice = createSlice({
       state.trackUrl = action.payload.trackUrl;
       state.trackTitle = action.payload.trackTitle;
       state.trackArtist = action.payload.trackArtist;
+      state.trackSource = action.payload.trackSource;
+      state.spotifyId = action.payload.spotifyId;
       state.currentPosition = 0;
       state.isLoading = true;
-      state.error = null; // Limpiar errores anteriores
+      state.error = null;
     },
     setAudioState: (state, action: PayloadAction<AudioState>) => {
-      // Validar valores antes de actualizar
-      // Validar que trackUrl sea válida (debe ser un archivo de audio válido)
+      const isSpotify =
+        (action.payload as any).trackSource === 'spotify' || !!(action.payload as any).spotifyId;
       let validTrackUrl = action.payload.trackUrl;
-      if (validTrackUrl && !isValidAudioUrl(validTrackUrl)) {
+      if (isSpotify) {
+        validTrackUrl = action.payload.trackUrl ?? '';
+      } else if (validTrackUrl && !isValidAudioUrl(validTrackUrl)) {
         console.warn(
           'Intento de guardar una URL inválida como trackUrl:',
           validTrackUrl,
           'Preservando URL anterior'
         );
-        // Preservar el trackUrl actual si el nuevo es inválido
         validTrackUrl = state.trackUrl;
       } else if (!validTrackUrl) {
-        // Si no hay trackUrl, preservar el actual
         validTrackUrl = state.trackUrl;
       }
 
