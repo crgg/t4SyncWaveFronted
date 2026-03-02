@@ -1,6 +1,11 @@
 /**
  * Spotify Web Playback SDK wrapper
  * Playback is local per user - no sync (per Spotify terms)
+ *
+ * Architecture:
+ * - SDK: connect, pause, resume, seek, volume, state updates (player_state_changed)
+ * - REST API: start playback of a track (PUT /me/player/play with uris), transfer device
+ *   (SDK has no method to play a specific track by URI)
  */
 
 import { getValidSpotifyToken } from './spotifyAuth';
@@ -112,6 +117,7 @@ export async function initSpotifyPlayer(onStateChange: StateChangeCallback): Pro
     playerInstance.disconnect();
     playerInstance = null;
   }
+  spotifyDeviceId = null;
 
   playerInstance = new window.Spotify.Player({
     name: 'T4SyncWave',
@@ -122,13 +128,6 @@ export async function initSpotifyPlayer(onStateChange: StateChangeCallback): Pro
     volume: 1,
   });
 
-  // playerInstance.addListener('ready', ({ device_id }: { device_id: string }) => {
-  playerInstance.addListener('ready', ({ device_id }: any) => {
-    spotifyDeviceId = device_id;
-    console.log('Spotify player ready, device:', device_id);
-  });
-
-  // playerInstance.addListener('not_ready', ({ device_id }: { device_id: string }) => {
   playerInstance.addListener('not_ready', ({ device_id }: any) => {
     spotifyDeviceId = null;
     console.warn('Spotify player not ready', device_id);
@@ -153,18 +152,160 @@ export async function initSpotifyPlayer(onStateChange: StateChangeCallback): Pro
     return false;
   }
 
-  return true;
+  // Wait for 'ready' event so device_id is set before any play call
+  const deviceReady = await new Promise<boolean>((resolve) => {
+    const timeout = setTimeout(() => {
+      playerInstance?.removeListener('ready');
+      resolve(false);
+    }, 15000);
+
+    const onReady = (ev: { device_id?: string }) => {
+      const device_id = ev?.device_id;
+      if (device_id) {
+        clearTimeout(timeout);
+        spotifyDeviceId = device_id;
+        playerInstance?.removeListener('ready');
+        resolve(true);
+      }
+    };
+
+    playerInstance!.addListener('ready', onReady as (state?: SpotifyPlayerState) => void);
+  });
+
+  return deviceReady;
+}
+
+async function transferPlaybackToDevice(deviceId: string): Promise<boolean> {
+  console.log('transferPlaybackToDevice', deviceId);
+  const token = await getValidSpotifyToken();
+  if (!token) return false;
+  const res = await fetch('https://api.spotify.com/v1/me/player', {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ device_ids: [deviceId], play: false }),
+  });
+  return res.ok || res.status === 204;
+}
+
+async function getDeviceIdFromApi(token: string): Promise<string | null> {
+  const res = await fetch('https://api.spotify.com/v1/me/player/devices', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return null;
+  const data = await res.json().catch(() => ({}));
+  const devices = data.devices || [];
+  const ourDevice = devices.find(
+    (d: { id?: string; name?: string }) => d.name === 'T4SyncWave' || d.id === spotifyDeviceId
+  );
+  return ourDevice?.id || null;
+}
+
+async function reconnectPlayer(): Promise<boolean> {
+  if (playerInstance) {
+    playerInstance.disconnect();
+    playerInstance = null;
+  }
+  spotifyDeviceId = null;
+
+  const token = await getValidSpotifyToken();
+  if (!token) return false;
+  if (!window.Spotify) await loadSpotifySDK();
+  if (!window.Spotify) return false;
+
+  playerInstance = new window.Spotify!.Player({
+    name: 'T4SyncWave',
+    getOAuthToken: async (cb) => {
+      const t = await getValidSpotifyToken();
+      if (t) cb(t);
+    },
+    volume: 1,
+  });
+
+  playerInstance.addListener('not_ready', () => {
+    spotifyDeviceId = null;
+  });
+
+  if (stateChangeCallback) {
+    playerInstance.addListener('player_state_changed', (state) => {
+      if (!state || !stateChangeCallback) return;
+      const track = state.track_window?.current_track;
+      stateChangeCallback({
+        isPlaying: !state.paused,
+        currentPosition: state.position / 1000,
+        trackDuration: state.duration / 1000,
+        trackId: track?.id,
+        trackTitle: track?.name,
+        trackArtist: track?.artists?.map((a) => a.name).join(', '),
+      });
+    });
+  }
+
+  const connected = await playerInstance.connect();
+  if (!connected) return false;
+
+  const deviceReady = await new Promise<boolean>((resolve) => {
+    const timeout = setTimeout(() => {
+      playerInstance?.removeListener('ready');
+      resolve(false);
+    }, 10000);
+    const onReady = (ev: { device_id?: string }) => {
+      if (ev?.device_id) {
+        clearTimeout(timeout);
+        spotifyDeviceId = ev.device_id;
+        playerInstance?.removeListener('ready');
+        resolve(true);
+      }
+    };
+    playerInstance!.addListener('ready', onReady as (state?: SpotifyPlayerState) => void);
+  });
+  return deviceReady;
 }
 
 export async function playSpotifyTrack(spotifyId: string): Promise<boolean> {
+  console.log('playSpotifyTrack', spotifyId);
   const token = await getValidSpotifyToken();
   if (!token) return false;
 
+  if (!spotifyDeviceId || !playerInstance) {
+    throw new Error('Spotify player not ready. Please try again.');
+  }
+
   const uri = `spotify:track:${spotifyId}`;
-  const url = spotifyDeviceId
-    ? `https://api.spotify.com/v1/me/player/play?device_id=${spotifyDeviceId}`
-    : 'https://api.spotify.com/v1/me/player/play';
-  const response = await fetch(url, {
+
+  // Required for mobile autoplay
+  try {
+    await playerInstance.activateElement();
+  } catch {
+    /* desktop may not need */
+  }
+
+  // Use device_id from API if available (more reliable than SDK's ready event)
+  let deviceId = spotifyDeviceId;
+  for (let i = 0; i < 10; i++) {
+    const apiDeviceId = await getDeviceIdFromApi(token);
+    console.log('apiDeviceId', apiDeviceId);
+    if (apiDeviceId) {
+      deviceId = apiDeviceId;
+      spotifyDeviceId = apiDeviceId;
+      break;
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+
+  if (!deviceId) {
+    throw new Error('Spotify device not ready. Refresh the page and try again.');
+  }
+
+  const playUrl = `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`;
+
+  // Transfer playback to our device first (required to avoid 404 NO_ACTIVE_DEVICE)
+  await transferPlaybackToDevice(deviceId);
+  await new Promise((r) => setTimeout(r, 400));
+
+  let response = await fetch(playUrl, {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -173,49 +314,111 @@ export async function playSpotifyTrack(spotifyId: string): Promise<boolean> {
     body: JSON.stringify({ uris: [uri] }),
   });
 
+  console.log('response', response);
+
+  // If 404 "Device not found", reconnect player and retry
+  if (response.status === 404) {
+    const errBody = await response
+      .clone()
+      .json()
+      .catch(() => ({}));
+    const isDeviceNotFound = errBody.error?.message?.toLowerCase().includes('device') ?? false;
+
+    if (isDeviceNotFound) {
+      const reconnected = await reconnectPlayer();
+      if (reconnected && spotifyDeviceId) {
+        await new Promise((r) => setTimeout(r, 800));
+        const newDeviceId = (await getDeviceIdFromApi(token)) || spotifyDeviceId;
+        await transferPlaybackToDevice(newDeviceId);
+        await new Promise((r) => setTimeout(r, 400));
+        response = await fetch(
+          `https://api.spotify.com/v1/me/player/play?device_id=${newDeviceId}`,
+          {
+            method: 'PUT',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ uris: [uri] }),
+          }
+        );
+      }
+    } else {
+      await transferPlaybackToDevice(deviceId);
+      await new Promise((r) => setTimeout(r, 500));
+      response = await fetch(playUrl, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ uris: [uri] }),
+      });
+    }
+  }
+
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
+    const msg = err.error?.message || '';
+    const reason = err.error?.reason || '';
     if (response.status === 404) {
-      console.warn('No Spotify device found. Open Spotify app or refresh the page.');
-    } else {
-      console.warn('Spotify play failed:', err);
+      const hint = msg.toLowerCase().includes('device not found')
+        ? 'Spotify device disconnected. Refresh the page and try again.'
+        : reason === 'NO_ACTIVE_DEVICE' || msg.includes('device')
+          ? 'Open Spotify app once, then try again.'
+          : 'Spotify Premium required. Try refreshing the page.';
+      throw new Error(hint);
     }
-    return false;
+    throw new Error(msg || 'Spotify playback failed');
   }
   return true;
 }
 
 export async function pauseSpotifyPlayer(): Promise<void> {
-  const token = await getValidSpotifyToken();
-  if (!token || !playerInstance) return;
-
-  await fetch('https://api.spotify.com/v1/me/player/pause', {
-    method: 'PUT',
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  if (!playerInstance) return;
+  try {
+    await playerInstance.pause();
+  } catch {
+    // Fallback to REST API if SDK fails
+    const token = await getValidSpotifyToken();
+    if (token) {
+      await fetch('https://api.spotify.com/v1/me/player/pause', {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+  }
 }
 
 export async function resumeSpotifyPlayer(): Promise<void> {
-  const token = await getValidSpotifyToken();
-  if (!token) return;
-
-  await fetch('https://api.spotify.com/v1/me/player/play', {
-    method: 'PUT',
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  if (!playerInstance) return;
+  try {
+    await playerInstance.resume();
+  } catch {
+    const token = await getValidSpotifyToken();
+    if (token && spotifyDeviceId) {
+      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${spotifyDeviceId}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+  }
 }
 
 export async function seekSpotifyPlayer(positionSeconds: number): Promise<void> {
-  const token = await getValidSpotifyToken();
-  if (!token) return;
-
-  await fetch(
-    `https://api.spotify.com/v1/me/player/seek?position_ms=${Math.floor(positionSeconds * 1000)}`,
-    {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token}` },
+  if (!playerInstance) return;
+  const positionMs = Math.floor(positionSeconds * 1000);
+  try {
+    await playerInstance.seek(positionMs);
+  } catch {
+    const token = await getValidSpotifyToken();
+    if (token) {
+      await fetch(`https://api.spotify.com/v1/me/player/seek?position_ms=${positionMs}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
     }
-  );
+  }
 }
 
 export async function setSpotifyVolume(volume: number): Promise<void> {

@@ -2,10 +2,11 @@ import { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Music, CheckCircle2, Loader2, Search } from 'lucide-react';
-import { searchSpotifyTracks } from '../spotifyApi';
+
 import { initiateSpotifyLogin, isSpotifyConnected } from '../spotifyAuth';
-import { SPOTIFY_CONFIG } from '../constants';
 import { formatTime, msToSeconds, cn } from '@shared/utils';
+import { searchSpotifyTracks } from '../spotifyApi';
+import { SPOTIFY_CONFIG } from '../constants';
 
 interface SpotifySearchTabProps {
   selectedTrackId: string | null;
@@ -57,7 +58,7 @@ export function SpotifySearchTab({
     initiateSpotifyLogin();
   }, []);
 
-  const handleAddSpotifyTrack = useCallback(() => {
+  const handleAddSpotifyTrack = useCallback(async () => {
     if (!selectedTrackId || !spotifyTracks) return;
     const track = spotifyTracks.find((t) => t.id === selectedTrackId);
     if (!track) return;

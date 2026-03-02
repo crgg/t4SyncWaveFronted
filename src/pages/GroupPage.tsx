@@ -32,6 +32,7 @@ import { getAudioService } from '@services/audio/audioService';
 import DeleteDialog from '@/shared/components/DeleteDialog/DeleteDialog';
 import { GroupPageSkeleton } from './GroupPage/components/GroupPageSkeleton';
 import { MediaSessionSection } from '@/features/media/components/MediaSessionSection';
+import { SpotifyAccountCard } from '@/features/spotify/components/SpotifyAccountCard';
 import { cn, orderBy } from '@/shared/utils';
 import { AvatarPreview } from '@/shared/components/AvatarPreview/AvatarPreview';
 import { withAuth } from '@/shared/hoc/withAuth';
@@ -39,26 +40,25 @@ import AlertDialog from '@/shared/components/AlertDialog/AlertDialog';
 import { ScreenLockedDueLackInteraction } from './GroupPage/components/ScreenLockedDueLackInteraction';
 
 const GroupPage = () => {
+  const dispatch = useAppDispatch();
   const { groupId } = useParams<{ groupId: string }>();
   const [isDeleteMember, setIsDeleteMember] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const connectionUsers = useAppSelector((state) => state.session.connectionUsers);
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
-  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [isLeaveGroupDialogOpen, setIsLeaveGroupDialogOpen] = useState(false);
-  const dispatch = useAppDispatch();
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const { createSession, joinSession, leaveSession } = useWebSocket();
+  const { play, needsInteraction, setNeedsInteraction } = useAudio();
 
-  const isHostRef = useRef<boolean | null>(null);
-  const isConnectingRef = useRef(false);
   const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listenerAudioInitializedRef = useRef<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState<DialogType>(null);
   const processedGroupIdRef = useRef<string | null>(null);
   const createdByRef = useRef<string | null>(null);
-  const listenerAudioInitializedRef = useRef<string | null>(null);
-  const { play, needsInteraction, setNeedsInteraction } = useAudio();
-  const [dialogOpen, setDialogOpen] = useState<DialogType>(null);
-  // const role = useAppSelector((state) => state.session.role);
+  const isHostRef = useRef<boolean | null>(null);
+  const isConnectingRef = useRef(false);
 
   const isConnected = useAppSelector((state) => state.connection.isConnected);
   const audioState = useAppSelector((state) => state.audio);
@@ -88,19 +88,15 @@ const GroupPage = () => {
 
   useEffect(() => {
     if (!groupPlaybackStateData?.playbackState || !groupId) return;
-    // if (isOwner) return;
 
     const { playbackState: state } = groupPlaybackStateData;
     const currentRole = store.getState().session.role;
-
     const match =
       currentRole === 'dj' && state.trackUrl && listenerAudioInitializedRef.current !== groupId;
 
     if (match) {
       try {
         listenerAudioInitializedRef.current = groupId;
-
-        // Generar un trackId si no está presente (usar URL como fallback)
         const trackId = state.trackId || state.trackUrl || '';
 
         dispatch(
@@ -166,6 +162,9 @@ const GroupPage = () => {
   };
 
   const playlist = useMemo(() => {
+    // trackas
+    // const tracks = data?.group?.current_track.map(PlaylistAdapter.toCurrentTrack);
+    // console.log('tracks', tracks);
     return data?.group
       ? (Array.isArray(data.group.current_track)
           ? data.group.current_track
@@ -173,6 +172,10 @@ const GroupPage = () => {
         ).filter((track) => !!track)
       : null;
   }, [data]);
+
+  useEffect(() => {
+    console.log('tracks', tracks);
+  }, [tracks]);
 
   const createdBy = useMemo(() => {
     if (!data?.group) return;
@@ -183,6 +186,7 @@ const GroupPage = () => {
 
   useEffect(() => {
     if (playlist) {
+      console.log('playlist', playlist);
       const tracks = orderBy(playlist.map(PlaylistAdapter.toCurrentTrack), 'addedAt', 'desc');
       dispatch(setPlaylistFromApi({ tracks }));
       const isHost = createdBy === user?.id;
@@ -490,7 +494,12 @@ const GroupPage = () => {
           </Link>
         </div>
 
-        {playlist?.length === 0 ? (
+        {(() => {
+          const hasPlaylistTracks = (playlist?.length ?? 0) > 0;
+          const hasCurrentTrack = !!(audioState.trackId || audioState.spotifyId);
+          const showPlayer = hasPlaylistTracks || hasCurrentTrack;
+          return !showPlayer;
+        })() ? (
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -510,7 +519,9 @@ const GroupPage = () => {
           </motion.div>
         ) : (
           <>
-            {isHostRef.current && <AudioPlayerHost playlistCount={playlist?.length ?? 0} />}
+            {isHostRef.current && (
+              <AudioPlayerHost playlistCount={playlist?.length ?? tracks.length ?? 0} />
+            )}
             {!isHostRef.current && (
               <AudioPlayerListener name={tracks?.[0]?.title} artist={tracks?.[0]?.artist} />
             )}
@@ -634,6 +645,18 @@ const GroupPage = () => {
             members={members}
           />
         </div>
+
+        <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2 mt-4">
+          Spotify Account
+        </h2>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="mb-4"
+        >
+          <SpotifyAccountCard />
+        </motion.div>
 
         <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2 mt-4">
           Group Information

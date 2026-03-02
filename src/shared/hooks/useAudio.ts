@@ -90,15 +90,12 @@ export function useAudio() {
           })
         );
       })
-        .then((ok) => {
+        .then(async (ok) => {
           if (ok && role === 'dj') {
-            playSpotifyTrack(audioState.spotifyId!).then(() => {
-              dispatch(setLoading({ isLoading: false }));
-            });
-          } else {
-            dispatch(setLoading({ isLoading: false }));
+            await playSpotifyTrack(audioState.spotifyId!);
           }
         })
+        .then(() => dispatch(setLoading({ isLoading: false })))
         .catch((err) => {
           dispatch(setError({ error: err?.message || 'Spotify playback failed' }));
           dispatch(setLoading({ isLoading: false }));
@@ -297,8 +294,8 @@ export function useAudio() {
     role,
     dispatch,
     audioState.trackId,
-    audioState.trackTitle,
-    audioState.trackArtist,
+    // No incluir trackTitle/trackArtist: el callback player_state_changed los actualiza
+    // y provocaría re-ejecuciones que reinician el player y playSpotifyTrack repetidamente
   ]);
 
   useEffect(() => {
@@ -738,14 +735,17 @@ export function useAudio() {
   const handleSelect = useCallback(
     (trackId: string) => {
       if (role !== 'dj') return;
+      // Leer tracks del store en el momento de la llamada para evitar closure stale
+      // (ej: al añadir track de Spotify y llamar handleSelect desde setTimeout)
+      const currentTracks = store.getState().playlist.tracks;
+      if (currentTracks.length === 0) return;
 
-      if (tracks.length === 0) return;
+      const index = currentTracks.findIndex((t) => t.id === trackId);
+      if (index === -1) return;
 
-      const track = tracks.find((t) => t.id === trackId);
+      const track = currentTracks[index];
       if (!track) return;
 
-      const index = tracks.findIndex((t) => t.id === trackId);
-      if (index === -1) return;
       dispatch(setCurrentTrackIndex({ index }));
 
       dispatch(
@@ -779,7 +779,7 @@ export function useAudio() {
         }
       }, 100);
     },
-    [role, dispatch, tracks, currentTrackIndex]
+    [role, dispatch]
   );
 
   const handlePrevious = useCallback(() => {
@@ -849,6 +849,11 @@ export function useAudio() {
     const timestamp = Date.now();
     dispatch(seek({ position: 0, timestamp }));
 
+    if (isSpotifyTrack(audioState)) {
+      seekSpotifyPlayer(0);
+      return;
+    }
+
     if (audioServiceRef.current) {
       audioServiceRef.current.seek(0);
     }
@@ -856,18 +861,21 @@ export function useAudio() {
     const wsService = getWebSocketService({ url: WS_URL });
     if (wsService.isConnected() && audioState.trackUrl) {
       const isPlaying = audioState.isPlaying ?? false;
-
-      // Enviar seek con trackUrl para que se emita PLAYBACK_STATE
       wsService.seekAudio(0, timestamp, audioState.trackUrl);
-
-      // Enviar el play-state correcto para mantener el estado de reproducción
       if (isPlaying) {
         wsService.playAudio(timestamp, 0, audioState.trackUrl);
       } else {
         wsService.pauseAudio(timestamp, 0, audioState.trackUrl);
       }
     }
-  }, [role, dispatch, audioState.trackUrl, audioState.isPlaying]);
+  }, [
+    role,
+    dispatch,
+    audioState.trackUrl,
+    audioState.isPlaying,
+    audioState.spotifyId,
+    audioState.trackSource,
+  ]);
 
   useEffect(() => {
     return () => {

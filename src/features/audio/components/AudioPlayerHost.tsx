@@ -8,18 +8,26 @@ import * as Icon from '@/shared/icons/Icons';
 import AudioButtonToggleMuted from './AudioButtonToggleMuted';
 import { VolumeSlider } from './VolumeSlider';
 
+import { store } from '@app/store';
 import { AUDIO_SECONDS } from '@features/audio/utils/constants';
 import { getAudioService } from '@services/audio/audioService';
 import { groupsApi } from '@features/groups/groupsApi';
 import { STORAGE_KEYS } from '@/shared/constants';
 import { useAudio } from '@shared/hooks/useAudio';
-import { formatTime } from '@shared/utils';
+import { formatTime, isSpotifyTrack } from '@shared/utils';
+
+const TICK_MS = 100;
 
 export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number }) {
-  const { audioState, play, pause, seek, setVolume, toggleMute, next, restart, stop } = useAudio();
+  const { audioState, play, pause, seek, setVolume, toggleMute, next, previous, restart, stop } =
+    useAudio();
   const [isDragging, setIsDragging] = useState(false);
   const progressRef = useRef<HTMLDivElement>(null);
   const { groupId } = useParams<{ groupId: string }>();
+
+  // Spotify: el SDK actualiza ~1s; interpolamos localmente para barra fluida
+  const lastSyncRef = useRef({ position: 0, timestamp: 0 });
+  const [displayPosition, setDisplayPosition] = useState(0);
 
   useEffect(() => {
     const savedVolume = localStorage.getItem(STORAGE_KEYS.VOLUME);
@@ -54,14 +62,58 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
     }
   }, [audioState.isMuted, audioState.previousVolume]);
 
+  // Sincronizar ref cuando Redux/SDK actualiza la posición
+  useEffect(() => {
+    const pos = audioState.currentPosition ?? 0;
+    lastSyncRef.current = { position: pos, timestamp: Date.now() };
+    if (!audioState.isPlaying || !isSpotifyTrack(audioState)) {
+      setDisplayPosition(pos);
+    }
+  }, [
+    audioState.currentPosition,
+    audioState.isPlaying,
+    audioState.trackSource,
+    audioState.spotifyId,
+  ]);
+
+  // Ticker: interpolación fluida para Spotify (SDK solo actualiza ~1s)
+  useEffect(() => {
+    if (
+      !audioState.isPlaying ||
+      !isSpotifyTrack(audioState) ||
+      isDragging ||
+      !audioState.trackDuration
+    ) {
+      return;
+    }
+    const interval = setInterval(() => {
+      const { position, timestamp } = lastSyncRef.current;
+      const elapsed = (Date.now() - timestamp) / 1000;
+      const nextPos = Math.min(position + elapsed, audioState.trackDuration ?? Infinity);
+      setDisplayPosition(nextPos);
+    }, TICK_MS);
+    return () => clearInterval(interval);
+  }, [
+    audioState.isPlaying,
+    audioState.trackDuration,
+    audioState.trackSource,
+    audioState.spotifyId,
+    isDragging,
+  ]);
+
+  const effectivePosition =
+    audioState.isPlaying && isSpotifyTrack(audioState) && !isDragging && audioState.trackDuration
+      ? displayPosition
+      : (audioState.currentPosition ?? 0);
+
   useEffect(() => {
     if (!isDragging && progressRef.current) {
       const progress = audioState.trackDuration
-        ? (audioState.currentPosition / audioState.trackDuration) * 100
+        ? (effectivePosition / audioState.trackDuration) * 100
         : 0;
       progressRef.current.style.setProperty('--progress', `${progress}%`);
     }
-  }, [audioState.currentPosition, audioState.trackDuration, isDragging]);
+  }, [effectivePosition, audioState.trackDuration, isDragging]);
 
   useEffect(() => {
     if (
@@ -72,6 +124,8 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
       seek(0);
       setTimeout(async () => {
         pause();
+        // Spotify: no sync al backend
+        if (isSpotifyTrack(store.getState().audio)) return;
         try {
           await groupsApi.pause({ groupId: groupId! });
         } catch (error) {
@@ -110,32 +164,32 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
 
   const handleSkipForward = () => {
     if (!audioState.trackDuration) return;
-    const newPosition = Math.min(
-      audioState.currentPosition + AUDIO_SECONDS.SKIP_FORWARD,
-      audioState.trackDuration
-    );
+    const current = effectivePosition;
+    const newPosition = Math.min(current + AUDIO_SECONDS.SKIP_FORWARD, audioState.trackDuration);
     seek(newPosition);
   };
 
   const handleSkipBackward = () => {
-    const newPosition = Math.max(audioState.currentPosition - AUDIO_SECONDS.SKIP_BACKWARD, 0);
+    const newPosition = Math.max(effectivePosition - AUDIO_SECONDS.SKIP_BACKWARD, 0);
     seek(newPosition);
   };
 
   const handlePlay = async () => {
     play();
 
+    // Spotify: reproducción local, no sync al backend (evita 401 y cumple términos de Spotify)
+    const state = store.getState().audio;
+    if (isSpotifyTrack(state)) return;
+
     try {
       setTimeout(async () => {
-        const currentAudioState = audioState;
-        const audioService = getAudioService();
-        const audioServiceState = audioService.getState();
+        const currentState = store.getState().audio;
         const currentPosition =
-          audioServiceState?.currentPosition ?? currentAudioState.currentPosition ?? 0;
+          getAudioService().getState()?.currentPosition ?? currentState.currentPosition ?? 0;
 
         await groupsApi.play({
           groupId: groupId!,
-          trackId: currentAudioState.trackId || '',
+          trackId: currentState.trackId || currentState.spotifyId || '',
           startedAt: currentPosition,
         });
       }, 100);
@@ -146,6 +200,10 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
 
   const handlePause = async () => {
     pause();
+
+    // Spotify: reproducción local, no sync al backend
+    const state = store.getState().audio;
+    if (isSpotifyTrack(state)) return;
 
     try {
       setTimeout(async () => {
@@ -158,8 +216,10 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
   };
 
   const progressPercentage = audioState.trackDuration
-    ? (audioState.currentPosition / audioState.trackDuration) * 100
+    ? (effectivePosition / audioState.trackDuration) * 100
     : 0;
+
+  const hasTrack = !!(audioState.trackUrl || audioState.spotifyId);
 
   return (
     <div className="bg-light-card dark:bg-dark-card rounded-xl p-3 sm:p-6 space-y-2 border border-light-hover dark:border-dark-hover transition-colors duration-200 mb-4">
@@ -198,7 +258,7 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
             min="0"
             max={audioState.trackDuration ?? 100}
             step="0.1"
-            value={audioState.currentPosition ?? 0}
+            value={effectivePosition}
             onChange={handleSeek}
             onMouseDown={handleSeekStart}
             onMouseUp={handleSeekEnd}
@@ -210,7 +270,7 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
           />
         </div>
         <div className="flex justify-between text-xs text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200">
-          <span>{formatTime(audioState.currentPosition)}</span>
+          <span>{formatTime(effectivePosition)}</span>
           <span>{formatTime(audioState.trackDuration ?? 0)}</span>
         </div>
       </div>
@@ -237,11 +297,23 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
         <div className="w-full flex items-center order-1 sm:order-2 justify-center gap-1.5 sm:gap-3">
           <div className="w-full flex flex-col items-center order-1 sm:order-2 justify-center gap-1.5 sm:gap-3">
             <div className="flex items-center justify-center gap-2">
+              {playlistCount > 1 && (
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={previous}
+                  disabled={!hasTrack}
+                  className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Previous"
+                >
+                  <Icon.Previous className="sm:w-5 sm:h-5 w-3 h-3" />
+                </motion.button>
+              )}
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={restart}
-                disabled={!audioState.trackUrl || audioState.currentPosition === 0}
+                disabled={!hasTrack || audioState.currentPosition === 0}
                 className="p-2 rounded-full enabled:hover:bg-light-hover dark:enabled:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Restart"
               >
@@ -254,7 +326,7 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={handleSkipBackward}
-                disabled={!audioState.trackUrl}
+                disabled={!hasTrack}
                 className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
                 title="Rewind 10s"
               >
@@ -267,8 +339,9 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={audioState.isPlaying ? handlePause : handlePlay}
-                disabled={!audioState.trackUrl}
+                disabled={!hasTrack}
                 className="p-4 rounded-full bg-primary-600 hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-white"
+                title={audioState.isPlaying ? 'Pause' : 'Play'}
               >
                 {audioState.isPlaying ? (
                   <Icon.Pause className="sm:w-8 sm:h-8 w-6 h-6" />
@@ -280,7 +353,7 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={handleSkipForward}
-                disabled={!audioState.trackUrl}
+                disabled={!hasTrack}
                 className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
                 title="Forward 10s"
               >
@@ -294,7 +367,7 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={next}
-                  disabled={!audioState.trackUrl}
+                  disabled={!hasTrack}
                   className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50"
                   title="Next"
                 >
@@ -305,7 +378,7 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 className="p-2 rounded-full enabled:hover:bg-light-hover dark:enabled:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!audioState.trackUrl || audioState.currentPosition === 0}
+                disabled={!hasTrack || audioState.currentPosition === 0}
                 onClick={stop}
                 title="Stop"
               >

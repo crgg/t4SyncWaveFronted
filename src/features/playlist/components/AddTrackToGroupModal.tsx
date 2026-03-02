@@ -16,6 +16,7 @@ import { uploadService } from '@services/upload';
 import { formatTime, msToSeconds, cn, getErrorMessage } from '@shared/utils';
 import { addTrack } from '@features/playlist/playlistSlice';
 import { useAppDispatch } from '@app/hooks';
+import { useAudio } from '@/shared/hooks/useAudio';
 
 type SortOption = 'newest' | 'oldest' | 'title-asc' | 'title-desc' | 'artist-asc' | 'artist-desc';
 type TabId = 'library' | 'spotify';
@@ -34,6 +35,7 @@ export function AddTrackToGroupModal({
   groupId,
   initialTab = 'library',
 }: AddTrackToGroupModalProps) {
+  const { handleSelect } = useAudio();
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 
   useEffect(() => {
@@ -197,7 +199,10 @@ export function AddTrackToGroupModal({
     toast.success('Spotify track added to playlist');
     setSelectedSpotifyTrackId(null);
     setIsAdding(false);
-    setTimeout(onClose, 500);
+    setTimeout(() => {
+      onClose();
+      handleSelect(track.id);
+    }, 300);
   };
 
   return (

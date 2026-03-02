@@ -88,3 +88,22 @@ export async function getSpotifyTrack(trackId: string): Promise<SpotifyTrack | n
     return null;
   }
 }
+
+export interface SpotifyUserProfile {
+  id: string;
+  display_name: string | null;
+  email: string | null;
+  country: string | null;
+  product: 'premium' | 'free' | 'open' | null;
+  images: Array<{ url: string; height: number; width: number }>;
+  external_urls: { spotify: string };
+}
+
+export async function getSpotifyCurrentUser(): Promise<SpotifyUserProfile | null> {
+  if (!SPOTIFY_CONFIG.CLIENT_ID) return null;
+  try {
+    return await spotifyFetch<SpotifyUserProfile>('/me');
+  } catch {
+    return null;
+  }
+}
