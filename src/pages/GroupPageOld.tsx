@@ -77,43 +77,6 @@ const GroupPage = () => {
     retry: false,
   });
 
-  // Obtener el estado del grupo al cargar la página
-  // const { data: groupStateData } = useQuery({
-  //   queryKey: ['group-state', groupId],
-  //   queryFn: () => groupsApi.getGroupState(groupId!),
-  //   enabled: !!groupId,
-  //   staleTime: 1000 * 30,
-  //   gcTime: 1000 * 60 * 2,
-  //   retry: false,
-  // });
-
-  const { data: groupPlaybackStateData } = useQuery({
-    queryKey: ['group-playback-state', groupId],
-    queryFn: () => groupsApi.getGroupPlaybackState(groupId!),
-    enabled: !!groupId,
-    staleTime: 1000 * 30, // 30 seconds
-    gcTime: 1000 * 60 * 2, // 2 minutes
-    retry: false,
-  });
-
-  // Log del estado del grupo para debugging (puedes usar groupStateData.state para lógica futura)
-  // useEffect(() => {
-  //   if (groupStateData?.state) {
-  //     console.log('Group State:', groupStateData.state);
-  //     // Aquí puedes agregar lógica basada en el estado:
-  //     // - IDLE: No active playback
-  //     // - PLAYING_HOSTED: DJ present, controls unlocked
-  //     // - PLAYING_NO_HOST: DJ absent, controls LOCKED
-  //     // - CONTROL_AVAILABLE: DJ can retake control
-  //   }
-  // }, [groupStateData]);
-
-  useEffect(() => {
-    if (groupPlaybackStateData?.playbackState) {
-      console.log('Group Playback State:', groupPlaybackStateData.playbackState);
-    }
-  }, [groupPlaybackStateData]);
-
   const handleLeaveGroup = () => {
     leaveSession();
   };
@@ -771,7 +734,9 @@ const GroupPage = () => {
                 </h2>
               </div>
             )}
-            {isHostRef.current === true && groupId && <PlaylistHost groupId={groupId} />}
+            {isHostRef.current === true && groupId && (
+              <PlaylistHost groupId={groupId} isIsSpotifyOnly={false} />
+            )}
             {isHostRef.current === false && <PlaylistListener />}
           </motion.div>
         ) : (

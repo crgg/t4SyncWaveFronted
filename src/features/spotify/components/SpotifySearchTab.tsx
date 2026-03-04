@@ -7,6 +7,7 @@ import { initiateSpotifyLogin, isSpotifyConnected } from '../spotifyAuth';
 import { formatTime, msToSeconds, cn } from '@shared/utils';
 import { searchSpotifyTracks } from '../spotifyApi';
 import { SPOTIFY_CONFIG } from '../constants';
+import { Input } from '@/shared/components/Input/Input';
 
 interface SpotifySearchTabProps {
   selectedTrackId: string | null;
@@ -18,6 +19,7 @@ interface SpotifySearchTabProps {
     duration: number;
     source: 'spotify';
     spotifyId: string;
+    uri: string;
   }) => void;
   isAdding: boolean;
   groupId: string;
@@ -69,6 +71,7 @@ export function SpotifySearchTab({
       duration: msToSeconds(track.duration_ms),
       source: 'spotify',
       spotifyId: track.id,
+      uri: track.uri,
     });
   }, [selectedTrackId, spotifyTracks, onAddTrack]);
 
@@ -111,22 +114,22 @@ export function SpotifySearchTab({
       {/* Search input */}
       <div className="relative">
         <Search
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
           size={18}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-light-text-secondary dark:text-dark-text-secondary"
         />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+        <Input
           placeholder="Search Spotify (min 2 characters)..."
-          className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-light-hover dark:border-dark-hover bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text placeholder:text-light-text-secondary dark:placeholder:text-dark-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
+          onChange={(e) => setSearchQuery(e.target.value)}
+          value={searchQuery}
+          className="ps-10"
+          type="text"
         />
       </div>
 
       {/* Results */}
       {searchQuery.trim().length < 2 ? (
         <div className="py-8 text-center">
-          <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Type at least 2 characters to search
           </p>
         </div>

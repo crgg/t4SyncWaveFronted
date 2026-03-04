@@ -6,38 +6,41 @@ import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 
-import { groupsApi } from '@/features/groups/groupsApi';
-import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { store } from '@/app/store';
-import { Button } from '@shared/components/Button/Button';
-import { AddMemberModal } from '@/features/groups/components/AddMemberModal';
 import type { DialogType, IGroupUsers, Member } from '@/features/groups/groups.types';
-import { PlaylistHost } from '@/features/playlist/components/PlaylistHost';
-import { PlaylistCompact } from '@/features/playlist/components/PlaylistCompact';
+
 import {
   playListSelectors,
   setCurrentTrackIndex,
   setPlaylistFromApi,
 } from '@/features/playlist/playlistSlice';
-import { AudioPlayerHost } from '@/features/audio/components/AudioPlayerHost';
-import { useWebSocket } from '@/shared/hooks/useWebSocket';
-import { createSessionStart, joinSessionStart, setRole } from '@/features/session/sessionSlice';
-import { PlaylistListener } from '@/features/playlist/components/PlaylistListener';
-import { AudioPlayerListener } from '@/features/audio/components/AudioPlayerListener';
-import { paths } from '@/routes/paths';
-import PlaylistAdapter from '@/features/playlist/playlistAdapter';
-import { setTrack, setAudioState } from '@/features/audio/audioSlice';
-import { useAudio } from '@/shared/hooks/useAudio';
-import { getAudioService } from '@services/audio/audioService';
-import DeleteDialog from '@/shared/components/DeleteDialog/DeleteDialog';
-import { GroupPageSkeleton } from './GroupPage/components/GroupPageSkeleton';
-import { MediaSessionSection } from '@/features/media/components/MediaSessionSection';
-import { SpotifyAccountCard } from '@/features/spotify/components/SpotifyAccountCard';
-import { cn, orderBy } from '@/shared/utils';
-import { AvatarPreview } from '@/shared/components/AvatarPreview/AvatarPreview';
-import { withAuth } from '@/shared/hoc/withAuth';
-import AlertDialog from '@/shared/components/AlertDialog/AlertDialog';
 import { ScreenLockedDueLackInteraction } from './GroupPage/components/ScreenLockedDueLackInteraction';
+import { AudioPlayerListener } from '@/features/audio/components/AudioPlayerListener';
+import { MediaSessionSection } from '@/features/media/components/MediaSessionSection';
+import { PlaylistListener } from '@/features/playlist/components/PlaylistListener';
+import { PlaylistCompact } from '@/features/playlist/components/PlaylistCompact';
+import { AvatarPreview } from '@/shared/components/AvatarPreview/AvatarPreview';
+import { AudioPlayerHost } from '@/features/audio/components/AudioPlayerHost';
+import { GroupPageSkeleton } from './GroupPage/components/GroupPageSkeleton';
+import { AddMemberModal } from '@/features/groups/components/AddMemberModal';
+import { PlaylistHost } from '@/features/playlist/components/PlaylistHost';
+import DeleteDialog from '@/shared/components/DeleteDialog/DeleteDialog';
+import AlertDialog from '@/shared/components/AlertDialog/AlertDialog';
+import SpotifyAccount from './ProfilePage/components/SpotifyAccount';
+import { Button } from '@shared/components/Button/Button';
+import Example from './GroupPage/components/Example';
+
+import { createSessionStart, joinSessionStart, setRole } from '@/features/session/sessionSlice';
+import { setTrack, setAudioState } from '@/features/audio/audioSlice';
+import PlaylistAdapter from '@/features/playlist/playlistAdapter';
+import { getAudioService } from '@services/audio/audioService';
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { useWebSocket } from '@/shared/hooks/useWebSocket';
+import { groupsApi } from '@/features/groups/groupsApi';
+import { useAudio } from '@/shared/hooks/useAudio';
+import { withAuth } from '@/shared/hoc/withAuth';
+import { cn, orderBy } from '@/shared/utils';
+import { paths } from '@/routes/paths';
+import { store } from '@/app/store';
 
 const GroupPage = () => {
   const dispatch = useAppDispatch();
@@ -85,6 +88,7 @@ const GroupPage = () => {
   const group = data?.status && data?.group ? data.group : null;
   const members = group?.members || [];
   const isOwner = group?.created_by === user?.id;
+  const isSpotifyOnly = group?.music_type === 'spotify_only';
 
   useEffect(() => {
     if (!groupPlaybackStateData?.playbackState || !groupId) return;
@@ -162,9 +166,6 @@ const GroupPage = () => {
   };
 
   const playlist = useMemo(() => {
-    // trackas
-    // const tracks = data?.group?.current_track.map(PlaylistAdapter.toCurrentTrack);
-    // console.log('tracks', tracks);
     return data?.group
       ? (Array.isArray(data.group.current_track)
           ? data.group.current_track
@@ -172,10 +173,6 @@ const GroupPage = () => {
         ).filter((track) => !!track)
       : null;
   }, [data]);
-
-  useEffect(() => {
-    console.log('tracks', tracks);
-  }, [tracks]);
 
   const createdBy = useMemo(() => {
     if (!data?.group) return;
@@ -186,7 +183,6 @@ const GroupPage = () => {
 
   useEffect(() => {
     if (playlist) {
-      console.log('playlist', playlist);
       const tracks = orderBy(playlist.map(PlaylistAdapter.toCurrentTrack), 'addedAt', 'desc');
       dispatch(setPlaylistFromApi({ tracks }));
       const isHost = createdBy === user?.id;
@@ -198,12 +194,15 @@ const GroupPage = () => {
           const track = tracks[index];
           if (!track) return;
           dispatch(setCurrentTrackIndex({ index }));
+          console.log(track);
           dispatch(
             setTrack({
               trackId: track.id,
               trackUrl: track.url,
               trackTitle: track.title,
               trackArtist: track.artist,
+              trackSource: track.source,
+              spotifyId: track.spotifyId,
             })
           );
           if (!createdByRef.current || !createdBy || createdByRef.current === createdBy) return;
@@ -466,7 +465,7 @@ const GroupPage = () => {
       await audioService.play();
       setNeedsInteraction(false);
     } catch (error) {
-      console.log('Error playing audio after interaction:', error);
+      console.error('Error playing audio after interaction:', error);
     }
   };
 
@@ -514,7 +513,9 @@ const GroupPage = () => {
                 </h2>
               </div>
             )}
-            {isHostRef.current && groupId && <PlaylistHost groupId={groupId} />}
+            {isHostRef.current && groupId && (
+              <PlaylistHost groupId={groupId} isIsSpotifyOnly={isSpotifyOnly} />
+            )}
             {!isHostRef.current && <PlaylistListener />}
           </motion.div>
         ) : (
@@ -527,6 +528,8 @@ const GroupPage = () => {
             )}
           </>
         )}
+
+        <Example groupId={groupId!} isSpotifyOnly={isSpotifyOnly} />
 
         {groupUsers.dj && (
           <div>
@@ -646,17 +649,7 @@ const GroupPage = () => {
           />
         </div>
 
-        <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2 mt-4">
-          Spotify Account
-        </h2>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          className="mb-4"
-        >
-          <SpotifyAccountCard />
-        </motion.div>
+        {isSpotifyOnly && <SpotifyAccount className="mt-4" />}
 
         <h2 className="text-xs font-semibold text-zinc-400 flex items-center gap-2 mt-4">
           Group Information
@@ -747,18 +740,6 @@ const MemberCard = ({
     if (parts.length === 1) return parts[0][0].toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
-
-  // const formatDate = (dateString: string) => {
-  //   const date = new Date(dateString);
-  //   const now = new Date();
-  //   const diffInMs = now.getTime() - date.getTime();
-  //   const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-  //   if (diffInDays === 0) return 'Today';
-  //   if (diffInDays === 1) return 'Yesterday';
-  //   if (diffInDays < 7) return `${diffInDays} days ago`;
-  //   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  // };
 
   const handleAvatarClick = () => {
     if (member.avatar_url) {

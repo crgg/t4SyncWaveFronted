@@ -35,7 +35,7 @@ export function GroupsPageHeader({
               className="flex items-center gap-2"
             >
               <Plus size={16} strokeWidth={2} />
-              <span className="hidden sm:inline">Create</span>
+              <span className="hidden sm:inline text-sm">Create</span>
             </Button>
           )}
         </div>

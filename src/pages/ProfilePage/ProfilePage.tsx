@@ -22,6 +22,7 @@ import {
   ProfileMessages,
 } from './components';
 import { CreatePasswordForm } from './components/CreatePasswordForm';
+import SpotifyAccount from './components/SpotifyAccount';
 
 type ProfileFormData = {
   nickname: string;
@@ -254,6 +255,8 @@ function ProfilePage() {
         <ProfileMessages error={error} success={success} />
 
         <AccountInfo user={user} />
+
+        <SpotifyAccount />
 
         {enableActions && (
           <ProfileActions

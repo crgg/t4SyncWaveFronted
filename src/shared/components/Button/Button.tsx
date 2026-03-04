@@ -9,7 +9,8 @@ type ButtonVariant =
   | 'ghost-danger'
   | 'outline-primary'
   | 'emerald'
-  | 'danger';
+  | 'danger'
+  | 'spotify';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -23,11 +24,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
+      'inline-flex items-center justify-center text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
 
     const variants = {
       primary:
-        'bg-primary text-white hover:bg-primary-dark dark:hover:bg-primary focus:ring-primary/30 shadow-sm',
+        'bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 focus:ring-blue-500/30 shadow-sm',
       secondary:
         'bg-light-surface dark:bg-dark-surface text-light-text dark:text-dark-text hover:bg-light-hover dark:hover:bg-dark-hover border border-light-hover dark:border-dark-hover focus:ring-primary/20',
       outline:
@@ -41,6 +42,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         'bg-emerald-500 dark:bg-emerald-600 text-white hover:bg-emerald-600 dark:hover:bg-emerald-700 focus:ring-emerald-500/30',
       danger:
         'bg-red-500 dark:bg-red-600 text-white hover:bg-red-600 dark:hover:bg-red-700 focus:ring-red-500/30',
+      spotify:
+        'bg-spotify-500 text-white hover:bg-spotify-600 dark:hover:bg-spotify-700 focus:ring-spotify-500/30',
     };
 
     const sizes = {

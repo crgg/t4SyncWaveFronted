@@ -16,6 +16,7 @@ const schema = yup.object({
     .required('Group name is required')
     .min(3, 'Name must be at least 3 characters')
     .max(50, 'Name must be less than 50 characters'),
+  music_type: yup.string().oneOf(['spotify_only', 'mp3']).required('Type is required'),
 });
 
 type EditGroupFormData = yup.InferType<typeof schema>;
@@ -47,6 +48,7 @@ export function EditGroupModal({
     resolver: yupResolver(schema),
     defaultValues: {
       name: currentName,
+      music_type: 'mp3',
     },
   });
 
@@ -62,7 +64,7 @@ export function EditGroupModal({
   });
 
   const onSubmit = (data: EditGroupFormData) => {
-    mutation.mutate({ id: groupId, name: String(data.name).trim() });
+    mutation.mutate({ id: groupId, name: String(data.name).trim(), music_type: data.music_type });
   };
 
   const handleClose = () => {
@@ -81,14 +83,14 @@ export function EditGroupModal({
           </div>
         </div>
 
-        <p className="text-center text-sm text-light-text-secondary dark:text-dark-text-secondary">
+        <p className="text-center text-sm text-gray-500 dark:text-gray-400">
           Update your group name. Changes will be reflected immediately.
         </p>
 
         <div className="space-y-4">
           <Input
             {...register('name')}
-            label="Group Name"
+            label="Name"
             error={errors.name?.message}
             disabled={mutation.isPending}
             autoComplete="off"

@@ -46,9 +46,11 @@ export function getSpotifyAuthUrl(): string {
   }).toString()}`;
 }
 
-export async function initiateSpotifyLogin(): Promise<void> {
+export async function initiateSpotifyLogin(onlyGeneratePKCE = false): Promise<void | string> {
   const { codeVerifier, codeChallenge } = await generatePKCE();
   sessionStorage.setItem(SPOTIFY_STORAGE_KEYS.PKCE_VERIFIER, codeVerifier);
+
+  if (onlyGeneratePKCE) return codeVerifier;
 
   const params = new URLSearchParams({
     client_id: SPOTIFY_CONFIG.CLIENT_ID,

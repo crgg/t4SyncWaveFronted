@@ -15,6 +15,7 @@ export interface Group {
   created_by_avatar_url?: any;
   members?: Member[];
   current_track: Array<any> | ICurrentTrack;
+  music_type: 'spotify_only' | 'mp3';
 }
 
 export interface ICurrentTrack {
@@ -29,6 +30,10 @@ export interface ICurrentTrack {
   file_url: string;
   duration_ms: number;
   uploaded_by: string;
+  source: string;
+  spotify_id: string;
+  spotify_uri: string;
+  spotify_url: string;
 }
 
 export interface GroupsResponse extends ResponseBase {
@@ -61,6 +66,7 @@ export interface GroupResponse extends ResponseBase {
 
 export interface FormCreateGroup {
   name: string;
+  music_type: 'spotify_only' | 'mp3';
 }
 
 export interface FormAddMemberToGroup {
@@ -123,6 +129,7 @@ export interface IGroupPlaybackState {
 export interface IPayloadUpdateGroup {
   id: string;
   name: string;
+  music_type: 'spotify_only' | 'mp3';
 }
 
 export interface IPayloadDeleteGroup {

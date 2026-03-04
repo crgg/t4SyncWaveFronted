@@ -21,13 +21,11 @@ const TICK_MS = 100;
 export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number }) {
   const { audioState, play, pause, seek, setVolume, toggleMute, next, previous, restart, stop } =
     useAudio();
-  const [isDragging, setIsDragging] = useState(false);
-  const progressRef = useRef<HTMLDivElement>(null);
-  const { groupId } = useParams<{ groupId: string }>();
-
-  // Spotify: el SDK actualiza ~1s; interpolamos localmente para barra fluida
   const lastSyncRef = useRef({ position: 0, timestamp: 0 });
   const [displayPosition, setDisplayPosition] = useState(0);
+  const { groupId } = useParams<{ groupId: string }>();
+  const [isDragging, setIsDragging] = useState(false);
+  const progressRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const savedVolume = localStorage.getItem(STORAGE_KEYS.VOLUME);
@@ -54,7 +52,6 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
     }
   }, [audioState.volume]);
 
-  // Guardar estado de muted cuando cambia
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.IS_MUTED, audioState.isMuted.toString());
     if (audioState.previousVolume !== undefined) {
@@ -62,7 +59,6 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
     }
   }, [audioState.isMuted, audioState.previousVolume]);
 
-  // Sincronizar ref cuando Redux/SDK actualiza la posición
   useEffect(() => {
     const pos = audioState.currentPosition ?? 0;
     lastSyncRef.current = { position: pos, timestamp: Date.now() };
@@ -76,7 +72,6 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
     audioState.spotifyId,
   ]);
 
-  // Ticker: interpolación fluida para Spotify (SDK solo actualiza ~1s)
   useEffect(() => {
     if (
       !audioState.isPlaying ||

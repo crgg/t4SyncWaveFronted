@@ -176,7 +176,6 @@ export async function initSpotifyPlayer(onStateChange: StateChangeCallback): Pro
 }
 
 async function transferPlaybackToDevice(deviceId: string): Promise<boolean> {
-  console.log('transferPlaybackToDevice', deviceId);
   const token = await getValidSpotifyToken();
   if (!token) return false;
   const res = await fetch('https://api.spotify.com/v1/me/player', {
@@ -265,7 +264,6 @@ async function reconnectPlayer(): Promise<boolean> {
 }
 
 export async function playSpotifyTrack(spotifyId: string): Promise<boolean> {
-  console.log('playSpotifyTrack', spotifyId);
   const token = await getValidSpotifyToken();
   if (!token) return false;
 
@@ -286,7 +284,6 @@ export async function playSpotifyTrack(spotifyId: string): Promise<boolean> {
   let deviceId = spotifyDeviceId;
   for (let i = 0; i < 10; i++) {
     const apiDeviceId = await getDeviceIdFromApi(token);
-    console.log('apiDeviceId', apiDeviceId);
     if (apiDeviceId) {
       deviceId = apiDeviceId;
       spotifyDeviceId = apiDeviceId;
@@ -313,8 +310,6 @@ export async function playSpotifyTrack(spotifyId: string): Promise<boolean> {
     },
     body: JSON.stringify({ uris: [uri] }),
   });
-
-  console.log('response', response);
 
   // If 404 "Device not found", reconnect player and retry
   if (response.status === 404) {

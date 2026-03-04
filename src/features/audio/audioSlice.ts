@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { AudioState } from '@shared/types';
-import { isValidAudioUrl } from '@shared/utils';
+import { extractSpotifyId, isValidAudioUrl } from '@shared/utils';
 import { STORAGE_KEYS } from '@shared/constants';
 
 interface AudioReducerState extends AudioState {
@@ -70,31 +70,57 @@ const audioSlice = createSlice({
       state,
       action: PayloadAction<{
         trackId: string;
-        trackUrl: string;
+        trackUrl?: string;
         trackTitle?: string;
         trackArtist?: string;
         trackSource?: 'file' | 'spotify';
         spotifyId?: string;
       }>
     ) => {
+      console.trace('setTrack');
       const isSpotify = action.payload.trackSource === 'spotify' || !!action.payload.spotifyId;
-      // Validar URL solo para tracks de archivo
-      if (!isSpotify && !isValidAudioUrl(action.payload.trackUrl)) {
-        console.error(
-          'Error: Intento de guardar una URL inválida como trackUrl:',
-          action.payload.trackUrl,
-          'Debe ser una URL de archivo de audio válida (ej: .mp3, .wav, etc.)'
-        );
-        state.error = 'URL de audio no válida. Debe ser un archivo de audio (ej: .mp3, .wav, etc.)';
-        return;
+
+      if (isSpotify) {
+        // Spotify: usar spotifyId o extraerlo de trackUrl/URI para reproducir con Spotify API
+        const spotifyId =
+          action.payload.spotifyId ||
+          (action.payload.trackUrl ? extractSpotifyId(action.payload.trackUrl) : null);
+        if (!spotifyId) {
+          console.error(
+            'Error: Track de Spotify requiere spotifyId o una URL/URI de Spotify válida:',
+            action.payload.trackUrl
+          );
+          state.error =
+            'Track de Spotify inválido. Se requiere spotifyId o URL/URI de Spotify (ej: spotify:track:xxx)';
+          return;
+        }
+        state.trackId = action.payload.trackId;
+        state.trackUrl = action.payload.trackUrl ?? '';
+        state.trackTitle = action.payload.trackTitle;
+        state.trackArtist = action.payload.trackArtist;
+        state.trackSource = 'spotify';
+        state.spotifyId = spotifyId;
+      } else {
+        // Archivo: validar URL de audio
+        const trackUrl = action.payload.trackUrl ?? '';
+        if (!isValidAudioUrl(trackUrl)) {
+          console.error(
+            'Error: Intento de guardar una URL inválida como trackUrl:',
+            trackUrl,
+            'Debe ser una URL de archivo de audio válida (ej: .mp3, .wav, etc.)'
+          );
+          state.error =
+            'URL de audio no válida. Debe ser un archivo de audio (ej: .mp3, .wav, etc.)';
+          return;
+        }
+        state.trackId = action.payload.trackId;
+        state.trackUrl = trackUrl;
+        state.trackTitle = action.payload.trackTitle;
+        state.trackArtist = action.payload.trackArtist;
+        state.trackSource = action.payload.trackSource ?? 'file';
+        state.spotifyId = undefined;
       }
 
-      state.trackId = action.payload.trackId;
-      state.trackUrl = action.payload.trackUrl;
-      state.trackTitle = action.payload.trackTitle;
-      state.trackArtist = action.payload.trackArtist;
-      state.trackSource = action.payload.trackSource;
-      state.spotifyId = action.payload.spotifyId;
       state.currentPosition = 0;
       state.isLoading = true;
       state.error = null;

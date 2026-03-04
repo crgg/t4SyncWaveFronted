@@ -24,11 +24,25 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
+  --spotify-color: rgb(101, 212, 110);
+  --spotify-color-hover: rgb(85, 181, 93);
+
   @apply text-sm sm:text-base;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* components */
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-lg transition-all duration-200;
+  }
+  .btn:hover {
+    @apply scale-105;
+  }
 }
 
 /* Custom scrollbar - Dark mode */

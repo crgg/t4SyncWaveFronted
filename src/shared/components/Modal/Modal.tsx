@@ -85,7 +85,7 @@ export function Modal({
                 sizeClasses[size],
                 'bg-light-card dark:bg-dark-card',
                 'rounded-xl shadow-2xl',
-                'border border-light-hover dark:border-dark-hover',
+                'border dark:border-dark-hover',
                 'pointer-events-auto',
                 'max-h-[96dvh] sm:max-h-[90dvh] overflow-hidden flex flex-col',
                 className
@@ -93,7 +93,7 @@ export function Modal({
             >
               {/* Header */}
               {title && (
-                <div className="flex items-center justify-between p-3 sm:p-4 border-b border-light-hover dark:border-dark-hover">
+                <div className="flex items-center justify-between p-3 sm:p-4 border-b dark:border-dark-hover">
                   <h2 className="text-base sm:text-xl font-semibold text-light-text dark:text-dark-text">
                     {title}
                   </h2>

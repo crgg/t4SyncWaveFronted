@@ -161,7 +161,6 @@ export function useLocalAudioPlayer(
         audio
           .play()
           .then(() => {
-            console.log('playing audio');
             setAudioState((prev) => ({ ...prev, isPlaying: true }));
           })
           .catch((error) => {
@@ -260,12 +259,6 @@ export function useLocalAudioPlayer(
 
   const skipForward = useCallback(
     (seconds: number = AUDIO_SECONDS.SKIP_FORWARD) => {
-      console.log({
-        currentTime: audioRef.current?.currentTime,
-        duration: audioRef.current?.duration,
-        trackDuration: audioState.trackDuration,
-        seconds,
-      });
       if (!audioRef.current) return;
       const currentTime = audioRef.current.currentTime || 0;
       const duration = audioRef.current.duration || audioState.trackDuration || 0;

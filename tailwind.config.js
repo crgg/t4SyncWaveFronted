@@ -25,6 +25,23 @@ export default {
           DEFAULT: '#C5A059',
           dark: '#A6823E',
         },
+        // Paleta oficial Spotify (https://developer.spotify.com/documentation/design)
+        spotify: {
+          50: '#dcfce7',
+          100: '#bbf7d0',
+          200: '#86efac',
+          300: '#4ade80',
+          400: '#22c55e',
+          500: '#1DB954', // Verde oficial Spotify
+          600: '#16a34a',
+          700: '#15803d',
+          800: '#166534',
+          900: '#14532d',
+          DEFAULT: 'var(--spotify-color)',
+          hover: 'var(--spotify-color-hover)',
+          black: '#191414', // Negro oficial Spotify
+          white: '#FFFFFF',
+        },
         // El color del texto "T4"
         secondary: {
           DEFAULT: '#1A150E',
@@ -34,6 +51,7 @@ export default {
           light: '#f2f2f6', // Background principal
           dark: '#120F0A', // Casi negro, pero con tono cálido
         },
+        // Darks
         dark: {
           bg: '#120F0A',
           surface: '#120F0A',
@@ -42,6 +60,7 @@ export default {
           text: '#F9F7F2',
           'text-secondary': '#E2C285',
         },
+        // Lights
         light: {
           bg: '#f2f2f6',
           surface: '#f2f2f6',

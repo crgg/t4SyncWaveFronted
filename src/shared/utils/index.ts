@@ -224,3 +224,24 @@ export const extractCharacters = (text: string, count: number = 1): string => {
 export function isSpotifyTrack(state: { trackSource?: string; spotifyId?: string }): boolean {
   return state.trackSource === 'spotify' || !!state.spotifyId;
 }
+
+/**
+ * Extract Spotify track ID from URL or URI.
+ * Supports: https://open.spotify.com/track/ID, spotify:track:ID
+ */
+export function extractSpotifyId(urlOrUri: string): string | null {
+  if (!urlOrUri || typeof urlOrUri !== 'string') return null;
+  const s = urlOrUri.trim();
+  const uriMatch = s.match(/^spotify:track:([a-zA-Z0-9]+)$/);
+  if (uriMatch) return uriMatch[1];
+  try {
+    const url = new URL(s);
+    if (url.hostname === 'open.spotify.com' && url.pathname.startsWith('/track/')) {
+      const id = url.pathname.split('/track/')[1]?.split('/')[0] ?? url.pathname.split('/').pop();
+      return id || null;
+    }
+  } catch {
+    // not a valid URL
+  }
+  return null;
+}

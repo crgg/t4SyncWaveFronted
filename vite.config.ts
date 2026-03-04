@@ -18,7 +18,6 @@ export default defineConfig({
     port: 4019,
     open: true,
     host: true,
-    // https://c36c-50-247-183-17.ngrok-free.app/
-    allowedHosts: ['c36c-50-247-183-17.ngrok-free.app'],
+    origin: 'http://127.0.0.1:4019',
   },
 });

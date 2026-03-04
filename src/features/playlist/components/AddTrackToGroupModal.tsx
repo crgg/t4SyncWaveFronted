@@ -1,32 +1,32 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { Music, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Music, CheckCircle2, AlertCircle, Loader2, Library, Search } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { useQueryClient } from '@tanstack/react-query';
 
-import { libraryApi, type Audio } from '@/features/library/libraryApi';
-import { useLocalAudioPlayer } from '@/shared/hooks/useLocalAudioPlayer';
-import { Modal } from '@shared/components/Modal/Modal';
-import { Button } from '@shared/components/Button/Button';
-import { LocalAudioPlayer } from '@/pages/LibraryPage/components/LocalAudioPlayer';
 import { SearchAndSortControls } from '@/pages/LibraryPage/components/SearchAndSortControls';
+import { LocalAudioPlayer } from '@/pages/LibraryPage/components/LocalAudioPlayer';
 import { SpotifySearchTab } from '@/features/spotify/components/SpotifySearchTab';
-import { uploadService } from '@services/upload';
+import { useLocalAudioPlayer } from '@/shared/hooks/useLocalAudioPlayer';
+import { Button } from '@shared/components/Button/Button';
+import { Modal } from '@shared/components/Modal/Modal';
+
 import { formatTime, msToSeconds, cn, getErrorMessage } from '@shared/utils';
+import { libraryApi, type Audio } from '@/features/library/libraryApi';
+import * as spotifyApi from '@/features/spotify/spotifyApi';
 import { addTrack } from '@features/playlist/playlistSlice';
-import { useAppDispatch } from '@app/hooks';
 import { useAudio } from '@/shared/hooks/useAudio';
+import { uploadService } from '@services/upload';
+import { useAppDispatch } from '@app/hooks';
 
 type SortOption = 'newest' | 'oldest' | 'title-asc' | 'title-desc' | 'artist-asc' | 'artist-desc';
 type TabId = 'library' | 'spotify';
 
 interface AddTrackToGroupModalProps {
-  isOpen: boolean;
   onClose: () => void;
-  groupId: string;
-  /** Open directly on Spotify tab */
   initialTab?: TabId;
+  isOpen: boolean;
+  groupId: string;
 }
 
 export function AddTrackToGroupModal({
@@ -35,19 +35,19 @@ export function AddTrackToGroupModal({
   groupId,
   initialTab = 'library',
 }: AddTrackToGroupModalProps) {
-  const { handleSelect } = useAudio();
+  const [selectedSpotifyTrackId, setSelectedSpotifyTrackId] = useState<string | null>(null);
+  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const queryClient = useQueryClient();
+  const { handleSelect } = useAudio();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (isOpen) setActiveTab(initialTab);
   }, [isOpen, initialTab]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<SortOption>('newest');
-  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
-  const [selectedSpotifyTrackId, setSelectedSpotifyTrackId] = useState<string | null>(null);
-  const [isAdding, setIsAdding] = useState(false);
-  const queryClient = useQueryClient();
-  const dispatch = useAppDispatch();
 
   const {
     data: libraryData,
@@ -175,13 +175,14 @@ export function AddTrackToGroupModal({
     }
   };
 
-  const handleAddSpotifyTrack = (track: {
+  const handleAddSpotifyTrack = async (track: {
     id: string;
     title: string;
     artist: string;
     duration: number;
     source: 'spotify';
     spotifyId: string;
+    uri: string;
   }) => {
     setIsAdding(true);
     dispatch(
@@ -195,6 +196,10 @@ export function AddTrackToGroupModal({
         spotifyId: track.spotifyId,
       })
     );
+    await spotifyApi.postGroupSpotifyAddTrack(groupId, {
+      spotifyUri: track.uri,
+    });
+
     queryClient.invalidateQueries({ queryKey: ['group', groupId] });
     toast.success('Spotify track added to playlist');
     setSelectedSpotifyTrackId(null);
@@ -214,7 +219,6 @@ export function AddTrackToGroupModal({
             <Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-400" />
           </div>
         )}
-
         {/* Error State */}
         {error && (
           <div className="p-4 bg-red-500/10 dark:bg-red-900/30 border border-red-500/20 dark:border-red-700/50 rounded-lg">
@@ -236,7 +240,7 @@ export function AddTrackToGroupModal({
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 rounded-lg bg-light-hover/50 dark:bg-dark-hover/50">
+        {/* <div className="flex gap-1 p-1 rounded-lg bg-light-hover/50 dark:bg-dark-hover/50">
           <button
             onClick={() => setActiveTab('library')}
             className={cn(
@@ -261,7 +265,7 @@ export function AddTrackToGroupModal({
             <Search size={16} />
             Search Spotify
           </button>
-        </div>
+        </div> */}
 
         {/* Content */}
         {activeTab === 'spotify' ? (

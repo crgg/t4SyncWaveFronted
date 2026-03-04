@@ -19,6 +19,7 @@ export const SPOTIFY_CONFIG = {
   AUTH_URL: 'https://accounts.spotify.com/authorize',
   TOKEN_URL: 'https://accounts.spotify.com/api/token',
   API_BASE: 'https://api.spotify.com/v1',
+  redirectUriRemote: 'https://t4videocall.t4ever.com/spotify-oauth/callback',
 } as const;
 
 export const SPOTIFY_STORAGE_KEYS = {

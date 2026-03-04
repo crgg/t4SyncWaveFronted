@@ -35,9 +35,10 @@ const GroupsPage = () => {
   const [leavingGroup, setLeavingGroup] = useState<Group | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
-  const navigate = useNavigate();
-  const pathname = useLocation().pathname;
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const pathname = useLocation().pathname;
 
   const {
     data: dataMyGroups,
@@ -147,9 +148,9 @@ const GroupsPage = () => {
     <>
       <div className="w-full max-w-4xl mx-auto pb-24 space-y-5">
         <GroupsPageHeader
-          isMyGroups={isMyGroups}
-          groupsCount={displayedGroups.length}
           onCreateGroup={() => setIsCreateModalOpen(true)}
+          groupsCount={displayedGroups.length}
+          isMyGroups={isMyGroups}
         />
 
         {!isMyGroups && <JoinGroupByCode userId={userId} />}
@@ -157,11 +158,11 @@ const GroupsPage = () => {
         <ProfileStatus />
 
         <SearchAndSortControls
-          searchQuery={searchQuery}
-          sortBy={sortBy}
-          onSearchChange={setSearchQuery}
-          onSortChange={setSortBy}
           resultsCount={displayedGroups.length}
+          onSearchChange={setSearchQuery}
+          searchQuery={searchQuery}
+          onSortChange={setSortBy}
+          sortBy={sortBy}
         />
 
         {displayedGroups.length === 0 && (searchQuery || sortBy !== 'newest') ? (
