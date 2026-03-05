@@ -53,6 +53,8 @@ export interface GroupSpotifyTrack {
   album: string;
   duration_ms: number;
   source: 'spotify';
+  image_url: string;
+  image_small: string;
 }
 
 export interface GroupSpotifySearchResponse {
@@ -198,6 +200,9 @@ export async function getGroupSpotifySearch(
   if (params.limit != null) {
     searchParams.set('limit', String(Math.min(50, Math.max(1, params.limit))));
   }
+  console.log(
+    `Attempting to get group Spotify search for group ${groupId} with params ${searchParams}`
+  );
   const response = await http.get<GroupSpotifySearchResponse>(
     `/groups/${groupId}/spotify/search?${searchParams}`
   );

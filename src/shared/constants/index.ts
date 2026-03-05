@@ -4,8 +4,8 @@
 
 // WebSocket
 export const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3005';
-
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+export const SPOTIFY_BASE_URL = import.meta.env.VITE_SPOTIFY_BASE_URL || 'https://api.spotify.com';
 
 // Eventos Socket.IO
 export const SOCKET_EVENTS = {

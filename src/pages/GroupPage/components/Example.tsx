@@ -1,11 +1,9 @@
-import { Suspense, useDeferredValue, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 
-import { Input } from '@/shared/components/Input/Input';
+import { dispatchSpotifyDisconnected } from '@/features/spotify/components/SpotifyAccountCard';
 
 import { SPOTIFY_CONFIG, SPOTIFY_STORAGE_KEYS } from '@/features/spotify/constants';
-import { dispatchSpotifyDisconnected } from '@/features/spotify/components/SpotifyAccountCard';
 import { generatePKCE } from '@/features/spotify/spotifyAuth';
 import * as SpotifyApi from '@/features/spotify/spotifyApi';
 
@@ -14,15 +12,7 @@ interface Propss {
   groupId: string;
 }
 
-function SearchResults({ searchQuery }: { searchQuery: string }) {
-  return <div>Search Results: {searchQuery}</div>;
-}
-
 const Example = ({ groupId, isSpotifyOnly }: Propss) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const deferredValue = useDeferredValue(searchQuery);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   useQuery({
     queryKey: ['group-spotify-status', groupId],
     queryFn: () => SpotifyApi.getGroupSpotifyStatus(groupId),
@@ -31,24 +21,6 @@ const Example = ({ groupId, isSpotifyOnly }: Propss) => {
     refetchInterval: 1000 * 5,
     enabled: !!groupId && isSpotifyOnly,
   });
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    timeoutRef.current = setTimeout(() => {
-      SpotifyApi.getGroupSpotifySearch(groupId, { q: e.target.value }).then(
-        ({ status = false }) => {
-          if (status) {
-            toast.success('Spotify search successful');
-          } else {
-            toast.error('Failed to search Spotify');
-          }
-        }
-      );
-    }, 500);
-  };
 
   const handleConnectSpotify = async () => {
     const { REDIRECT_URI } = SPOTIFY_CONFIG;
@@ -94,35 +66,20 @@ const Example = ({ groupId, isSpotifyOnly }: Propss) => {
   };
 
   return (
-    <>
-      <div>
-        <p className="text-sm">
-          Group ID: <em>{groupId}</em>
-        </p>
-      </div>
-      <div className="">
-        <div>
-          <Input placeholder="Search..." value={searchQuery} onChange={handleSearchChange} />
-        </div>
-        <Suspense fallback={<div>Loading...</div>}>
-          <SearchResults searchQuery={deferredValue} />
-        </Suspense>
-      </div>
-      <div className="text-sm flex items-center justify-end gap-2 my-4">
-        <button
-          className="btn bg-emerald-500/10  border border-emerald-500 text-emerald-700"
-          onClick={handleConnectSpotify}
-        >
-          Connect Spotify
-        </button>
-        <button
-          className="btn bg-red-500/10 border border-red-500 text-red-700"
-          onClick={handleDisconnectSpotify}
-        >
-          Disconnect Spotify
-        </button>
-      </div>
-    </>
+    <div className="text-sm items-center justify-end gap-2 my-4 flex">
+      <button
+        className="btn bg-emerald-500/10  border border-emerald-500 text-emerald-700"
+        onClick={handleConnectSpotify}
+      >
+        Connect Spotify
+      </button>
+      <button
+        className="btn bg-red-500/10 border border-red-500 text-red-700"
+        onClick={handleDisconnectSpotify}
+      >
+        Disconnect Spotify
+      </button>
+    </div>
   );
 };
 

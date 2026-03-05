@@ -5,8 +5,10 @@ import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'react-toastify';
 
 import { SearchAndSortControls } from '@/pages/LibraryPage/components/SearchAndSortControls';
+// import { SpotifySearchTab } from '@/features/spotify/components/SpotifyInlineSearchTab';
 import { LocalAudioPlayer } from '@/pages/LibraryPage/components/LocalAudioPlayer';
 import { SpotifySearchTab } from '@/features/spotify/components/SpotifySearchTab';
+
 import { useLocalAudioPlayer } from '@/shared/hooks/useLocalAudioPlayer';
 import { Button } from '@shared/components/Button/Button';
 import { Modal } from '@shared/components/Modal/Modal';
@@ -187,18 +189,17 @@ export function AddTrackToGroupModal({
     setIsAdding(true);
     dispatch(
       addTrack({
-        id: track.id,
-        title: track.title,
-        artist: track.artist,
-        url: '', // Spotify tracks use spotifyId, no file URL
-        duration: track.duration,
-        source: 'spotify',
         spotifyId: track.spotifyId,
+        duration: track.duration,
+        artist: track.artist,
+        title: track.title,
+        source: 'spotify',
+        id: track.id,
+        url: '',
       })
     );
-    await spotifyApi.postGroupSpotifyAddTrack(groupId, {
-      spotifyUri: track.uri,
-    });
+
+    await spotifyApi.postGroupSpotifyAddTrack(groupId, { spotifyUri: track.uri });
 
     queryClient.invalidateQueries({ queryKey: ['group', groupId] });
     toast.success('Spotify track added to playlist');

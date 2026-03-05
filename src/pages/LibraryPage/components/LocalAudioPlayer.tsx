@@ -13,6 +13,7 @@ interface LocalAudioPlayerProps {
   trackTitle?: string;
   trackArtist?: string;
   volume: number;
+  disabled?: boolean;
   onPlay: () => void;
   onPause: () => void;
   onSeek: (position: number) => void;
@@ -32,6 +33,7 @@ export function LocalAudioPlayer({
   trackTitle,
   trackArtist,
   volume,
+  disabled = false,
   onPlay,
   onPause,
   onSeek,
@@ -215,7 +217,7 @@ export function LocalAudioPlayer({
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={isPlaying ? onPause : onPlay}
-            disabled={!trackDuration}
+            disabled={!trackDuration || disabled}
             className="p-3.5 sm:p-4 rounded-full bg-primary-600 dark:bg-primary-500 hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           >
             {isPlaying ? (

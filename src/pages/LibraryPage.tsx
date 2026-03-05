@@ -5,7 +5,7 @@ import { Search } from 'lucide-react';
 
 import { libraryApi, type Audio } from '@/features/library/libraryApi';
 import { withAuth } from '@/shared/hoc/withAuth';
-import { useLocalAudioPlayer } from '@/shared/hooks/useLocalAudioPlayer';
+import { useLibraryAudioPlayer } from '@/shared/hooks/useLibraryAudioPlayer';
 
 import { LibraryPageHeader } from './LibraryPage/components/LibraryPageHeader';
 import { LibraryPageSkeleton } from './LibraryPage/components/LibraryPageSkeleton';
@@ -50,7 +50,7 @@ const LibraryPage = () => {
     previousTrack,
     skipForward,
     skipBackward,
-  } = useLocalAudioPlayer(allTracks);
+  } = useLibraryAudioPlayer(allTracks);
 
   // Find current track index
   const currentTrackIndex = useMemo(() => {
@@ -100,6 +100,8 @@ const LibraryPage = () => {
         title: track.title,
         artist: track.artist,
         duration_ms: track.duration_ms,
+        source: track.source,
+        spotifyId: track.spotify_id,
       },
       true
     );
@@ -147,6 +149,18 @@ const LibraryPage = () => {
           onAddTrack={hasTracks ? handleAddTrack : undefined}
         />
 
+        {/* Spotify loading / error */}
+        {audioState.isLoading && (
+          <div className="rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 px-4 py-3 text-sm text-primary-700 dark:text-primary-300">
+            Connecting to Spotify...
+          </div>
+        )}
+        {audioState.error && !audioState.isLoading && (
+          <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+            {audioState.error}
+          </div>
+        )}
+
         {/* Audio Player */}
         {audioState.trackId && (
           <LocalAudioPlayer
@@ -157,6 +171,7 @@ const LibraryPage = () => {
             trackArtist={audioState.trackArtist}
             volume={audioState.volume}
             onPlay={play}
+            disabled={audioState.isLoading}
             onPause={pause}
             onSeek={seek}
             onVolumeChange={setVolume}

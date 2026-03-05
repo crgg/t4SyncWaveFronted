@@ -3,6 +3,8 @@ import { Music } from 'lucide-react';
 import { cn, formatTime, msToSeconds } from '@shared/utils';
 import type { Audio } from '@/features/library/libraryApi';
 
+import spotifyIcon from '@/shared/icons/spotify-icon.svg';
+
 interface TrackListProps {
   tracks: Audio[];
   currentTrackId: string | null;
@@ -45,20 +47,26 @@ export function TrackList({ tracks, currentTrackId, onTrackClick, isPlaying }: T
               )}
             >
               {isCurrentTrack && isPlaying ? (
-                <CurrentTrackIndicator />
-              ) : isCurrentTrack ? (
-                <Music
-                  size={20}
-                  className={`flex-shrink-0 text-primary-600 dark:text-primary-400`}
-                />
+                <CurrentTrackIndicator source={track.source} />
               ) : (
-                <Music size={20} className={`flex-shrink-0 text-light-text dark:text-zinc-400`} />
+                <>
+                  {track.source === 'spotify' ? (
+                    <img src={spotifyIcon} alt="Spotify" className="w-6 h-6" />
+                  ) : (
+                    <Music
+                      size={20}
+                      className={`flex-shrink-0 text-light-text dark:text-zinc-400`}
+                    />
+                  )}
+                </>
               )}
               <div className="flex-1 min-w-0">
                 <div
                   className={`text-sm font-medium truncate ${
                     isCurrentTrack
-                      ? 'text-primary-600 dark:text-primary-400'
+                      ? track.source === 'spotify'
+                        ? 'text-spotify-500'
+                        : 'text-primary-600 dark:text-primary-400'
                       : 'text-light-text dark:text-zinc-400'
                   }`}
                 >
@@ -78,13 +86,16 @@ export function TrackList({ tracks, currentTrackId, onTrackClick, isPlaying }: T
   );
 }
 
-function CurrentTrackIndicator() {
+function CurrentTrackIndicator({ source = 'default' }: { source: string }) {
   return (
     <div className="flex items-end gap-0.5">
       {Array.from({ length: 4 }).map((_, index) => (
         <div key={index} className="h-4 rotate-180">
           <div
-            className="current-track-indicator"
+            className={cn(
+              'current-track-indicator',
+              source === 'spotify' ? 'bg-spotify-500' : 'bg-primary-500'
+            )}
             style={{ '--delay': `${index * 0.1}s` } as React.CSSProperties}
           ></div>
         </div>

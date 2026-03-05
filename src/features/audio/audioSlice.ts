@@ -77,7 +77,6 @@ const audioSlice = createSlice({
         spotifyId?: string;
       }>
     ) => {
-      console.trace('setTrack');
       const isSpotify = action.payload.trackSource === 'spotify' || !!action.payload.spotifyId;
 
       if (isSpotify) {

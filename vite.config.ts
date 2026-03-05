@@ -15,9 +15,9 @@ export default defineConfig({
     },
   },
   server: {
-    port: 4019,
     open: true,
     host: true,
-    origin: 'http://127.0.0.1:4019',
+    // port: 4019,
+    // origin: 'http://127.0.0.1:4019',
   },
 });

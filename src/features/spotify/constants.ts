@@ -1,9 +1,7 @@
-/**
- * Spotify integration constants
- * Requires VITE_SPOTIFY_CLIENT_ID in .env
- */
-
 import { paths } from '@/routes/paths';
+
+const SPOTIFY_AUTH_URL = 'https://accounts.spotify.com';
+const SPOTIFY_API_BASE = 'https://api.spotify.com';
 
 export const SPOTIFY_CONFIG = {
   CLIENT_ID: import.meta.env.VITE_SPOTIFY_CLIENT_ID || '',
@@ -16,9 +14,9 @@ export const SPOTIFY_CONFIG = {
     'user-read-playback-state',
     'user-modify-playback-state',
   ].join(' '),
-  AUTH_URL: 'https://accounts.spotify.com/authorize',
-  TOKEN_URL: 'https://accounts.spotify.com/api/token',
-  API_BASE: 'https://api.spotify.com/v1',
+  AUTH_URL: `${SPOTIFY_AUTH_URL}/authorize`,
+  TOKEN_URL: `${SPOTIFY_AUTH_URL}/api/token`,
+  API_BASE: `${SPOTIFY_API_BASE}/v1`,
   redirectUriRemote: 'https://t4videocall.t4ever.com/spotify-oauth/callback',
 } as const;
 

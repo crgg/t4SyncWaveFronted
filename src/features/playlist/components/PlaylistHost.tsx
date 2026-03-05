@@ -18,12 +18,12 @@ interface PlaylistHostProps {
 }
 
 export function PlaylistHost({ isIsSpotifyOnly, groupId }: PlaylistHostProps) {
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isAddTrackModalOpen, setIsAddTrackModalOpen] = useState(false);
   const [addTrackModalTab, setAddTrackModalTab] = useState<'library' | 'spotify'>('library');
+  const [isAddTrackModalOpen, setIsAddTrackModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const { handleSelect } = useAudio();
-
   const dispatch = useAppDispatch();
+
   const { tracks, currentTrackIndex } = useAppSelector((state) => state.playlist);
   const { trackId: currentTrackId } = useAppSelector((state) => state.audio);
 

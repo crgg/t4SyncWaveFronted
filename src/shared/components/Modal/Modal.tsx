@@ -94,19 +94,19 @@ export function Modal({
               {/* Header */}
               {title && (
                 <div className="flex items-center justify-between p-3 sm:p-4 border-b dark:border-dark-hover">
-                  <h2 className="text-base sm:text-xl font-semibold text-light-text dark:text-dark-text">
+                  <h2 className="text-base sm:text-lg font-medium text-light-text dark:text-dark-text">
                     {title}
                   </h2>
                   <button
                     onClick={onClose}
                     className={cn(
+                      'hover:bg-gray-100  dark:hover:bg-gray-800',
+                      'text-gray-400 hover:text-gray-500',
                       'p-2 rounded-lg transition-colors',
-                      'text-light-text-secondary dark:text-dark-text-secondary',
-                      'hover:bg-light-hover dark:hover:bg-dark-hover',
-                      'hover:text-light-text dark:hover:text-dark-text'
+                      'dark:hover:text-gray-100'
                     )}
                   >
-                    <X size={20} />
+                    <X size={20} strokeWidth={2.5} />
                   </button>
                 </div>
               )}

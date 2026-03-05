@@ -10,6 +10,11 @@ export interface Audio {
   uploaded_by: string;
   created_at: string;
   groups: Group[];
+  apple_music_id?: string;
+  source: string;
+  spotify_id?: string;
+  spotify_uri?: string;
+  spotify_url?: string;
 }
 
 export interface Group {

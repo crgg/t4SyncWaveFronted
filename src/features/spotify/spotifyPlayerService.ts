@@ -9,6 +9,10 @@
  */
 
 import { getValidSpotifyToken } from './spotifyAuth';
+import { SPOTIFY_CONFIG } from './constants';
+import { STORAGE_KEYS } from '@/shared/constants';
+
+const { API_BASE } = SPOTIFY_CONFIG;
 
 declare global {
   interface Window {
@@ -119,13 +123,16 @@ export async function initSpotifyPlayer(onStateChange: StateChangeCallback): Pro
   }
   spotifyDeviceId = null;
 
+  const retrieveVolumen = localStorage.getItem(STORAGE_KEYS.VOLUME);
+  const volume = retrieveVolumen ? parseFloat(retrieveVolumen) : 100;
+
   playerInstance = new window.Spotify.Player({
     name: 'T4SyncWave',
     getOAuthToken: async (cb) => {
       const t = await getValidSpotifyToken();
       if (t) cb(t);
     },
-    volume: 1,
+    volume: volume / 100,
   });
 
   playerInstance.addListener('not_ready', ({ device_id }: any) => {
@@ -178,7 +185,7 @@ export async function initSpotifyPlayer(onStateChange: StateChangeCallback): Pro
 async function transferPlaybackToDevice(deviceId: string): Promise<boolean> {
   const token = await getValidSpotifyToken();
   if (!token) return false;
-  const res = await fetch('https://api.spotify.com/v1/me/player', {
+  const res = await fetch(`${API_BASE}/me/player`, {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -190,7 +197,7 @@ async function transferPlaybackToDevice(deviceId: string): Promise<boolean> {
 }
 
 async function getDeviceIdFromApi(token: string): Promise<string | null> {
-  const res = await fetch('https://api.spotify.com/v1/me/player/devices', {
+  const res = await fetch(`${API_BASE}/me/player/devices`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) return null;
@@ -296,7 +303,7 @@ export async function playSpotifyTrack(spotifyId: string): Promise<boolean> {
     throw new Error('Spotify device not ready. Refresh the page and try again.');
   }
 
-  const playUrl = `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`;
+  const playUrl = `${API_BASE}/me/player/play?device_id=${deviceId}`;
 
   // Transfer playback to our device first (required to avoid 404 NO_ACTIVE_DEVICE)
   await transferPlaybackToDevice(deviceId);
@@ -326,17 +333,14 @@ export async function playSpotifyTrack(spotifyId: string): Promise<boolean> {
         const newDeviceId = (await getDeviceIdFromApi(token)) || spotifyDeviceId;
         await transferPlaybackToDevice(newDeviceId);
         await new Promise((r) => setTimeout(r, 400));
-        response = await fetch(
-          `https://api.spotify.com/v1/me/player/play?device_id=${newDeviceId}`,
-          {
-            method: 'PUT',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ uris: [uri] }),
-          }
-        );
+        response = await fetch(`${API_BASE}/me/player/play?device_id=${newDeviceId}`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ uris: [uri] }),
+        });
       }
     } else {
       await transferPlaybackToDevice(deviceId);
@@ -377,7 +381,7 @@ export async function pauseSpotifyPlayer(): Promise<void> {
     // Fallback to REST API if SDK fails
     const token = await getValidSpotifyToken();
     if (token) {
-      await fetch('https://api.spotify.com/v1/me/player/pause', {
+      await fetch(`${API_BASE}/me/player/pause`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -392,7 +396,7 @@ export async function resumeSpotifyPlayer(): Promise<void> {
   } catch {
     const token = await getValidSpotifyToken();
     if (token && spotifyDeviceId) {
-      await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${spotifyDeviceId}`, {
+      await fetch(`${API_BASE}/me/player/play?device_id=${spotifyDeviceId}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -408,7 +412,7 @@ export async function seekSpotifyPlayer(positionSeconds: number): Promise<void> 
   } catch {
     const token = await getValidSpotifyToken();
     if (token) {
-      await fetch(`https://api.spotify.com/v1/me/player/seek?position_ms=${positionMs}`, {
+      await fetch(`${API_BASE}/me/player/seek?position_ms=${positionMs}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` },
       });

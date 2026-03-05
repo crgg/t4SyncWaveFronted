@@ -43,28 +43,29 @@ import { paths } from '@/routes/paths';
 import { store } from '@/app/store';
 
 const GroupPage = () => {
-  const dispatch = useAppDispatch();
-  const { groupId } = useParams<{ groupId: string }>();
-  const [isDeleteMember, setIsDeleteMember] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const connectionUsers = useAppSelector((state) => state.session.connectionUsers);
-  const navigate = useNavigate();
-  const user = useAppSelector((state) => state.auth.user);
-  const [isLeaveGroupDialogOpen, setIsLeaveGroupDialogOpen] = useState(false);
-  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const { play, pause, needsInteraction, setNeedsInteraction } = useAudio();
   const { createSession, joinSession, leaveSession } = useWebSocket();
-  const { play, needsInteraction, setNeedsInteraction } = useAudio();
+  const { groupId } = useParams<{ groupId: string }>();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isLeaveGroupDialogOpen, setIsLeaveGroupDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const listenerAudioInitializedRef = useRef<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState<DialogType>(null);
+  const [isDeleteMember, setIsDeleteMember] = useState(false);
   const processedGroupIdRef = useRef<string | null>(null);
   const createdByRef = useRef<string | null>(null);
   const isHostRef = useRef<boolean | null>(null);
+  const disconnectSentRef = useRef(false);
   const isConnectingRef = useRef(false);
 
+  const connectionUsers = useAppSelector((state) => state.session.connectionUsers);
   const isConnected = useAppSelector((state) => state.connection.isConnected);
   const audioState = useAppSelector((state) => state.audio);
+  const user = useAppSelector((state) => state.auth.user);
   const tracks = useAppSelector(playListSelectors.tracks);
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -86,9 +87,10 @@ const GroupPage = () => {
   });
 
   const group = data?.status && data?.group ? data.group : null;
-  const members = group?.members || [];
-  const isOwner = group?.created_by === user?.id;
   const isSpotifyOnly = group?.music_type === 'spotify_only';
+  const isOwner = group?.created_by === user?.id;
+  const members = group?.members || [];
+  const USER_MEMBERS = [...members];
 
   useEffect(() => {
     if (!groupPlaybackStateData?.playbackState || !groupId) return;
@@ -194,7 +196,6 @@ const GroupPage = () => {
           const track = tracks[index];
           if (!track) return;
           dispatch(setCurrentTrackIndex({ index }));
-          console.log(track);
           dispatch(
             setTrack({
               trackId: track.id,
@@ -346,8 +347,6 @@ const GroupPage = () => {
     }
   }, [data]);
 
-  const disconnectSentRef = useRef(false);
-
   const sendDjDisconnect = async (useKeepalive = false) => {
     if (!groupId || !isOwner || disconnectSentRef.current) return;
 
@@ -437,10 +436,9 @@ const GroupPage = () => {
     );
   }
 
-  const USER_MEMBERS = [...members];
-
   const onConfirmLeaveGroup = async () => {
     setDialogOpen(null);
+    pause();
     await sendDjDisconnect(false);
     navigate(isOwner ? paths.GROUPS(null) : paths.LISTENERS(null));
   };

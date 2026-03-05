@@ -1,13 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Music, CheckCircle2, Loader2, Search, Link } from 'lucide-react';
+import { Music, CheckCircle2, Loader2, Search } from 'lucide-react';
 
-import { initiateSpotifyLogin, isSpotifyConnected } from '../spotifyAuth';
-import { formatTime, msToSeconds, cn } from '@shared/utils';
-import { searchSpotifyTracks } from '../spotifyApi';
-import { SPOTIFY_CONFIG } from '../constants';
 import { Input } from '@/shared/components/Input/Input';
+
+import { formatTime, msToSeconds, cn } from '@shared/utils';
+import { getGroupSpotifySearch } from '@/features/spotify/spotifyApi';
 import { Button } from '@/shared/components/Button/Button';
 
 interface SpotifySearchTabProps {
@@ -33,7 +32,6 @@ export function SpotifySearchTab({
   isAdding,
   groupId,
 }: SpotifySearchTabProps) {
-  void groupId; // Reserved for future backend API when adding Spotify track to group
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
@@ -43,71 +41,42 @@ export function SpotifySearchTab({
   }, [searchQuery]);
 
   const {
-    data: spotifyTracks,
+    data: spotifyTracksResponse,
     isLoading,
     error,
     refetch,
   } = useQuery({
     queryKey: ['spotify-search', debouncedQuery],
-    queryFn: () => searchSpotifyTracks(debouncedQuery, 10),
-    enabled: isSpotifyConnected() && debouncedQuery.trim().length >= 2,
+    queryFn: () => getGroupSpotifySearch(groupId, { q: debouncedQuery }),
+    // enabled: isSpotifyConnected() && debouncedQuery.trim().length >= 2,
+    enabled: debouncedQuery.trim().length >= 2,
     staleTime: 1000 * 60,
   });
 
-  const handleConnect = useCallback(() => {
-    if (!SPOTIFY_CONFIG.CLIENT_ID) {
-      return;
-    }
-    initiateSpotifyLogin();
-  }, []);
+  const { tracks = [], status = true } = spotifyTracksResponse || {};
 
   const handleAddSpotifyTrack = useCallback(async () => {
-    if (!selectedTrackId || !spotifyTracks) return;
-    const track = spotifyTracks.find((t) => t.id === selectedTrackId);
+    if (!selectedTrackId || !tracks) return;
+    const track = tracks.find((t) => t.spotify_id === selectedTrackId);
     if (!track) return;
     onAddTrack({
-      id: track.id,
-      title: track.name,
-      artist: track.artists.map((a) => a.name).join(', '),
+      id: track.spotify_id,
+      title: track.title,
+      artist: track.artist,
       duration: msToSeconds(track.duration_ms),
       source: 'spotify',
-      spotifyId: track.id,
-      uri: track.uri,
+      spotifyId: track.spotify_id,
+      uri: track.spotify_uri,
     });
-  }, [selectedTrackId, spotifyTracks, onAddTrack]);
+  }, [selectedTrackId, tracks, onAddTrack]);
 
-  const tracks = spotifyTracks ?? [];
-
-  if (!SPOTIFY_CONFIG.CLIENT_ID) {
+  if (!status) {
     return (
       <div className="py-8 text-center">
         <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-          Spotify integration is not configured. Add VITE_SPOTIFY_CLIENT_ID to your .env file.
+          Failed to search Spotify.
         </p>
-      </div>
-    );
-  }
-
-  if (!isSpotifyConnected()) {
-    return (
-      <div className="py-8 text-center space-y-4">
-        <p className="text-sm text-gray-700 dark:text-gray-300">
-          Connect your Spotify account to search and add tracks. Spotify Premium required for
-          playback.
-        </p>
-        <p className="text-xs text-gray-600/80 dark:text-gray-300/80">
-          Note: Spotify tracks play on each user&apos;s device individually (no sync per Spotify
-          terms).
-        </p>
-        <Button
-          onClick={handleConnect}
-          className="!mt-10 gap-2 px-8 py-2.5"
-          variant="spotify"
-          rounded="full"
-        >
-          <Link size={16} strokeWidth={2.5} />
-          Connect Spotify
-        </Button>
+        <Button onClick={() => refetch()}>Retry</Button>
       </div>
     );
   }
@@ -166,18 +135,18 @@ export function SpotifySearchTab({
           <div className="max-h-[280px] overflow-y-auto p-0.5">
             <AnimatePresence>
               {tracks.map((track) => {
-                const isSelected = track.id === selectedTrackId;
+                const isSelected = track.spotify_id === selectedTrackId;
                 return (
                   <motion.div
-                    key={track.id}
+                    key={track.spotify_id}
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.2 }}
-                    onClick={() => onTrackSelect(isSelected ? null : track.id)}
+                    onClick={() => onTrackSelect(isSelected ? null : track.spotify_id)}
                     className={cn(
                       'flex items-center gap-3 p-3 rounded-lg transition-all cursor-pointer',
-                      'hover:bg-light-hover dark:hover:bg-dark-hover',
+                      'hover:bg-primary-100 dark:hover:bg-dark-hover',
                       isSelected &&
                         'ring-2 ring-primary-600 dark:ring-primary-400 bg-primary-50 dark:bg-primary-900/20'
                     )}
@@ -185,7 +154,9 @@ export function SpotifySearchTab({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        onTrackSelect(track.id === selectedTrackId ? null : track.id);
+                        onTrackSelect(
+                          track.spotify_id === selectedTrackId ? null : track.spotify_id
+                        );
                       }}
                       className={cn(
                         'flex-shrink-0 w-5 h-5 rounded border-2 transition-all flex items-center justify-center',
@@ -196,9 +167,9 @@ export function SpotifySearchTab({
                     >
                       {isSelected && <CheckCircle2 size={14} className="text-white" />}
                     </button>
-                    {track.album?.images?.[0]?.url ? (
+                    {track.image_url ? (
                       <img
-                        src={track.album.images[0].url}
+                        src={track.image_url}
                         alt=""
                         className="w-10 h-10 rounded flex-shrink-0"
                       />
@@ -212,10 +183,10 @@ export function SpotifySearchTab({
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate text-light-text dark:text-dark-text">
-                        {track.name}
+                        {track.title}
                       </div>
                       <div className="text-xs text-light-text-secondary dark:text-dark-text-secondary truncate">
-                        {track.artists.map((a) => a.name).join(', ')}
+                        {track.artist}
                       </div>
                     </div>
                     <div className="text-xs text-light-text-secondary dark:text-dark-text-secondary flex-shrink-0">

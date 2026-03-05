@@ -134,8 +134,8 @@ input[type='range']::-moz-range-track {
   width: 3px;
   height: 15px;
   border-radius: 3px;
-  background: #c5a059;
-  animation: current-track-indicator-animation 1.5s infinite var(--delay);
+  /* background: #c5a059; */
+  animation: current-track-indicator-animation 1s infinite var(--delay);
 }
 
 @keyframes current-track-indicator-animation {

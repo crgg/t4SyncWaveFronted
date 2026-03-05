@@ -16,15 +16,25 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
+  rounded?: 'sm' | 'md' | 'lg' | 'full';
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    { className, variant = 'primary', size = 'md', isLoading, children, disabled, ...props },
+    {
+      className,
+      variant = 'primary',
+      size = 'md',
+      isLoading,
+      children,
+      disabled,
+      rounded = 'md',
+      ...props
+    },
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
+      'inline-flex items-center justify-center text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
 
     const variants = {
       primary:
@@ -52,10 +62,23 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       lg: 'px-6 py-3 text-lg',
     };
 
+    const roundedClasses = {
+      sm: 'rounded-sm',
+      md: 'rounded-md',
+      lg: 'rounded-lg',
+      full: 'rounded-full',
+    };
+
     return (
       <button
         ref={ref}
-        className={cn(baseStyles, variants[variant], sizes[size], className)}
+        className={cn(
+          roundedClasses[rounded],
+          variants[variant],
+          sizes[size],
+          baseStyles,
+          className
+        )}
         disabled={disabled || isLoading}
         {...props}
       >
