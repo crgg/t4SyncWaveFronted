@@ -93,6 +93,14 @@ const LibraryPage = () => {
   }, [allTracks, searchQuery, sortBy]);
 
   const handleTrackClick = (track: Audio) => {
+    if (track.id === audioState.trackId) {
+      if (audioState.isPlaying) {
+        pause();
+      } else {
+        play();
+      }
+      return;
+    }
     setTrack(
       {
         id: track.id,
@@ -148,10 +156,9 @@ const LibraryPage = () => {
           tracksCount={displayedTracks.length}
           onAddTrack={hasTracks ? handleAddTrack : undefined}
         />
-
         {/* Spotify loading / error */}
         {audioState.isLoading && (
-          <div className="rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 px-4 py-3 text-sm text-primary-700 dark:text-primary-300">
+          <div className="rounded-lg bg-spotify-50 dark:bg-spotify-900/20 border border-spotify-200 dark:border-spotify-800 px-4 py-3 text-sm text-spotify-700 dark:text-spotify-300">
             Connecting to Spotify...
           </div>
         )}
@@ -160,36 +167,35 @@ const LibraryPage = () => {
             {audioState.error}
           </div>
         )}
-
         {/* Audio Player */}
         {audioState.trackId && (
           <LocalAudioPlayer
-            isPlaying={audioState.isPlaying}
-            currentPosition={audioState.currentPosition}
-            trackDuration={audioState.trackDuration}
-            trackTitle={audioState.trackTitle}
-            trackArtist={audioState.trackArtist}
-            volume={audioState.volume}
-            onPlay={play}
-            disabled={audioState.isLoading}
-            onPause={pause}
-            onSeek={seek}
-            onVolumeChange={setVolume}
-            onSkipForward={skipForward}
-            onSkipBackward={skipBackward}
-            onNextTrack={nextTrack}
-            onPreviousTrack={previousTrack}
             hasNextTrack={currentTrackIndex !== null && currentTrackIndex < allTracks.length - 1}
             hasPreviousTrack={currentTrackIndex !== null && currentTrackIndex > 0}
+            currentPosition={audioState.currentPosition}
+            trackDuration={audioState.trackDuration}
+            trackArtist={audioState.trackArtist}
+            trackTitle={audioState.trackTitle}
+            isPlaying={audioState.isPlaying}
+            disabled={audioState.isLoading}
+            onPreviousTrack={previousTrack}
+            onSkipBackward={skipBackward}
+            onSkipForward={skipForward}
+            volume={audioState.volume}
+            onVolumeChange={setVolume}
+            onNextTrack={nextTrack}
+            onPause={pause}
+            onSeek={seek}
+            onPlay={play}
           />
         )}
 
         <SearchAndSortControls
-          searchQuery={searchQuery}
-          sortBy={sortBy}
-          onSearchChange={setSearchQuery}
-          onSortChange={setSortBy}
           resultsCount={displayedTracks.length}
+          onSearchChange={setSearchQuery}
+          searchQuery={searchQuery}
+          onSortChange={setSortBy}
+          sortBy={sortBy}
         />
 
         {displayedTracks.length === 0 && searchQuery ? (

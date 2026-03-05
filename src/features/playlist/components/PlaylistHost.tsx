@@ -11,6 +11,7 @@ import { UploadTrackModal } from './UploadTrackModal';
 import { AddTrackToGroupModal } from './AddTrackToGroupModal';
 
 import spotifyIcon from '@/shared/icons/spotify-icon.svg';
+import { Play } from '@/shared/icons/Icons';
 
 interface PlaylistHostProps {
   isIsSpotifyOnly: boolean;
@@ -77,12 +78,12 @@ export function PlaylistHost({ isIsSpotifyOnly, groupId }: PlaylistHostProps) {
           <div className="flex flex-wrap items-center gap-3 justify-center">
             {isIsSpotifyOnly ? (
               <Button
+                className="flex items-center gap-2 text-xs"
                 onClick={() => {
                   setAddTrackModalTab('spotify');
                   setIsAddTrackModalOpen(true);
                 }}
                 variant="spotify"
-                className="flex items-center gap-2 text-xs border-[#1DB954] text-[#1DB954] hover:bg-[#1DB954]/10"
               >
                 <Music size={18} />
                 Add from Spotify
@@ -90,12 +91,12 @@ export function PlaylistHost({ isIsSpotifyOnly, groupId }: PlaylistHostProps) {
             ) : (
               <>
                 <Button
+                  className="flex items-center gap-2 text-xs"
                   onClick={() => {
                     setAddTrackModalTab('library');
                     setIsAddTrackModalOpen(true);
                   }}
                   variant="primary"
-                  className="flex items-center gap-2 text-xs"
                 >
                   <Music2 size={18} />
                   Add from Library
@@ -195,17 +196,7 @@ export function PlaylistHost({ isIsSpotifyOnly, groupId }: PlaylistHostProps) {
                 <div className="w-8 flex-shrink-0 flex items-center justify-center">
                   {isPlaying ? (
                     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-4 h-4">
-                      <svg
-                        className="w-full h-full text-primary-600"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
+                      <Play className="w-full h-full text-primary-600" />
                     </motion.div>
                   ) : (
                     <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">

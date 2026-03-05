@@ -43,7 +43,7 @@ export function TrackList({ tracks, currentTrackId, onTrackClick, isPlaying }: T
               `,
                 isCurrentTrack
                   ? 'bg-primary-50 dark:bg-primary-900/20'
-                  : 'hover:bg-light-hover dark:hover:bg-dark-hover'
+                  : 'hover:bg-light-hover/30 dark:hover:bg-dark-hover'
               )}
             >
               {isCurrentTrack && isPlaying ? (
