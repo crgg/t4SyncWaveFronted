@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAudio } from '@shared/hooks/useAudio';
 import { formatTime } from '@shared/utils';
 import { motion } from 'framer-motion';
@@ -17,6 +17,39 @@ interface Props {
 export function AudioPlayerListener({ name }: Props) {
   const { audioState, setVolume, toggleMute } = useAudio();
   const dispatch = useAppDispatch();
+
+  // For Spotify tracks the Spotify SDK fires player_state_changed events which update Redux,
+  // but only on state changes — not every second. Maintain a local tick so the progress bar
+  // and time display move smoothly between WebSocket/SDK updates.
+  const [localPosition, setLocalPosition] = useState(audioState.currentPosition);
+  const localPositionRef = useRef(audioState.currentPosition);
+
+  // Keep local position in sync whenever Redux delivers a new position (seek, new track, etc.)
+  useEffect(() => {
+    localPositionRef.current = audioState.currentPosition;
+    setLocalPosition(audioState.currentPosition);
+  }, [audioState.currentPosition]);
+
+  // Tick every second while a Spotify track is playing
+  useEffect(() => {
+    const isSpotify = audioState.trackSource === 'spotify' || !!audioState.spotifyId;
+    if (!isSpotify || !audioState.isPlaying) return;
+
+    const interval = setInterval(() => {
+      localPositionRef.current += 1;
+      const capped = audioState.trackDuration
+        ? Math.min(localPositionRef.current, audioState.trackDuration)
+        : localPositionRef.current;
+      setLocalPosition(capped);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [
+    audioState.isPlaying,
+    audioState.trackSource,
+    audioState.spotifyId,
+    audioState.trackDuration,
+  ]);
 
   useEffect(() => {
     const savedVolume = localStorage.getItem(STORAGE_KEYS.VOLUME);
@@ -81,7 +114,7 @@ export function AudioPlayerListener({ name }: Props) {
   }, [audioState.trackDuration, audioState.trackUrl, audioState, dispatch]);
 
   const progressPercentage = audioState.trackDuration
-    ? (audioState.currentPosition / audioState.trackDuration) * 100
+    ? (localPosition / audioState.trackDuration) * 100
     : 0;
 
   return (
@@ -113,12 +146,12 @@ export function AudioPlayerListener({ name }: Props) {
           />
         </div>
         <div className="flex justify-between text-xs text-light-text-secondary dark:text-dark-text-secondary transition-colors duration-200">
-          <span>{formatTime(audioState.currentPosition)}</span>
+          <span>{formatTime(localPosition)}</span>
           <span>{formatTime(audioState.trackDuration || 0)}</span>
         </div>
       </div>
 
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center gap-3">
         <div className="flex items-center gap-3 px-4 py-2 bg-light-surface dark:bg-dark-surface rounded-full transition-colors duration-200">
           {audioState.isPlaying ? (
             <>

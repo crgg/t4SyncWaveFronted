@@ -3,6 +3,7 @@ import type { SocketEventHandlers, WebSocketServiceConfig } from '../websocket/t
 import type { AudioState, UserRole } from '@shared/types';
 import { store } from '@app/store';
 import { getAudioService } from '../audio/audioService';
+import { extractSpotifyId, isSpotifyUrl } from '@shared/utils';
 
 interface SFUSignalingMessage {
   type:
@@ -231,16 +232,36 @@ class WebRTCSFUService {
           room: string;
           userName: string;
           userId?: string;
+          trackId?: string | null;
           position: number;
           isPlaying: boolean;
-          timestamp: number; // Timestamp en segundos (Unix timestamp)
-          trackUrl: string;
-          duration?: number | null; // Duración en segundos, puede ser null
+          timestamp: number;
+          trackUrl: string | null;
+          duration?: number | null;
           trackTitle?: string | null;
           trackArtist?: string | null;
+          // Server-side field names
+          appleMusicId?: string | null;
+          source?: string | null;
+          // Client-side field names (backward compat)
+          spotifyId?: string;
+          trackSource?: string;
         };
 
-        if (!playbackState.trackUrl) {
+        // Resolve spotify ID: explicit field first, then extract from trackUrl if it's a Spotify URL.
+        // The server may return source:"mp3" with a Spotify URL in trackUrl — detect both cases.
+        const resolvedSpotifyId =
+          playbackState.appleMusicId ||
+          playbackState.spotifyId ||
+          extractSpotifyId(playbackState.trackUrl || '') ||
+          null;
+        const resolvedSource = playbackState.source || playbackState.trackSource || null;
+        const isSpotify =
+          resolvedSource === 'spotify' ||
+          !!resolvedSpotifyId ||
+          isSpotifyUrl(playbackState.trackUrl);
+
+        if (!isSpotify && !playbackState.trackUrl) {
           console.warn('Received playback-state without trackUrl:', playbackState);
           return;
         }
@@ -257,6 +278,31 @@ class WebRTCSFUService {
 
         const clientReceiveTime = Date.now();
         const timestamp = clientReceiveTime;
+        const currentPosition =
+          isNaN(playbackState.position) || playbackState.position < 0
+            ? (currentAudioState.currentPosition ?? 0)
+            : playbackState.position;
+
+        if (isSpotify) {
+          const audioState: AudioState = {
+            isPlaying: playbackState.isPlaying ?? false,
+            currentPosition,
+            volume: currentAudioState.volume ?? 100,
+            // For track-change events the payload carries the new trackId
+            trackId: playbackState.trackId || currentAudioState.trackId || resolvedSpotifyId!,
+            trackUrl: currentAudioState.trackUrl || '',
+            // Prefer payload values (track-change events include them)
+            trackTitle: playbackState.trackTitle ?? currentAudioState.trackTitle,
+            trackArtist: playbackState.trackArtist ?? currentAudioState.trackArtist,
+            trackDuration: currentAudioState.trackDuration,
+            timestamp,
+            spotifyId: resolvedSpotifyId ?? undefined,
+            trackSource: 'spotify',
+          };
+          this.handleEvent(SOCKET_EVENTS.AUDIO_STATE, audioState);
+          break;
+        }
+
         const trackDuration =
           playbackState.duration !== null && playbackState.duration !== undefined
             ? playbackState.duration
@@ -274,10 +320,7 @@ class WebRTCSFUService {
 
         const audioState: AudioState = {
           isPlaying: playbackState.isPlaying ?? false,
-          currentPosition:
-            isNaN(playbackState.position) || playbackState.position < 0
-              ? (currentAudioState.currentPosition ?? 0)
-              : playbackState.position,
+          currentPosition,
           volume: currentAudioState.volume ?? 100,
           trackId: currentAudioState.trackId || playbackState.trackUrl || '',
           trackUrl: playbackState.trackUrl || currentAudioState.trackUrl || '',
@@ -285,7 +328,7 @@ class WebRTCSFUService {
           trackArtist: trackArtist,
           trackDuration: trackDuration,
           timestamp: timestamp,
-          truckUrl: playbackState.trackUrl,
+          truckUrl: playbackState.trackUrl ?? undefined,
         };
 
         this.handleEvent(SOCKET_EVENTS.AUDIO_STATE, audioState);
@@ -485,7 +528,11 @@ class WebRTCSFUService {
       try {
         const message = JSON.parse(event.data) as SFUSignalingMessage;
         if (message.event && message.payload) {
+          // Legacy format: { event, payload }
           this.handleEvent(message.event, message.payload);
+        } else if (message.type) {
+          // Signaling-format message received via data channel (e.g. playback-state)
+          this.handleSignalingMessage(message);
         }
       } catch (error) {
         console.error('Error al parsear mensaje del data channel:', error);
@@ -582,24 +629,24 @@ class WebRTCSFUService {
   }
 
   emit(_event: string, data?: unknown): void {
-    if (this.dataChannel && this.dataChannel.readyState === 'open') {
-      try {
-        this.dataChannel.send(
-          JSON.stringify({
-            type: 'playback-state',
-            ...(data as Record<string, unknown>),
-          })
-        );
-        return;
-      } catch (error) {
-        console.warn('Error al enviar por data channel, intentando WebSocket:', error);
-      }
-    }
-
-    this.sendSignalingMessage({
+    const message: SFUSignalingMessage = {
       type: 'playback-state',
       ...(data as Record<string, unknown>),
-    });
+    };
+
+    // Signaling WebSocket is the primary channel: the SFU server relays these
+    // messages to all room participants. DataChannel is peer-to-peer and may
+    // not be forwarded by the server to other peers.
+    this.sendSignalingMessage(message);
+
+    // Also send via DataChannel as a secondary path when available.
+    if (this.dataChannel?.readyState === 'open') {
+      try {
+        this.dataChannel.send(JSON.stringify(message));
+      } catch (error) {
+        console.warn('Error al enviar por data channel:', error);
+      }
+    }
   }
 
   async createSession(name: string, user: IUserData): Promise<void> {

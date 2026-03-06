@@ -111,6 +111,13 @@ export function useLibraryAudioPlayer(tracks: LibraryTrack[]): UseLibraryAudioPl
       setCurrentTrackIndex(index !== -1 ? index : null);
       setError(null);
 
+      // Spotify tracks that are missing the ID (e.g. file_url is open.spotify.com URL)
+      // must not be sent to the HTML5 audio element.
+      if (isSpotifyTrack(track) && !track.spotifyId) {
+        setError('Cannot play: Spotify track is missing its ID.');
+        return;
+      }
+
       if (isSpotifyTrack(track) && track.spotifyId) {
         setIsSpotifyActive(true);
         currentLibraryTrackIdRef.current = track.id;

@@ -38,9 +38,12 @@ import { useWebSocket } from '@/shared/hooks/useWebSocket';
 import { groupsApi } from '@/features/groups/groupsApi';
 import { useAudio } from '@/shared/hooks/useAudio';
 import { withAuth } from '@/shared/hoc/withAuth';
-import { cn, orderBy } from '@/shared/utils';
+import { cn, orderBy, extractSpotifyId, isSpotifyUrl } from '@/shared/utils';
+import { playSpotifyTrack } from '@/features/spotify/spotifyPlayerService';
+import { compensateStalePosition, SPOTIFY_PLAY_OVERHEAD_MS } from '@/shared/utils';
 import { paths } from '@/routes/paths';
 import { store } from '@/app/store';
+import { isSpotifyConnected } from '@/features/spotify/spotifyAuth';
 
 const GroupPage = () => {
   const { play, pause, needsInteraction, setNeedsInteraction } = useAudio();
@@ -67,6 +70,7 @@ const GroupPage = () => {
   const audioState = useAppSelector((state) => state.audio);
   const user = useAppSelector((state) => state.auth.user);
   const tracks = useAppSelector(playListSelectors.tracks);
+  const spotifyConnected = isSpotifyConnected();
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['group', groupId],
@@ -97,68 +101,108 @@ const GroupPage = () => {
 
     const { playbackState: state } = groupPlaybackStateData;
     const currentRole = store.getState().session.role;
+
+    // Detect Spotify early — server may send appleMusicId/source:"spotify" with trackUrl null,
+    // or may put the Spotify URL inside trackUrl with source:"mp3".
+    const rawTrackUrl = state.trackUrl || '';
+    const spotifyId =
+      (state as any).appleMusicId ||
+      (state as any).spotifyId ||
+      extractSpotifyId(rawTrackUrl) ||
+      undefined;
+    const isSpotify =
+      !!spotifyId || isSpotifyUrl(rawTrackUrl) || (state as any).source === 'spotify';
+
+    // A "track" is present if there is a usable file URL or a Spotify track ID
+    const hasTrack = !!(rawTrackUrl && !isSpotify) || isSpotify;
+
     const match =
-      currentRole === 'dj' && state.trackUrl && listenerAudioInitializedRef.current !== groupId;
+      (currentRole === 'dj' || currentRole === 'member') &&
+      hasTrack &&
+      listenerAudioInitializedRef.current !== groupId;
 
-    if (match) {
-      try {
-        listenerAudioInitializedRef.current = groupId;
-        const trackId = state.trackId || state.trackUrl || '';
+    if (!match) return;
 
+    try {
+      listenerAudioInitializedRef.current = groupId;
+
+      // Position from the server is already in seconds.
+      // The REST API snapshot is stale — advance position by the time elapsed since
+      // the server recorded it (lastEventTime) to compensate.
+      const rawPosition = Math.max(0, state.position ?? 0);
+      const currentPosition = compensateStalePosition(
+        rawPosition,
+        state.lastEventTime,
+        state.isPlaying
+      );
+      const currentTimestamp = state.lastEventTime || Date.now();
+
+      if (isSpotify) {
+        // Set initial Redux state so the UI shows the right position/title
         dispatch(
-          setTrack({
-            trackId,
-            trackUrl: state.trackUrl!,
-            trackTitle: state.trackTitle || undefined,
-            trackArtist: state.trackArtist || undefined,
+          setAudioState({
+            isPlaying: state.isPlaying,
+            currentPosition,
+            trackDuration: state.duration ?? undefined,
+            trackTitle: state.trackTitle ?? undefined,
+            trackArtist: state.trackArtist ?? undefined,
+            spotifyId,
+            trackSource: 'spotify',
+            trackUrl: '',
+            trackId: spotifyId || state.trackId || '',
+            volume: 100,
+            timestamp: currentTimestamp,
           })
         );
 
-        const audioService = getAudioService();
-
-        // Convertir posición de milisegundos a segundos y validar
-        let currentPosition = 0;
-        if (state.position !== null && state.position !== undefined) {
-          const positionInSeconds = state.position / 1000;
-          // Validar que la posición esté en un rango razonable
-          if (state.duration && state.duration > 0) {
-            // Asegurar que la posición no exceda la duración
-            currentPosition = Math.max(0, Math.min(positionInSeconds, state.duration));
-          } else {
-            currentPosition = Math.max(0, positionInSeconds);
-          }
+        // Members need to actively start Spotify playback; the DJ controls their own player.
+        // Add extra overhead for the Spotify API startup time so the listener lands in sync.
+        if (currentRole === 'member' && state.isPlaying && spotifyId) {
+          const startPositionMs = (currentPosition + SPOTIFY_PLAY_OVERHEAD_MS / 1000) * 1000;
+          playSpotifyTrack(spotifyId, startPositionMs).catch((err) => {
+            console.error('Error starting Spotify for listener on page load:', err);
+          });
         }
-
-        // Validar timestamp - si es muy grande o inválido, usar el actual
-        let currentTimestamp = Date.now();
-        if (state.lastEventTime && state.lastEventTime > 0) {
-          // Verificar que el timestamp sea razonable (no más de 1 año en el futuro o pasado)
-          const now = Date.now();
-          const oneYearInMs = 365 * 24 * 60 * 60 * 1000;
-          const timestampDiff = Math.abs(state.lastEventTime - now);
-
-          if (timestampDiff < oneYearInMs) {
-            currentTimestamp = state.lastEventTime;
-          } else {
-            console.warn('Timestamp inválido detectado, usando timestamp actual:', {
-              lastEventTime: state.lastEventTime,
-              now,
-              diff: timestampDiff,
-            });
-          }
-        }
-
-        audioService.init(state.trackUrl!, (audioState) => {
-          dispatch(setAudioState(audioState));
-        });
-
-        setTimeout(() => {
-          audioService.sync(currentPosition, currentTimestamp, state.isPlaying, state.trackUrl);
-        }, 500);
-      } catch (error) {
-        console.error('Error al inicializar audio para listener:', error);
-        listenerAudioInitializedRef.current = null;
+        return;
       }
+
+      // File-based track
+      const trackId = state.trackId || rawTrackUrl || '';
+      dispatch(
+        setTrack({
+          trackId,
+          trackUrl: rawTrackUrl,
+          trackTitle: state.trackTitle ?? undefined,
+          trackArtist: state.trackArtist ?? undefined,
+        })
+      );
+
+      const audioService = getAudioService();
+
+      let validPosition = currentPosition;
+      if (state.duration && state.duration > 0) {
+        validPosition = Math.min(validPosition, state.duration);
+      }
+
+      // Validar timestamp - si es muy grande o inválido, usar el actual
+      let validTimestamp = Date.now();
+      if (currentTimestamp > 0) {
+        const oneYearInMs = 365 * 24 * 60 * 60 * 1000;
+        if (Math.abs(currentTimestamp - Date.now()) < oneYearInMs) {
+          validTimestamp = currentTimestamp;
+        }
+      }
+
+      audioService.init(rawTrackUrl, (audioState) => {
+        dispatch(setAudioState(audioState));
+      });
+
+      setTimeout(() => {
+        audioService.sync(validPosition, validTimestamp, state.isPlaying, rawTrackUrl);
+      }, 500);
+    } catch (error) {
+      console.error('Error al inicializar audio en GroupPage:', error);
+      listenerAudioInitializedRef.current = null;
     }
   }, [groupPlaybackStateData, groupId, dispatch]);
 
@@ -519,7 +563,10 @@ const GroupPage = () => {
         ) : (
           <>
             {isHostRef.current && (
-              <AudioPlayerHost playlistCount={playlist?.length ?? tracks.length ?? 0} />
+              <AudioPlayerHost
+                playlistCount={playlist?.length ?? tracks.length ?? 0}
+                disabledControls={isSpotifyOnly && !spotifyConnected}
+              />
             )}
             {!isHostRef.current && (
               <AudioPlayerListener name={tracks?.[0]?.title} artist={tracks?.[0]?.artist} />
@@ -639,10 +686,10 @@ const GroupPage = () => {
 
         <div className="mt-4">
           <MediaSessionSection
-            groupId={groupId!}
-            isOwner={isOwner}
             userName={user?.displayName || user?.name || user?.nickname}
             currentUserId={user?.id}
+            groupId={groupId!}
+            isOwner={isOwner}
             members={members}
           />
         </div>

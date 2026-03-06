@@ -70,7 +70,7 @@ export function JoinGroupByCode({ userId }: JoinGroupByCodeProps) {
   };
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div>
           <div className="flex items-center gap-2">

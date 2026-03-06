@@ -18,7 +18,12 @@ import { formatTime, isSpotifyTrack } from '@shared/utils';
 
 const TICK_MS = 100;
 
-export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number }) {
+interface Props {
+  disabledControls?: boolean;
+  playlistCount?: number;
+}
+
+export function AudioPlayerHost({ playlistCount = 0, disabledControls = false }: Props) {
   const { audioState, play, pause, seek, setVolume, toggleMute, next, previous, restart, stop } =
     useAudio();
   const lastSyncRef = useRef({ position: 0, timestamp: 0 });
@@ -210,6 +215,11 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
     }
   };
 
+  const handleStop = () => {
+    stop();
+    seek(0);
+  };
+
   const progressPercentage = audioState.trackDuration
     ? (effectivePosition / audioState.trackDuration) * 100
     : 0;
@@ -225,7 +235,7 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {audioState.trackTitle || 'No title'}
+          {audioState.trackTitle || '--- Unknown track ---'}
         </motion.h3>
       </div>
 
@@ -275,6 +285,7 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
           <div className="flex items-center gap-3 w-full max-w-[160px]">
             <div className="w-5 h-5 flex items-center justify-center">
               <AudioButtonToggleMuted
+                disabledControls={disabledControls}
                 volume={audioState.volume ?? 100}
                 isMuted={audioState.isMuted}
                 toggleMute={toggleMute}
@@ -283,6 +294,7 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
             <div className="flex items-center gap-3 w-full">
               <VolumeSlider
                 value={audioState.isMuted ? 0 : (audioState.volume ?? 100)}
+                disabledControls={disabledControls}
                 onChange={handleVolumeChange}
               />
             </div>
@@ -297,8 +309,8 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={previous}
-                  disabled={!hasTrack}
-                  className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!hasTrack || disabledControls}
+                  className="p-2 rounded-full enabled:hover:bg-light-hover dark:enabled:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Previous"
                 >
                   <Icon.Previous className="sm:w-5 sm:h-5 w-3 h-3" />
@@ -308,7 +320,7 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={restart}
-                disabled={!hasTrack || audioState.currentPosition === 0}
+                disabled={!hasTrack || audioState.currentPosition === 0 || disabledControls}
                 className="p-2 rounded-full enabled:hover:bg-light-hover dark:enabled:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Restart"
               >
@@ -318,11 +330,11 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
                 />
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: disabledControls ? 1 : 1.1 }}
+                whileTap={{ scale: disabledControls ? 1 : 0.9 }}
                 onClick={handleSkipBackward}
-                disabled={!hasTrack}
-                className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
+                disabled={!hasTrack || disabledControls}
+                className="p-2 rounded-full enabled:hover:bg-light-hover dark:enabled:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
                 title="Rewind 10s"
               >
                 <Icon.Rewind className="sm:w-6 sm:h-6 w-4 h-4" />
@@ -331,11 +343,11 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
                 </span>
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: disabledControls ? 1 : 1.1 }}
+                whileTap={{ scale: disabledControls ? 1 : 0.9 }}
                 onClick={audioState.isPlaying ? handlePause : handlePlay}
-                disabled={!hasTrack}
-                className="p-4 rounded-full bg-primary-600 hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-white"
+                disabled={!hasTrack || disabledControls}
+                className="p-4 rounded-full bg-primary-600 enabled:hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-white"
                 title={audioState.isPlaying ? 'Pause' : 'Play'}
               >
                 {audioState.isPlaying ? (
@@ -345,11 +357,11 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
                 )}
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: disabledControls ? 1 : 1.1 }}
+                whileTap={{ scale: disabledControls ? 1 : 0.9 }}
                 onClick={handleSkipForward}
-                disabled={!hasTrack}
-                className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
+                disabled={!hasTrack || disabledControls}
+                className="p-2 rounded-full enabled:hover:bg-light-hover dark:enabled:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
                 title="Forward 10s"
               >
                 <Icon.Fordward className="sm:w-6 sm:h-6 w-4 h-4" />
@@ -359,22 +371,22 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
               </motion.button>
               {playlistCount > 1 && (
                 <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: disabledControls ? 1 : 1.1 }}
+                  whileTap={{ scale: disabledControls ? 1 : 0.9 }}
                   onClick={next}
-                  disabled={!hasTrack}
-                  className="p-2 rounded-full hover:bg-light-hover dark:hover:bg-dark-hover transition-colors disabled:opacity-50"
+                  disabled={!hasTrack || disabledControls}
+                  className="p-2 rounded-full enabled:hover:bg-light-hover dark:enabled:hover:bg-dark-hover transition-colors disabled:opacity-50"
                   title="Next"
                 >
                   <Icon.Next className="sm:w-5 sm:h-5 w-3 h-3" />
                 </motion.button>
               )}
               <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
                 className="p-2 rounded-full enabled:hover:bg-light-hover dark:enabled:hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!hasTrack || audioState.currentPosition === 0}
-                onClick={stop}
+                disabled={!hasTrack || audioState.currentPosition === 0 || disabledControls}
+                whileHover={{ scale: disabledControls ? 1 : 1.1 }}
+                whileTap={{ scale: disabledControls ? 1 : 0.9 }}
+                onClick={handleStop}
                 title="Stop"
               >
                 <Icon.Stop className="sm:w-5 sm:h-5 w-3 h-3" />
@@ -383,6 +395,12 @@ export function AudioPlayerHost({ playlistCount = 0 }: { playlistCount?: number 
           </div>
         </div>
       </div>
+
+      {disabledControls && (
+        <div className="text-center text-sm text-red-500 dark:text-red-500 !mt-8">
+          You need to connect your Spotify account to use the audio player.
+        </div>
+      )}
     </div>
   );
 }

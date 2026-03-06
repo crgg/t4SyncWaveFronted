@@ -149,7 +149,7 @@ export function GroupCard({
       {group.music_type === 'spotify_only' && (
         <div className="w-full h-full absolute right-0 top-0 rounded-lg overflow-hidden pointer-events-none">
           <img
-            className="w-20 h-20 opacity-10 ml-auto -translate-x-3/4 dark:opacity-[0.08] pointer-events-none select-none"
+            className="w-20 opacity-10 ml-auto -translate-x-3/4 dark:opacity-[0.08] pointer-events-none select-none h-full my-auto"
             alt="Spotify Icon"
             src={SpotifyIcon}
             aria-hidden

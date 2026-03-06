@@ -21,9 +21,22 @@ import {
   initializeWebSocketService,
 } from '@services/websocket/websocketService';
 import { getAudioService } from '@services/audio/audioService';
+import {
+  seekSpotifyPlayer,
+  resumeSpotifyPlayer,
+  pauseSpotifyPlayer,
+  playSpotifyTrack,
+} from '@features/spotify/spotifyPlayerService';
 import { WS_URL, SOCKET_EVENTS } from '@shared/constants';
 import type { AudioState, SessionInfo, Track } from '@shared/types';
-import { isValidAudioUrl } from '@shared/utils';
+import {
+  isValidAudioUrl,
+  isSpotifyUrl,
+  extractSpotifyId,
+  compensatePositionSeconds,
+  SPOTIFY_PLAY_OVERHEAD_MS,
+  SPOTIFY_SEEK_OVERHEAD_MS,
+} from '@shared/utils';
 import { store } from '@app/store';
 import { IRoomUser, IRoomUsers } from '@/features/groups/groups.types';
 import { groupsApi } from '@/features/groups/groupsApi';
@@ -103,11 +116,22 @@ export function useWebSocket() {
         queryClient.invalidateQueries({ queryKey: ['group', groupId] });
       }
 
-      const newTrackUrl = data.trackUrl || data.truckUrl || '';
+      const rawTrackUrl = data.trackUrl || (data as any).truckUrl || '';
+      // Resolve Spotify ID: explicit field first, then extract from trackUrl if it's a Spotify URL.
+      // The server may return source:"mp3" with a Spotify URL in trackUrl.
+      const resolvedSpotifyId =
+        (data as any).appleMusicId || data.spotifyId || extractSpotifyId(rawTrackUrl) || null;
+      const resolvedSource = (data as any).source || data.trackSource || null;
+      const isSpotify =
+        resolvedSource === 'spotify' || !!resolvedSpotifyId || isSpotifyUrl(rawTrackUrl);
+
+      // For Spotify tracks use empty string as trackUrl — the Spotify SDK handles playback
+      const newTrackUrl = isSpotify ? '' : rawTrackUrl;
       updateAudioStateRef();
       const currentAudioState = audioStateRef.current;
 
-      if (newTrackUrl && !isValidAudioUrl(newTrackUrl)) {
+      // Spotify tracks don't have a traditional file URL — skip URL validation
+      if (!isSpotify && newTrackUrl && !isValidAudioUrl(newTrackUrl)) {
         console.warn(
           'El servidor envió una URL inválida:',
           newTrackUrl,
@@ -116,56 +140,113 @@ export function useWebSocket() {
         return;
       }
 
-      const isNewTrack = newTrackUrl && newTrackUrl !== currentAudioState?.trackUrl;
+      // Compensate position for network latency so the listener starts in sync with the host.
+      // We use the message's own timestamp (most accurate) with a rolling-median fallback.
+      const compensatedPosition = compensatePositionSeconds(
+        data.currentPosition || 0,
+        data.timestamp,
+        data.isPlaying
+      );
+
+      const isNewTrack = isSpotify
+        ? resolvedSpotifyId !== currentAudioState?.spotifyId
+        : newTrackUrl && newTrackUrl !== currentAudioState?.trackUrl;
       const positionDiff = Math.abs(
-        (data.currentPosition || 0) - (currentAudioState?.currentPosition || 0)
+        compensatedPosition - (currentAudioState?.currentPosition || 0)
       );
       const hasSignificantChange =
         isNewTrack ||
-        positionDiff > 0.1 ||
+        positionDiff > 0.5 ||
         data.isPlaying !== currentAudioState?.isPlaying ||
         (data.trackDuration && data.trackDuration !== currentAudioState?.trackDuration);
 
-      if (!hasSignificantChange && newTrackUrl && currentAudioState?.trackUrl) {
+      if (!isSpotify && !hasSignificantChange && newTrackUrl && currentAudioState?.trackUrl) {
         return;
       }
 
       const audioStateToDispatch: AudioState = {
         ...data,
-        trackUrl: newTrackUrl,
-        trackId: newTrackUrl,
-        // Preservar siempre el volumen local - NO usar el volumen del backend
+        trackUrl: newTrackUrl || currentAudioState?.trackUrl || '',
+        trackId: isSpotify
+          ? currentAudioState?.trackId || resolvedSpotifyId || ''
+          : newTrackUrl || currentAudioState?.trackId || '',
+        // Preserve local volume — never override from backend
         volume: currentAudioState?.volume ?? 100,
         trackDuration: data.trackDuration || currentAudioState?.trackDuration,
-        currentPosition:
-          isNaN(data.currentPosition) || data.currentPosition < 0
-            ? (currentAudioState?.currentPosition ?? 0)
-            : data.currentPosition,
+        // Use latency-compensated position so the UI shows the "real now" position
+        currentPosition: compensatedPosition,
         timestamp: data.timestamp || Date.now(),
+        ...(isSpotify && { spotifyId: resolvedSpotifyId, trackSource: 'spotify' }),
       } as AudioState;
 
       dispatch(setAudioState(audioStateToDispatch));
 
       const currentRole = store.getState().session.role;
-      if (currentRole === 'member' && newTrackUrl) {
-        try {
-          const audioService = getAudioService();
-          const audioServiceState = audioService.getState();
+      if (currentRole === 'member') {
+        if (isSpotify && resolvedSpotifyId) {
+          // Sync Spotify playback for listener.
+          // If the track changed (or nothing was loaded), start via REST API.
+          // If it's the same track, just seek + resume/pause.
+          const isNewSpotifyTrack = resolvedSpotifyId !== currentAudioState?.spotifyId;
+          try {
+            if (data.isPlaying) {
+              if (isNewSpotifyTrack) {
+                // Include Spotify API startup overhead so the listener lands at the right spot
+                const startPositionMs =
+                  compensatePositionSeconds(
+                    data.currentPosition || 0,
+                    data.timestamp,
+                    true,
+                    SPOTIFY_PLAY_OVERHEAD_MS
+                  ) * 1000;
+                playSpotifyTrack(resolvedSpotifyId, startPositionMs).catch((err) =>
+                  console.error('Error starting Spotify track for listener:', err)
+                );
+              } else {
+                const seekPositionS = compensatePositionSeconds(
+                  data.currentPosition || 0,
+                  data.timestamp,
+                  true,
+                  SPOTIFY_SEEK_OVERHEAD_MS
+                );
+                seekSpotifyPlayer(seekPositionS)
+                  .then(() => resumeSpotifyPlayer())
+                  .catch((err) => console.error('Error syncing Spotify play for listener:', err));
+              }
+            } else {
+              pauseSpotifyPlayer()
+                .then(() => seekSpotifyPlayer(compensatedPosition))
+                .catch((err) => console.error('Error syncing Spotify pause for listener:', err));
+            }
+          } catch (error) {
+            console.error('Error al sincronizar Spotify para el listener:', error);
+          }
+        } else if (newTrackUrl) {
+          // Sync file-based audio for listener
+          try {
+            const audioService = getAudioService();
+            const audioServiceState = audioService.getState();
 
-          if (newTrackUrl !== audioServiceState?.trackUrl) {
-            audioService.sync(data.currentPosition, data.timestamp, data.isPlaying, newTrackUrl);
-          } else {
-            if (audioServiceState) {
-              (audioServiceState as any).isPlaying = audioStateToDispatch.isPlaying;
-              (audioServiceState as any).trackUrl = newTrackUrl;
-              (audioServiceState as any).currentPosition = audioStateToDispatch.currentPosition;
-              if (audioStateToDispatch.trackDuration) {
-                (audioServiceState as any).trackDuration = audioStateToDispatch.trackDuration;
+            if (newTrackUrl !== audioServiceState?.trackUrl) {
+              audioService.sync(
+                compensatedPosition,
+                data.timestamp || Date.now(),
+                data.isPlaying,
+                newTrackUrl
+              );
+            } else {
+              if (audioServiceState) {
+                (audioServiceState as any).isPlaying = audioStateToDispatch.isPlaying;
+                (audioServiceState as any).trackUrl = newTrackUrl;
+                (audioServiceState as any).currentPosition = compensatedPosition;
+                if (audioStateToDispatch.trackDuration) {
+                  (audioServiceState as any).trackDuration = audioStateToDispatch.trackDuration;
+                }
               }
             }
+          } catch (error) {
+            console.error('Error al actualizar estado interno del audioService:', error);
           }
-        } catch (error) {
-          console.error('Error al actualizar estado interno del audioService:', error);
         }
       }
     };
@@ -182,16 +263,31 @@ export function useWebSocket() {
       userId?: string;
       position: number;
       isPlaying: boolean;
-      trackUrl: string;
+      trackUrl: string | null;
       timestamp?: number;
       duration?: number | null;
       trackTitle?: string | null;
       trackArtist?: string | null;
+      // Server-side field names
+      appleMusicId?: string | null;
+      source?: string | null;
+      // Client-side field names (backward compat)
+      spotifyId?: string;
+      trackSource?: string;
     }) => {
       updateAudioStateRef();
       const currentAudioState = audioStateRef.current;
 
-      if (data.trackUrl && !isValidAudioUrl(data.trackUrl)) {
+      // Resolve Spotify ID: explicit field first, then extract from trackUrl if it's a Spotify URL.
+      // The server may return source:"mp3" with a Spotify URL in trackUrl.
+      const resolvedSpotifyId =
+        data.appleMusicId || data.spotifyId || extractSpotifyId(data.trackUrl || '') || null;
+      const resolvedSource = data.source || data.trackSource || null;
+      const isSpotify =
+        resolvedSource === 'spotify' || !!resolvedSpotifyId || isSpotifyUrl(data.trackUrl);
+
+      // Spotify tracks don't have a traditional file URL — skip URL validation
+      if (!isSpotify && data.trackUrl && !isValidAudioUrl(data.trackUrl)) {
         console.warn(
           'El servidor envió una URL inválida:',
           data.trackUrl,
@@ -200,16 +296,85 @@ export function useWebSocket() {
         return;
       }
 
-      const clientReceiveTime = Date.now();
-      const timestamp = clientReceiveTime;
+      const serverTimestamp = data.timestamp ?? undefined;
+      const rawPosition =
+        isNaN(data.position) || data.position < 0
+          ? (currentAudioState?.currentPosition ?? 0)
+          : data.position;
 
-      // Mapear duration a trackDuration, manejar null
+      // Compensate for the time the message spent in transit so the listener
+      // starts at the position the track is actually at right now.
+      const currentPosition = compensatePositionSeconds(
+        rawPosition,
+        serverTimestamp,
+        data.isPlaying
+      );
+
+      if (isSpotify) {
+        const audioStateToDispatch: AudioState = {
+          isPlaying: data.isPlaying,
+          currentPosition,
+          volume: currentAudioState?.volume ?? 100,
+          trackId: currentAudioState?.trackId || resolvedSpotifyId || '',
+          trackUrl: currentAudioState?.trackUrl || '',
+          trackTitle: data.trackTitle ?? currentAudioState?.trackTitle,
+          trackArtist: data.trackArtist ?? currentAudioState?.trackArtist,
+          trackDuration: currentAudioState?.trackDuration,
+          timestamp: serverTimestamp ?? Date.now(),
+          spotifyId: resolvedSpotifyId ?? undefined,
+          trackSource: 'spotify',
+        };
+
+        dispatch(setAudioState(audioStateToDispatch));
+
+        const currentRole = store.getState().session.role;
+        if (currentRole === 'member' && resolvedSpotifyId) {
+          // If the track changed (or nothing was loaded), start via REST API (PUT /me/player/play).
+          // If it's the same track, seek + resume/pause is enough.
+          const isNewSpotifyTrack = resolvedSpotifyId !== currentAudioState?.spotifyId;
+          try {
+            if (data.isPlaying) {
+              if (isNewSpotifyTrack) {
+                // Add Spotify API startup overhead to the position compensation
+                const startPositionMs =
+                  compensatePositionSeconds(
+                    rawPosition,
+                    serverTimestamp,
+                    true,
+                    SPOTIFY_PLAY_OVERHEAD_MS
+                  ) * 1000;
+                playSpotifyTrack(resolvedSpotifyId, startPositionMs).catch((err) =>
+                  console.error('Error starting Spotify track for listener:', err)
+                );
+              } else {
+                const seekPositionS = compensatePositionSeconds(
+                  rawPosition,
+                  serverTimestamp,
+                  true,
+                  SPOTIFY_SEEK_OVERHEAD_MS
+                );
+                seekSpotifyPlayer(seekPositionS)
+                  .then(() => resumeSpotifyPlayer())
+                  .catch((err) => console.error('Error syncing Spotify play for listener:', err));
+              }
+            } else {
+              pauseSpotifyPlayer()
+                .then(() => seekSpotifyPlayer(currentPosition))
+                .catch((err) => console.error('Error syncing Spotify pause for listener:', err));
+            }
+          } catch (error) {
+            console.error('Error al sincronizar Spotify para el listener:', error);
+          }
+        }
+        return;
+      }
+
+      // File-based track
       const trackDuration =
         data.duration !== null && data.duration !== undefined
           ? data.duration
           : currentAudioState?.trackDuration;
 
-      // Mapear trackTitle y trackArtist, manejar null
       const trackTitle =
         data.trackTitle !== null && data.trackTitle !== undefined
           ? data.trackTitle
@@ -222,18 +387,15 @@ export function useWebSocket() {
 
       const audioStateToDispatch: AudioState = {
         isPlaying: data.isPlaying,
-        currentPosition:
-          isNaN(data.position) || data.position < 0
-            ? (currentAudioState?.currentPosition ?? 0)
-            : data.position,
-        // Preservar siempre el volumen local - NO usar el volumen del backend
+        currentPosition,
+        // Preserve local volume — never override from backend
         volume: currentAudioState?.volume ?? 100,
         trackId: currentAudioState?.trackId || data.trackUrl || '',
         trackUrl: data.trackUrl || currentAudioState?.trackUrl || '',
         trackTitle: trackTitle,
         trackArtist: trackArtist,
         trackDuration: trackDuration,
-        timestamp: timestamp,
+        timestamp: serverTimestamp ?? Date.now(),
         truckUrl: data.trackUrl,
       } as AudioState;
 
@@ -248,7 +410,8 @@ export function useWebSocket() {
           if (audioServiceState) {
             (audioServiceState as any).isPlaying = audioStateToDispatch.isPlaying;
             (audioServiceState as any).trackUrl = audioStateToDispatch.trackUrl;
-            (audioServiceState as any).currentPosition = audioStateToDispatch.currentPosition;
+            // Use latency-compensated position for the audio service too
+            (audioServiceState as any).currentPosition = currentPosition;
             if (audioStateToDispatch.trackDuration) {
               (audioServiceState as any).trackDuration = audioStateToDispatch.trackDuration;
             }
@@ -268,26 +431,32 @@ export function useWebSocket() {
       const currentAudioState = store.getState().audio;
       const sessionId = store.getState().session.sessionName;
 
-      if (currentRole === 'dj' && currentAudioState.trackUrl && sessionId) {
+      if (
+        currentRole === 'dj' &&
+        (currentAudioState.trackUrl || currentAudioState.spotifyId) &&
+        sessionId
+      ) {
         try {
           const audioService = getAudioService();
           const audioServiceState = audioService.getState();
           const currentPosition =
             audioServiceState?.currentPosition ?? currentAudioState.currentPosition ?? 0;
+          // timestamp MUST be accurate: listeners use it to compensate for network latency
           const timestamp = Date.now();
 
-          // Enviar playback-state para sincronizar al nuevo listener
-          // El formato espera position en segundos (no milisegundos)
           wsService.emit(SOCKET_EVENTS.PLAYBACK_STATE, {
             room: sessionId,
             userName: store.getState().auth.user?.name || 'DJ',
-            position: currentPosition, // En segundos
+            position: currentPosition, // seconds
             isPlaying: currentAudioState.isPlaying || false,
-            trackUrl: currentAudioState.trackUrl,
-            duration: currentAudioState.trackDuration || null, // En segundos
+            trackUrl: currentAudioState.trackUrl || null,
+            duration: currentAudioState.trackDuration || null,
             trackTitle: currentAudioState.trackTitle || null,
             trackArtist: currentAudioState.trackArtist || null,
-            timestamp,
+            // Spotify fields so the listener can detect and play via SDK
+            appleMusicId: currentAudioState.spotifyId || null,
+            source: currentAudioState.trackSource || null,
+            timestamp, // critical for latency compensation
           });
         } catch (error) {
           console.error('Error al enviar playback-state al nuevo listener:', error);

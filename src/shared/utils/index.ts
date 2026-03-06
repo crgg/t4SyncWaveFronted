@@ -5,6 +5,16 @@
 import { AxiosError } from 'axios';
 import { clsx, type ClassValue } from 'clsx';
 
+export {
+  recordNetworkSample,
+  getOneWayLatencyMs,
+  compensatePositionSeconds,
+  compensateStalePosition,
+  getLatencyDebugInfo,
+  SPOTIFY_PLAY_OVERHEAD_MS,
+  SPOTIFY_SEEK_OVERHEAD_MS,
+} from './latencyEstimator';
+
 /**
  * Combina clases CSS de forma condicional
  */
@@ -128,6 +138,11 @@ export function isValidAudioUrl(url: string): boolean {
   try {
     const urlObj = new URL(url);
     if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
+      // Reject Spotify web URLs — they are not streamable audio files.
+      // Spotify content must go through the Web Playback SDK, not HTMLAudioElement.
+      if (urlObj.hostname === 'open.spotify.com') {
+        return false;
+      }
       // Permitir URLs HTTP/HTTPS que no sean rutas de la app
       return true;
     }
@@ -219,10 +234,29 @@ export const extractCharacters = (text: string, count: number = 1): string => {
 };
 
 /**
- * Check if the current track is a Spotify track (uses Web Playback SDK, no sync)
+ * Returns true when the given URL is a Spotify web URL or spotify: URI.
+ * Used to detect Spotify tracks even when the server sends them with source:"mp3".
  */
-export function isSpotifyTrack(state: { trackSource?: string; spotifyId?: string }): boolean {
-  return state.trackSource === 'spotify' || !!state.spotifyId;
+export function isSpotifyUrl(url?: string | null): boolean {
+  if (!url) return false;
+  return (
+    url.startsWith('https://open.spotify.com/track/') ||
+    url.startsWith('http://open.spotify.com/track/') ||
+    url.startsWith('spotify:track:')
+  );
+}
+
+/**
+ * Check if the current track is a Spotify track (uses Web Playback SDK, no sync).
+ * Also detects Spotify by inspecting the trackUrl when explicit flags are missing
+ * (the server may return source:"mp3" with a Spotify URL in trackUrl).
+ */
+export function isSpotifyTrack(state: {
+  trackSource?: string;
+  spotifyId?: string;
+  trackUrl?: string | null;
+}): boolean {
+  return state.trackSource === 'spotify' || !!state.spotifyId || isSpotifyUrl(state.trackUrl);
 }
 
 /**

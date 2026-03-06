@@ -43,6 +43,9 @@ export const SOCKET_EVENTS = {
   REQUEST_PLAYBACK_STATE: 'request-playback-state',
   PLAYBACK_STATE_RESPONSE: 'playback-state-response',
   DJ_RETURN: 'DJ_RETURN',
+
+  // Spotify listener device registration
+  SPOTIFY_LISTENER_DEVICE: 'spotify:listener-device',
 } as const;
 
 // Configuración de sincronización

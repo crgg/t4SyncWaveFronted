@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { cn } from '@/shared/utils';
 
 interface VolumeSliderProps {
-  value: number;
   onChange: (volume: number) => void;
+  disabledControls?: boolean;
+  value: number;
 }
 
-export function VolumeSlider({ value, onChange }: VolumeSliderProps) {
+export function VolumeSlider({ value, onChange, disabledControls = false }: VolumeSliderProps) {
   const [localVolume, setLocalVolume] = useState(value * 10);
   const [isDraggingVolume, setIsDraggingVolume] = useState(false);
   const volumeSliderRef = useRef<HTMLDivElement>(null);
@@ -20,7 +22,7 @@ export function VolumeSlider({ value, onChange }: VolumeSliderProps) {
 
   const updateVolumeFromPosition = useCallback(
     (clientX: number) => {
-      if (!volumeSliderRef.current) return;
+      if (!volumeSliderRef.current || disabledControls) return;
 
       const rect = volumeSliderRef.current.getBoundingClientRect();
       const x = clientX - rect.left;
@@ -48,11 +50,13 @@ export function VolumeSlider({ value, onChange }: VolumeSliderProps) {
   );
 
   const handleVolumeMouseDown = (e: React.MouseEvent) => {
+    if (disabledControls) return;
     setIsDraggingVolume(true);
     updateVolumeFromPosition(e.clientX);
   };
 
   const handleVolumeTouchStart = (e: React.TouchEvent) => {
+    if (disabledControls) return;
     setIsDraggingVolume(true);
     if (e.touches[0]) {
       updateVolumeFromPosition(e.touches[0].clientX);
@@ -61,27 +65,29 @@ export function VolumeSlider({ value, onChange }: VolumeSliderProps) {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (isDraggingVolume) {
+      if (isDraggingVolume && !disabledControls) {
         updateVolumeFromPosition(e.clientX);
       }
     };
 
     const handleMouseUp = () => {
+      if (disabledControls) return;
       setIsDraggingVolume(false);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (isDraggingVolume && e.touches[0]) {
+      if (isDraggingVolume && e.touches[0] && !disabledControls) {
         e.preventDefault();
         updateVolumeFromPosition(e.touches[0].clientX);
       }
     };
 
     const handleTouchEnd = () => {
+      if (disabledControls) return;
       setIsDraggingVolume(false);
     };
 
-    if (isDraggingVolume) {
+    if (isDraggingVolume && !disabledControls) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       document.addEventListener('touchmove', handleTouchMove, { passive: false });
@@ -89,10 +95,12 @@ export function VolumeSlider({ value, onChange }: VolumeSliderProps) {
     }
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
+      if (!disabledControls) {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleTouchEnd);
+      }
     };
   }, [isDraggingVolume, updateVolumeFromPosition]);
 
@@ -108,9 +116,12 @@ export function VolumeSlider({ value, onChange }: VolumeSliderProps) {
     <>
       <div
         ref={volumeSliderRef}
-        className="flex-1 h-1 bg-zinc-200 dark:bg-dark-hover rounded-lg cursor-pointer relative group transition-colors duration-200"
-        onMouseDown={handleVolumeMouseDown}
+        className={cn(
+          'flex-1 h-1 bg-zinc-200 dark:bg-dark-hover rounded-lg cursor-pointer relative group transition-colors duration-200',
+          disabledControls && 'opacity-50 cursor-not-allowed'
+        )}
         onTouchStart={handleVolumeTouchStart}
+        onMouseDown={handleVolumeMouseDown}
       >
         <div
           className="absolute h-full bg-[#C5A059] dark:bg-primary-700 rounded-lg transition-all duration-75 ease-out"

@@ -65,7 +65,7 @@ type StateChangeCallback = (state: {
 
 let playerInstance: SpotifyPlayer | null = null;
 let stateChangeCallback: StateChangeCallback | null = null;
-let spotifyDeviceId: string | null = null;
+export let spotifyDeviceId: string | null = null;
 
 const SPOTIFY_SDK_URL = 'https://sdk.scdn.co/spotify-player.js';
 
@@ -168,6 +168,7 @@ export async function initSpotifyPlayer(onStateChange: StateChangeCallback): Pro
 
     const onReady = (ev: { device_id?: string }) => {
       const device_id = ev?.device_id;
+      console.log({ device_id });
       if (device_id) {
         clearTimeout(timeout);
         spotifyDeviceId = device_id;
@@ -182,21 +183,54 @@ export async function initSpotifyPlayer(onStateChange: StateChangeCallback): Pro
   return deviceReady;
 }
 
-async function transferPlaybackToDevice(deviceId: string): Promise<boolean> {
+export async function transferPlaybackToDevice(deviceId: string): Promise<boolean> {
   const token = await getValidSpotifyToken();
   if (!token) return false;
-  const res = await fetch(`${API_BASE}/me/player`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ device_ids: [deviceId], play: false }),
-  });
-  return res.ok || res.status === 204;
+  deviceId;
+  // const res = await fetch(`${API_BASE}/me/player`, {
+  //   method: 'PUT',
+  //   headers: {
+  //     Authorization: `Bearer ${token}`,
+  //     'Content-Type': 'application/json',
+  //   },
+  //   body: JSON.stringify({ device_ids: [deviceId], play: false }),
+  // });
+  // return res.ok || res.status === 204;
+  return true;
 }
 
-async function getDeviceIdFromApi(token: string): Promise<string | null> {
+/**
+ * Pushes a Spotify track to one or more specific device IDs.
+ * Use this for the host to manually transfer playback to listener devices.
+ * Each device must be associated with the Spotify account whose token is stored locally.
+ */
+export async function transferPlaybackToDevices(
+  deviceIds: string[],
+  spotifyId: string,
+  positionMs?: number
+): Promise<void> {
+  const token = await getValidSpotifyToken();
+  if (!token || deviceIds.length === 0) return;
+  const uri = `spotify:track:${spotifyId}`;
+  const body: Record<string, unknown> = { uris: [uri] };
+  if (positionMs !== undefined && positionMs > 0) {
+    body.position_ms = positionMs;
+  }
+  await Promise.allSettled(
+    deviceIds.map((deviceId) =>
+      fetch(`${API_BASE}/me/player/play?device_id=${deviceId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      })
+    )
+  );
+}
+
+export async function getDeviceIdFromApi(token: string): Promise<string | null> {
   const res = await fetch(`${API_BASE}/me/player/devices`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -207,6 +241,26 @@ async function getDeviceIdFromApi(token: string): Promise<string | null> {
     (d: { id?: string; name?: string }) => d.name === 'T4SyncWave' || d.id === spotifyDeviceId
   );
   return ourDevice?.id || null;
+}
+
+/**
+ * Returns all active T4SyncWave device IDs registered to the Spotify account.
+ * When all room members use the same group Spotify account, this discovers
+ * every listener's browser SDK device so the host can broadcast playback to all.
+ */
+export async function getAllT4SyncWaveDeviceIds(): Promise<string[]> {
+  const token = await getValidSpotifyToken();
+  if (!token) return [];
+  const res = await fetch(`${API_BASE}/me/player/devices`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return [];
+  const data = await res.json().catch(() => ({}));
+  const devices: Array<{ id?: string; name?: string }> = data.devices || [];
+  return devices
+    .filter((d) => d.name === 'T4SyncWave')
+    .map((d) => d.id)
+    .filter((id): id is string => !!id);
 }
 
 async function reconnectPlayer(): Promise<boolean> {
@@ -270,7 +324,21 @@ async function reconnectPlayer(): Promise<boolean> {
   return deviceReady;
 }
 
-export async function playSpotifyTrack(spotifyId: string): Promise<boolean> {
+/**
+ * Plays a Spotify track on the host's SDK device and, optionally, broadcasts
+ * to all other T4SyncWave devices registered to the same Spotify account
+ * (i.e. every listener in the room who connected to the group's shared account).
+ *
+ * @param spotifyId  - Spotify track ID
+ * @param positionMs - Start position in milliseconds (for synced start)
+ * @param broadcastToListeners - When true, fetches all T4SyncWave devices and
+ *   fires PUT /me/player/play on each listener device after the host device starts.
+ */
+export async function playSpotifyTrack(
+  spotifyId: string,
+  positionMs?: number,
+  broadcastToListeners = false
+): Promise<boolean> {
   const token = await getValidSpotifyToken();
   if (!token) return false;
 
@@ -309,13 +377,18 @@ export async function playSpotifyTrack(spotifyId: string): Promise<boolean> {
   await transferPlaybackToDevice(deviceId);
   await new Promise((r) => setTimeout(r, 400));
 
+  const hostBody: Record<string, unknown> = { uris: [uri] };
+  if (positionMs !== undefined && positionMs > 0) {
+    hostBody.position_ms = positionMs;
+  }
+
   let response = await fetch(playUrl, {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ uris: [uri] }),
+    body: JSON.stringify(hostBody),
   });
 
   // If 404 "Device not found", reconnect player and retry
@@ -339,7 +412,7 @@ export async function playSpotifyTrack(spotifyId: string): Promise<boolean> {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ uris: [uri] }),
+          body: JSON.stringify(hostBody),
         });
       }
     } else {
@@ -351,7 +424,7 @@ export async function playSpotifyTrack(spotifyId: string): Promise<boolean> {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ uris: [uri] }),
+        body: JSON.stringify(hostBody),
       });
     }
   }
@@ -370,6 +443,34 @@ export async function playSpotifyTrack(spotifyId: string): Promise<boolean> {
     }
     throw new Error(msg || 'Spotify playback failed');
   }
+
+  // Broadcast to all other T4SyncWave devices (listeners in the room).
+  // Only applies when the group shares a single Spotify account across members.
+  if (broadcastToListeners) {
+    const listenerBody: Record<string, unknown> = { uris: [uri] };
+    if (positionMs !== undefined && positionMs > 0) {
+      listenerBody.position_ms = positionMs;
+    }
+    try {
+      const allDeviceIds = await getAllT4SyncWaveDeviceIds();
+      const otherDeviceIds = allDeviceIds.filter((id) => id !== deviceId);
+      await Promise.allSettled(
+        otherDeviceIds.map((listenerId) =>
+          fetch(`${API_BASE}/me/player/play?device_id=${listenerId}`, {
+            method: 'PUT',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(listenerBody),
+          })
+        )
+      );
+    } catch {
+      // Best-effort: broadcast failures don't break the host's playback
+    }
+  }
+
   return true;
 }
 
