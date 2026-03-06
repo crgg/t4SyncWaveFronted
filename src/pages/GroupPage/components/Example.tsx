@@ -122,18 +122,20 @@ const Example = ({ groupId, isSpotifyOnly }: Propss) => {
   const updateDeviceId = (index: number, value: string) =>
     setDeviceIds((prev) => prev.map((id, i) => (i === index ? value : id)));
 
+  if (!isSpotifyOnly) return null;
+
   return (
     <div className="text-sm my-4 space-y-2">
       {/* Main action buttons */}
       <div className="flex items-center justify-end gap-2 flex-wrap">
         <button
-          className="btn bg-slate-500/10 border border-slate-500 text-slate-700"
+          className="btn bg-slate-500/10 border border-slate-500 text-slate-700 hidden"
           onClick={handleGetDevices}
         >
           Get Devices
         </button>
         <button
-          className="btn bg-violet-500/10 border border-violet-500 text-violet-700 dark:text-violet-400"
+          className="btn bg-violet-500/10 border border-violet-500 text-violet-700 dark:text-violet-400 hidden"
           onClick={() => setShowTransfer((v) => !v)}
         >
           Transfer Playback

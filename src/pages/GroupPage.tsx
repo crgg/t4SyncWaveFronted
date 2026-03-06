@@ -160,7 +160,7 @@ const GroupPage = () => {
       const currentTimestamp = state.lastEventTime || Date.now();
 
       if (isSpotify) {
-        // Set initial Redux state so the UI shows the right position/title
+        // Show initial state in the UI immediately (stale-compensated position)
         dispatch(
           setAudioState({
             isPlaying: state.isPlaying,
@@ -177,13 +177,23 @@ const GroupPage = () => {
           })
         );
 
-        // Members need to actively start Spotify playback; the DJ controls their own player.
+        // Only members need to start playback — the DJ controls their own Spotify player.
         if (currentRole === 'member' && spotifyId) {
-          // Capture snapshot values — will re-compensate at actual play time
-          const capturedPosition = currentPosition;
-          const capturedTimestamp = currentTimestamp;
+          // Anchor point: raw server position at snapshotTime.
+          // All latency calculations are done relative to this single reference so we
+          // never double-count elapsed time.
+          const snapshotPosition = rawPosition; // seconds (server value)
+          const snapshotTime =
+            state.lastEventTime > 0 // Unix ms
+              ? state.lastEventTime
+              : Date.now();
           const shouldPlay = state.isPlaying;
 
+          /**
+           * Called once the Spotify SDK is ready (device_id obtained).
+           * Calculates where the track is *right now* and starts playback
+           * accounting for the Spotify REST API startup overhead.
+           */
           const doPlay = (ok: boolean) => {
             if (!ok) {
               setSpotifyStatus('error');
@@ -192,24 +202,37 @@ const GroupPage = () => {
               );
               return;
             }
+
             setSpotifyStatus('ready');
             setSpotifyStatusMsg(shouldPlay ? 'Reproduciendo en Spotify' : 'Listo para reproducir');
-            // Auto-clear "ready" banner after 4 s so it doesn't clutter the UI
             setTimeout(() => setSpotifyStatus('idle'), 4000);
 
-            if (!shouldPlay) return; // track is paused — SDK is ready but don't force play
-            // Re-calculate position accounting for SDK init time since REST snapshot
-            const elapsed = (Date.now() - capturedTimestamp) / 1000;
-            const syncedPositionMs =
-              Math.max(0, capturedPosition + elapsed + SPOTIFY_PLAY_OVERHEAD_MS / 1000) * 1000;
-            playSpotifyTrack(spotifyId!, syncedPositionMs).catch((err) => {
+            if (!shouldPlay) return; // paused — SDK connected but don't force play
+
+            // ─── Intelligent position calculation ───────────────────────────
+            // snapshotPosition: where the track was at snapshotTime (server truth)
+            // elapsedSinceSnapshot: wall-clock time from server snapshot → now
+            //   (covers REST API fetch time + SDK init time + any other delay)
+            // SPOTIFY_PLAY_OVERHEAD_MS: extra time the Spotify REST API needs to
+            //   actually start sending audio after PUT /player/play is called
+            //
+            // Result = where the speaker will actually be playing when audio starts.
+            const elapsedSinceSnapshot = (Date.now() - snapshotTime) / 1000;
+            const overheadSeconds = SPOTIFY_PLAY_OVERHEAD_MS / 1000;
+            const targetPositionMs = Math.max(
+              0,
+              (snapshotPosition + elapsedSinceSnapshot + overheadSeconds) * 1000
+            );
+            // ────────────────────────────────────────────────────────────────
+
+            playSpotifyTrack(spotifyId!, targetPositionMs).catch((err) => {
               setSpotifyStatus('error');
               setSpotifyStatusMsg(err instanceof Error ? err.message : 'Error al iniciar Spotify');
               console.error('Error starting Spotify for listener on page load:', err);
             });
           };
 
-          // Callback wired to the SDK's player_state_changed — keeps Redux live
+          // Wired to SDK player_state_changed — keeps Redux in sync while playing
           const onSdkStateChange = (sdkState: {
             isPlaying: boolean;
             currentPosition: number;
@@ -236,8 +259,10 @@ const GroupPage = () => {
           };
 
           if (isSpotifyPlayerReady()) {
+            // SDK already connected — jump straight to play with full latency compensation
             doPlay(true);
           } else {
+            // SDK not ready: show connecting state, init (waits for ready event), then play
             setSpotifyStatus('connecting');
             setSpotifyStatusMsg('Conectando reproductor de Spotify…');
             initSpotifyPlayer(onSdkStateChange)
