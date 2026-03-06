@@ -1,6 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Users, Music, ArrowLeft, Crown, UserPlus, UserMinus } from 'lucide-react';
+import {
+  Users,
+  Music,
+  ArrowLeft,
+  Crown,
+  UserPlus,
+  UserMinus,
+  Music2,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Wifi,
+} from 'lucide-react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -39,7 +51,11 @@ import { groupsApi } from '@/features/groups/groupsApi';
 import { useAudio } from '@/shared/hooks/useAudio';
 import { withAuth } from '@/shared/hoc/withAuth';
 import { cn, orderBy, extractSpotifyId, isSpotifyUrl } from '@/shared/utils';
-import { playSpotifyTrack } from '@/features/spotify/spotifyPlayerService';
+import {
+  playSpotifyTrack,
+  initSpotifyPlayer,
+  isSpotifyPlayerReady,
+} from '@/features/spotify/spotifyPlayerService';
 import { compensateStalePosition, SPOTIFY_PLAY_OVERHEAD_MS } from '@/shared/utils';
 import { paths } from '@/routes/paths';
 import { store } from '@/app/store';
@@ -58,6 +74,9 @@ const GroupPage = () => {
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const listenerAudioInitializedRef = useRef<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState<DialogType>(null);
+  type SpotifyStatus = 'idle' | 'connecting' | 'ready' | 'error';
+  const [spotifyStatus, setSpotifyStatus] = useState<SpotifyStatus>('idle');
+  const [spotifyStatusMsg, setSpotifyStatusMsg] = useState<string>('');
   const [isDeleteMember, setIsDeleteMember] = useState(false);
   const processedGroupIdRef = useRef<string | null>(null);
   const createdByRef = useRef<string | null>(null);
@@ -70,6 +89,7 @@ const GroupPage = () => {
   const audioState = useAppSelector((state) => state.audio);
   const user = useAppSelector((state) => state.auth.user);
   const tracks = useAppSelector(playListSelectors.tracks);
+  const sessionRole = useAppSelector((state) => state.session.role);
   const spotifyConnected = isSpotifyConnected();
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -98,12 +118,14 @@ const GroupPage = () => {
 
   useEffect(() => {
     if (!groupPlaybackStateData?.playbackState || !groupId) return;
+    // Wait until the WebSocket role is set — this effect re-runs when sessionRole changes
+    if (!sessionRole) return;
 
     const { playbackState: state } = groupPlaybackStateData;
-    const currentRole = store.getState().session.role;
+    const currentRole = sessionRole;
 
-    // Detect Spotify early — server may send appleMusicId/source:"spotify" with trackUrl null,
-    // or may put the Spotify URL inside trackUrl with source:"mp3".
+    // Detect Spotify — server may send appleMusicId/source:"spotify" with trackUrl null,
+    // or may put the Spotify URL (https://open.spotify.com/track/...) inside trackUrl.
     const rawTrackUrl = state.trackUrl || '';
     const spotifyId =
       (state as any).appleMusicId ||
@@ -156,12 +178,78 @@ const GroupPage = () => {
         );
 
         // Members need to actively start Spotify playback; the DJ controls their own player.
-        // Add extra overhead for the Spotify API startup time so the listener lands in sync.
-        if (currentRole === 'member' && state.isPlaying && spotifyId) {
-          const startPositionMs = (currentPosition + SPOTIFY_PLAY_OVERHEAD_MS / 1000) * 1000;
-          playSpotifyTrack(spotifyId, startPositionMs).catch((err) => {
-            console.error('Error starting Spotify for listener on page load:', err);
-          });
+        if (currentRole === 'member' && spotifyId) {
+          // Capture snapshot values — will re-compensate at actual play time
+          const capturedPosition = currentPosition;
+          const capturedTimestamp = currentTimestamp;
+          const shouldPlay = state.isPlaying;
+
+          const doPlay = (ok: boolean) => {
+            if (!ok) {
+              setSpotifyStatus('error');
+              setSpotifyStatusMsg(
+                'No se pudo conectar el reproductor de Spotify. Verifica que tu cuenta Premium esté activa.'
+              );
+              return;
+            }
+            setSpotifyStatus('ready');
+            setSpotifyStatusMsg(shouldPlay ? 'Reproduciendo en Spotify' : 'Listo para reproducir');
+            // Auto-clear "ready" banner after 4 s so it doesn't clutter the UI
+            setTimeout(() => setSpotifyStatus('idle'), 4000);
+
+            if (!shouldPlay) return; // track is paused — SDK is ready but don't force play
+            // Re-calculate position accounting for SDK init time since REST snapshot
+            const elapsed = (Date.now() - capturedTimestamp) / 1000;
+            const syncedPositionMs =
+              Math.max(0, capturedPosition + elapsed + SPOTIFY_PLAY_OVERHEAD_MS / 1000) * 1000;
+            playSpotifyTrack(spotifyId!, syncedPositionMs).catch((err) => {
+              setSpotifyStatus('error');
+              setSpotifyStatusMsg(err instanceof Error ? err.message : 'Error al iniciar Spotify');
+              console.error('Error starting Spotify for listener on page load:', err);
+            });
+          };
+
+          // Callback wired to the SDK's player_state_changed — keeps Redux live
+          const onSdkStateChange = (sdkState: {
+            isPlaying: boolean;
+            currentPosition: number;
+            trackDuration?: number;
+            trackId?: string;
+            trackTitle?: string;
+            trackArtist?: string;
+          }) => {
+            dispatch(
+              setAudioState({
+                isPlaying: sdkState.isPlaying,
+                currentPosition: sdkState.currentPosition,
+                trackDuration: sdkState.trackDuration,
+                trackTitle: sdkState.trackTitle ?? undefined,
+                trackArtist: sdkState.trackArtist ?? undefined,
+                spotifyId: sdkState.trackId ?? spotifyId,
+                trackSource: 'spotify',
+                trackUrl: '',
+                trackId: sdkState.trackId ?? spotifyId ?? '',
+                volume: store.getState().audio.volume ?? 100,
+                timestamp: Date.now(),
+              })
+            );
+          };
+
+          if (isSpotifyPlayerReady()) {
+            doPlay(true);
+          } else {
+            setSpotifyStatus('connecting');
+            setSpotifyStatusMsg('Conectando reproductor de Spotify…');
+            initSpotifyPlayer(onSdkStateChange)
+              .then(doPlay)
+              .catch((err) => {
+                setSpotifyStatus('error');
+                setSpotifyStatusMsg(
+                  err instanceof Error ? err.message : 'Error al conectar Spotify'
+                );
+                console.error('Error initializing Spotify player for listener:', err);
+              });
+          }
         }
         return;
       }
@@ -204,7 +292,7 @@ const GroupPage = () => {
       console.error('Error al inicializar audio en GroupPage:', error);
       listenerAudioInitializedRef.current = null;
     }
-  }, [groupPlaybackStateData, groupId, dispatch]);
+  }, [groupPlaybackStateData, groupId, dispatch, sessionRole]);
 
   const handleLeaveGroup = () => {
     // dispatch(leaveSessionSlice());
@@ -569,7 +657,89 @@ const GroupPage = () => {
               />
             )}
             {!isHostRef.current && (
-              <AudioPlayerListener name={tracks?.[0]?.title} artist={tracks?.[0]?.artist} />
+              <>
+                {/* Spotify connection status banner — only for listeners with a Spotify track */}
+                {spotifyStatus !== 'idle' && (
+                  <motion.div
+                    key={spotifyStatus}
+                    initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                    transition={{ duration: 0.25 }}
+                    className={`mb-3 flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-colors
+                      ${spotifyStatus === 'connecting' ? 'bg-[#1DB954]/10 border-[#1DB954]/30 text-[#1DB954]' : ''}
+                      ${spotifyStatus === 'ready' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : ''}
+                      ${spotifyStatus === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-500 dark:text-red-400' : ''}
+                    `}
+                  >
+                    {/* Icon */}
+                    <span className="shrink-0">
+                      {spotifyStatus === 'connecting' && (
+                        <Loader2 size={18} className="animate-spin text-[#1DB954]" />
+                      )}
+                      {spotifyStatus === 'ready' && (
+                        <CheckCircle2 size={18} className="text-emerald-500" />
+                      )}
+                      {spotifyStatus === 'error' && (
+                        <AlertCircle size={18} className="text-red-500 dark:text-red-400" />
+                      )}
+                    </span>
+
+                    {/* Spotify logo + message */}
+                    <span className="flex items-center gap-2 flex-1 min-w-0">
+                      <Music2 size={14} className="shrink-0 opacity-70" />
+                      <span className="truncate">{spotifyStatusMsg}</span>
+                    </span>
+
+                    {/* Connecting animated dots */}
+                    {spotifyStatus === 'connecting' && (
+                      <span className="flex gap-1 shrink-0">
+                        {[0, 1, 2].map((i) => (
+                          <motion.span
+                            key={i}
+                            className="w-1.5 h-1.5 rounded-full bg-[#1DB954]"
+                            animate={{ opacity: [0.3, 1, 0.3] }}
+                            transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                          />
+                        ))}
+                      </span>
+                    )}
+
+                    {/* Dismiss error */}
+                    {spotifyStatus === 'error' && (
+                      <button
+                        onClick={() => setSpotifyStatus('idle')}
+                        className="shrink-0 ml-auto text-xs opacity-60 hover:opacity-100 transition-opacity underline underline-offset-2"
+                      >
+                        Cerrar
+                      </button>
+                    )}
+                  </motion.div>
+                )}
+
+                {/* Waiting for DJ indicator — shown when Spotify track is known but DJ hasn't pressed play yet */}
+                {spotifyStatus === 'idle' &&
+                  audioState.spotifyId &&
+                  !audioState.isPlaying &&
+                  sessionRole === 'member' && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.4 }}
+                      className="mb-3 flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-[#1DB954]/30 bg-[#1DB954]/5 text-sm text-[#1DB954]/80"
+                    >
+                      <Wifi size={15} className="shrink-0 opacity-70" />
+                      <span>Esperando que el DJ inicie la reproducción de Spotify…</span>
+                      <motion.span
+                        className="ml-auto w-2 h-2 rounded-full bg-[#1DB954]/50 shrink-0"
+                        animate={{ opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                    </motion.div>
+                  )}
+
+                <AudioPlayerListener name={tracks?.[0]?.title} artist={tracks?.[0]?.artist} />
+              </>
             )}
           </>
         )}

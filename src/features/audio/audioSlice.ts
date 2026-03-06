@@ -78,18 +78,11 @@ const audioSlice = createSlice({
       }>
     ) => {
       const isSpotify = action.payload.trackSource === 'spotify' || !!action.payload.spotifyId;
-      console.log({
-        isSpotify,
-        trackSource: action.payload.trackSource,
-        spotifyId: action.payload.spotifyId,
-      });
-
       if (isSpotify) {
         // Spotify: usar spotifyId o extraerlo de trackUrl/URI para reproducir con Spotify API
         const spotifyId =
           action.payload.spotifyId ||
           (action.payload.trackUrl ? extractSpotifyId(action.payload.trackUrl) : null);
-        console.log({ spotifyId });
 
         if (!spotifyId) {
           console.error(

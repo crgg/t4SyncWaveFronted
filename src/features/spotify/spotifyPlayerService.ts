@@ -105,6 +105,11 @@ function loadSpotifySDK(): Promise<void> {
   });
 }
 
+/** Returns true when the SDK player is connected and has a device ID ready for playback. */
+export function isSpotifyPlayerReady(): boolean {
+  return !!spotifyDeviceId && !!playerInstance;
+}
+
 export async function initSpotifyPlayer(onStateChange: StateChangeCallback): Promise<boolean> {
   const token = await getValidSpotifyToken();
   if (!token) return false;
@@ -168,7 +173,6 @@ export async function initSpotifyPlayer(onStateChange: StateChangeCallback): Pro
 
     const onReady = (ev: { device_id?: string }) => {
       const device_id = ev?.device_id;
-      console.log({ device_id });
       if (device_id) {
         clearTimeout(timeout);
         spotifyDeviceId = device_id;
